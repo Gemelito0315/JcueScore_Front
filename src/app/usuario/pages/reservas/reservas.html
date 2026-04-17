@@ -1,0 +1,76 @@
+<div class="page-header">
+  <div>
+    <h2>Mis Reservas</h2>
+    <p>Gestiona tus reservas de mesas y recursos</p>
+  </div>
+  <button class="btn-primary" (click)="showForm.set(true)">+ Nueva Reserva</button>
+</div>
+
+<!-- LISTA -->
+<div class="reservas-list">
+  @for (r of reservas(); track r.id) {
+    <div class="reserva-card">
+      <div class="reserva-icon">
+        {{ r.tipo === 'Billar' ? '🎱' : r.tipo === 'Tejo' ? '🎯' : '🎳' }}
+      </div>
+      <div class="reserva-info">
+        <h4>{{ r.tipo }} · {{ r.mesa }}</h4>
+        <p>📅 {{ r.fecha }} &nbsp; 🕐 {{ r.hora }}</p>
+      </div>
+      <span class="badge" [class]="getEstadoClass(r.estado)">{{ r.estado }}</span>
+      @if (r.estado === 'confirmada') {
+        <button class="btn-cancel" (click)="cancelar(r.id)">Cancelar</button>
+      }
+    </div>
+  }
+  @if (reservas().length === 0) {
+    <div class="empty-state">
+      <span>📅</span>
+      <p>No tienes reservas activas</p>
+    </div>
+  }
+</div>
+
+<!-- MODAL NUEVA RESERVA -->
+@if (showForm()) {
+  <div class="modal-overlay" (click)="showForm.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Nueva Reserva</h3>
+        <button (click)="showForm.set(false)">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-form">
+        <div class="field">
+          <label>Tipo de juego</label>
+          <select formControlName="tipo">
+            @for (t of tiposJuego; track t) {
+              <option [value]="t.toLowerCase()">{{ t }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" formControlName="fecha" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Hora inicio</label>
+            <input type="time" formControlName="horaInicio" />
+          </div>
+          <div class="field">
+            <label>Hora fin</label>
+            <input type="time" formControlName="horaFin" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Notas (opcional)</label>
+          <textarea formControlName="notas" rows="2" placeholder="Alguna indicación..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showForm.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary">Confirmar reserva</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

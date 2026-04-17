@@ -1,0 +1,276 @@
+<div class="productos-admin-container">
+  <div class="header">
+    <h1>Gestión de Productos</h1>
+    <div class="header-actions">
+      <button mat-flat-button color="primary" (click)="mostrarFormularioCrear()">
+        <mat-icon>add</mat-icon>
+        Nuevo Producto
+      </button>
+      <button mat-icon-button (click)="irAPedidos()">
+        <mat-icon>receipt_long</mat-icon>
+      </button>
+      <button mat-icon-button (click)="irADashboard()">
+        <mat-icon>dashboard</mat-icon>
+      </button>
+    </div>
+  </div>
+
+  <!-- Filtros -->
+  <div class="filters-section">
+    <mat-form-field appearance="outline" class="search-field">
+      <mat-label>Buscar productos</mat-label>
+      <mat-icon matPrefix>search</mat-icon>
+      <input matInput (input)="onBusquedaChange($event)" [value]="busqueda()">
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="category-field">
+      <mat-label>Categoría</mat-label>
+      <mat-select (selectionChange)="onCategoriaChange($event.value)" [value]="categoriaSeleccionada()">
+        <mat-option [value]="0">Todas las categorías</mat-option>
+        <mat-option [value]="1">Bebidas</mat-option>
+        <mat-option [value]="2">Snacks</mat-option>
+        <mat-option [value]="3">Comida</mat-option>
+        <mat-option [value]="4">Café</mat-option>
+        <mat-option [value]="5">Postres</mat-option>
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="status-field">
+      <mat-label>Estado</mat-label>
+      <mat-select (selectionChange)="onEstadoChange($event.value)" [value]="estadoSeleccionado()">
+        <mat-option value="todos">Todos</mat-option>
+        <mat-option value="activos">Activos</mat-option>
+        <mat-option value="inactivos">Inactivos</mat-option>
+      </mat-select>
+    </mat-form-field>
+  </div>
+
+  <!-- Lista de Productos -->
+  <div class="productos-list">
+    <div class="list-header">
+      <h3>Productos ({{ productosFiltrados().length }})</h3>
+      <div class="loading-indicator" *ngIf="loading()">
+        <mat-progress-spinner diameter="20"></mat-progress-spinner>
+        <span>Cargando...</span>
+      </div>
+    </div>
+
+    <mat-card *ngFor="let producto of productosFiltrados()" class="producto-card" [class.inactive]="producto.isActive === false">
+      <mat-card-header>
+        <div class="header-content">
+          <mat-card-title>{{ producto.name }}</mat-card-title>
+          <mat-card-subtitle>{{ producto.brand }} - {{ producto.sku }}</mat-card-subtitle>
+        </div>
+        <div class="header-actions">
+          <mat-chip [color]="producto.isActive ? 'primary' : 'warn'" selected>
+            {{ producto.isActive ? 'Activo' : 'Inactivo' }}
+          </mat-chip>
+        </div>
+      </mat-card-header>
+
+      <mat-card-content>
+        <div class="producto-details">
+          <div class="detail-row">
+            <div class="detail-item">
+              <mat-icon>local_offer</mat-icon>
+              <span class="label">Precio:</span>
+              <span class="value">{{ formatCurrency(producto.price) }}</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>attach_money</mat-icon>
+              <span class="label">Costo:</span>
+              <span class="value">{{ formatCurrency(producto.cost) }}</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>trending_up</mat-icon>
+              <span class="label">Margen:</span>
+              <span class="value" [style.color]="getProfitMarginColor(getProfitMargin(producto.price, producto.cost))">
+                {{ getProfitMargin(producto.price, producto.cost) | number:'1.1-1' }}%
+              </span>
+            </div>
+          </div>
+
+          <div class="detail-row">
+            <div class="detail-item">
+              <mat-icon>inventory</mat-icon>
+              <span class="label">Stock:</span>
+              <span class="value" [style.color]="getStockColor(producto.stock || 0)">
+                {{ producto.stock || 0 }} ({{ getStockLabel(producto.stock || 0) }})
+              </span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>category</mat-icon>
+              <span class="label">Categoría:</span>
+              <span class="value">{{ getCategoriaNombre(producto.productTypeId) }}</span>
+            </div>
+            <div class="detail-item">
+              <mat-icon>straighten</mat-icon>
+              <span class="label">Presentación:</span>
+              <span class="value">{{ producto.presentation }}</span>
+            </div>
+          </div>
+
+          <div class="description" *ngIf="producto.description">
+            <mat-icon>description</mat-icon>
+            <span>{{ producto.description }}</span>
+          </div>
+        </div>
+      </mat-card-content>
+
+      <mat-card-actions>
+        <button mat-icon-button color="primary" (click)="mostrarFormularioEditar(producto)">
+          <mat-icon>edit</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="toggleEstadoProducto(producto)">
+          <mat-icon>{{ producto.isActive ? 'block' : 'check_circle' }}</mat-icon>
+        </button>
+        <button mat-icon-button color="warn" (click)="eliminarProducto(producto)">
+          <mat-icon>delete</mat-icon>
+        </button>
+      </mat-card-actions>
+    </mat-card>
+
+    <!-- Mensaje si no hay productos -->
+    <div class="no-products" *ngIf="productosFiltrados().length === 0 && !loading()">
+      <mat-icon>inventory_2</mat-icon>
+      <h3>No se encontraron productos</h3>
+      <p>Intenta ajustar los filtros o crea un nuevo producto</p>
+      <button mat-flat-button color="primary" (click)="mostrarFormularioCrear()">
+        <mat-icon>add</mat-icon>
+        Crear Primer Producto
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- Formulario Flotante -->
+<div class="form-overlay" *ngIf="mostrandoFormulario()" (click)="ocultarFormulario()"></div>
+
+<div class="form-container" *ngIf="mostrandoFormulario()">
+  <div class="form-header">
+    <h3>{{ editandoProducto() ? 'Editar Producto' : 'Nuevo Producto' }}</h3>
+    <button mat-icon-button (click)="ocultarFormulario()">
+      <mat-icon>close</mat-icon>
+    </button>
+  </div>
+
+  <form [formGroup]="productoForm()" (ngSubmit)="guardarProducto()" class="producto-form">
+    <div class="form-grid">
+      <!-- Columna Izquierda -->
+      <div class="form-column">
+        <mat-form-field appearance="outline">
+          <mat-label>Nombre del Producto *</mat-label>
+          <input matInput formControlName="name" required>
+          <mat-error *ngIf="productoForm().get('name')?.hasError('required')">
+            El nombre es requerido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>SKU *</mat-label>
+          <input matInput formControlName="sku" required>
+          <mat-error *ngIf="productoForm().get('sku')?.hasError('required')">
+            El SKU es requerido
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Descripción</mat-label>
+          <textarea matInput formControlName="description" rows="3"></textarea>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Marca</mat-label>
+          <input matInput formControlName="brand">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Presentación</mat-label>
+          <input matInput formControlName="presentation">
+        </mat-form-field>
+      </div>
+
+      <!-- Columna Derecha -->
+      <div class="form-column">
+        <mat-form-field appearance="outline">
+          <mat-label>Precio de Venta *</mat-label>
+          <input matInput type="number" formControlName="price" required>
+          <mat-error *ngIf="productoForm().get('price')?.hasError('required')">
+            El precio es requerido
+          </mat-error>
+          <mat-error *ngIf="productoForm().get('price')?.hasError('min')">
+            El precio debe ser mayor a 0
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Costo *</mat-label>
+          <input matInput type="number" formControlName="cost" required>
+          <mat-error *ngIf="productoForm().get('cost')?.hasError('required')">
+            El costo es requerido
+          </mat-error>
+          <mat-error *ngIf="productoForm().get('cost')?.hasError('min')">
+            El costo debe ser mayor a 0
+          </mat-error>
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Stock Actual</mat-label>
+          <input matInput type="number" formControlName="stock">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Stock Mínimo</mat-label>
+          <input matInput type="number" formControlName="minStock">
+        </mat-form-field>
+
+        <mat-form-field appearance="outline">
+          <mat-label>Unidad</mat-label>
+          <mat-select formControlName="unit">
+            <mat-option value="unidad">Unidad</mat-option>
+            <mat-option value="caja">Caja</mat-option>
+            <mat-option value="paquete">Paquete</mat-option>
+            <mat-option value="kg">Kilogramo</mat-option>
+            <mat-option value="litro">Litro</mat-option>
+            <mat-option value="porción">Porción</mat-option>
+          </mat-select>
+        </mat-form-field>
+      </div>
+    </div>
+
+    <!-- Campos ocultos -->
+    <div class="hidden-fields">
+      <mat-form-field appearance="outline">
+        <mat-label>Categoría *</mat-label>
+        <mat-select formControlName="productTypeId" required>
+          <mat-option [value]="1">Bebidas</mat-option>
+          <mat-option [value]="2">Snacks</mat-option>
+          <mat-option [value]="3">Comida</mat-option>
+          <mat-option [value]="4">Café</mat-option>
+          <mat-option [value]="5">Postres</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sede *</mat-label>
+        <mat-select formControlName="venueId" required>
+          <mat-option [value]="1">Sede Principal</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-checkbox formControlName="isActive">
+        Producto Activo
+      </mat-checkbox>
+    </div>
+
+    <div class="form-actions">
+      <button mat-stroked-button type="button" (click)="ocultarFormulario()">
+        Cancelar
+      </button>
+      <button mat-flat-button color="primary" type="submit" [disabled]="productoForm().invalid || loading()">
+        <mat-spinner diameter="20" *ngIf="loading()"></mat-spinner>
+        {{ editandoProducto() ? 'Actualizar' : 'Crear' }} Producto
+      </button>
+    </div>
+  </form>
+</div>

@@ -1,0 +1,68 @@
+<div class="register-container">
+  <div class="register-card">
+    <div class="brand">
+      <h1 class="brand-title">JcueScore</h1>
+      <p class="brand-subtitle">Crear cuenta</p>
+    </div>
+
+    <form [formGroup]="registerForm" (ngSubmit)="onSubmit()">
+      <div class="row">
+        <div class="field-group">
+          <label>Nombre</label>
+          <input type="text" formControlName="name" placeholder="Nombre" class="input-field" />
+        </div>
+        <div class="field-group">
+          <label>Apellido</label>
+          <input type="text" formControlName="lastName" placeholder="Apellido" class="input-field" />
+        </div>
+      </div>
+
+      <div class="row">
+        <div class="field-group">
+          <label>Tipo documento</label>
+          <select formControlName="docType" class="input-field">
+            @for (type of docTypes; track type) {
+              <option [value]="type">{{ type }}</option>
+            }
+          </select>
+        </div>
+        <div class="field-group">
+          <label>Número documento</label>
+          <input type="text" formControlName="docNumber" placeholder="1234567890" class="input-field" />
+        </div>
+      </div>
+
+      <div class="field-group">
+        <label>Email</label>
+        <input type="email" formControlName="email" placeholder="correo@ejemplo.com" class="input-field" />
+      </div>
+
+      <div class="field-group">
+        <label>Contraseña</label>
+        <div class="password-wrapper">
+          <input
+            [type]="hidePassword ? 'password' : 'text'"
+            formControlName="password"
+            placeholder="••••••••"
+            class="input-field"
+          />
+          <button type="button" class="toggle-pass" (click)="hidePassword = !hidePassword">
+            {{ hidePassword ? '👁️' : '🙈' }}
+          </button>
+        </div>
+      </div>
+
+      @if (errorMsg) {
+        <p class="error-msg">{{ errorMsg }}</p>
+      }
+
+      <button type="submit" class="btn-primary">
+        Registrarse
+      </button>
+    </form>
+
+    <p class="login-link">
+      ¿Ya tienes cuenta? <a routerLink="/auth/login">Inicia sesión</a>
+    </p>
+  </div>
+</div>

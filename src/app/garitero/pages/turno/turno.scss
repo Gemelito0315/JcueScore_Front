@@ -1,0 +1,37 @@
+.apertura-screen { display:flex; align-items:center; justify-content:center; min-height:60vh; }
+.apertura-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:36px; width:100%; max-width:480px; text-align:center; }
+.apertura-icon { font-size:3rem; margin-bottom:12px; display:block; }
+.apertura-card h2 { font-size:1.5rem; font-weight:700; color:#f1f5f9; margin-bottom:6px; }
+.apertura-card p { color:#64748b; margin-bottom:24px; }
+.apertura-form { display:flex; flex-direction:column; gap:16px; text-align:left; }
+.field { display:flex; flex-direction:column; gap:6px; label{color:#94a3b8;font-size:0.82rem;font-weight:600;} small{color:#475569;font-size:0.72rem;} input,textarea{background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:0.9rem;outline:none;resize:vertical;&:focus{border-color:#34d399;}} }
+.input-prefix { display:flex; align-items:center; background:#0f172a; border:1px solid rgba(255,255,255,0.08); border-radius:8px; overflow:hidden; &:focus-within{border-color:#34d399;} span{padding:10px 12px;color:#64748b;font-weight:700;border-right:1px solid rgba(255,255,255,0.08);} input{border:none;border-radius:0;flex:1;&:focus{box-shadow:none;}} }
+.btn-iniciar { background:linear-gradient(135deg,#34d399,#06b6d4); color:#0f172a; border:none; padding:14px; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; width:100%; &:hover{opacity:0.9;} &:disabled{opacity:0.5;cursor:not-allowed;} }
+
+.turno-activo { display:flex; flex-direction:column; gap:20px; }
+.turno-header { display:grid; grid-template-columns:repeat(3,1fr); gap:14px; }
+.turno-timer,.turno-salario,.turno-base { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:20px; display:flex; flex-direction:column; gap:4px; }
+.turno-timer { border-left:4px solid #34d399; }
+.turno-salario { border-left:4px solid #06b6d4; }
+.turno-base { border-left:4px solid #fbbf24; }
+.timer-label,.salario-label,.base-label { font-size:0.75rem; color:#64748b; text-transform:uppercase; letter-spacing:0.5px; }
+.timer-value { font-size:2rem; font-weight:900; color:#34d399; font-variant-numeric:tabular-nums; letter-spacing:2px; }
+.timer-inicio { font-size:0.75rem; color:#475569; }
+.salario-value { font-size:1.8rem; font-weight:900; color:#06b6d4; }
+.salario-rate { font-size:0.72rem; color:#475569; }
+.base-value { font-size:1.8rem; font-weight:900; color:#fbbf24; }
+
+.resumen-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:12px; }
+.resumen-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px; display:flex; align-items:center; gap:12px; .r-icon{font-size:1.5rem;} .r-val{display:block;font-size:1.2rem;font-weight:900;color:#f1f5f9;} .r-label{display:block;font-size:0.72rem;color:#64748b;} &.green{border-left:3px solid #34d399;} &.cyan{border-left:3px solid #06b6d4;} &.yellow{border-left:3px solid #fbbf24;} &.red{border-left:3px solid #f87171;} &.orange{border-left:3px solid #fb923c;} &.total{border-left:3px solid #818cf8;} }
+
+.cierre-section { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:24px; h3{color:#f1f5f9;margin-bottom:6px;} p{color:#64748b;font-size:0.85rem;margin-bottom:20px;} }
+.cierre-form { display:flex; flex-direction:column; gap:16px; }
+.cuadre-preview { background:rgba(15,23,42,0.6); border-radius:10px; padding:16px; display:flex; flex-direction:column; gap:8px; }
+.cuadre-row { display:flex; justify-content:space-between; font-size:0.85rem; color:#94a3b8; .green{color:#34d399;font-weight:600;} .red{color:#f87171;font-weight:600;} &.total-row{border-top:1px solid rgba(255,255,255,0.06);padding-top:8px;color:#f1f5f9;font-weight:700;} }
+.estado-cuadre { padding:10px 16px; border-radius:8px; border:1px solid; font-weight:700; text-align:center; margin-top:8px; }
+.btn-cerrar { background:rgba(248,113,113,0.1); border:2px solid rgba(248,113,113,0.3); color:#f87171; padding:14px; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; &:hover{background:rgba(248,113,113,0.2);} &:disabled{opacity:0.5;cursor:not-allowed;} }
+
+.reporte-cierre { display:flex; align-items:center; justify-content:center; min-height:60vh; }
+.reporte-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:36px; width:100%; max-width:480px; text-align:center; .reporte-icon{font-size:3rem;margin-bottom:12px;display:block;} h2{font-size:1.5rem;font-weight:700;color:#f1f5f9;margin-bottom:6px;} p{color:#64748b;margin-bottom:24px;} }
+.reporte-resumen { display:flex; flex-direction:column; gap:8px; margin-bottom:24px; text-align:left; }
+.rep-row { display:flex; justify-content:space-between; font-size:0.85rem; color:#94a3b8; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); .green{color:#34d399;font-weight:700;} &.estado{font-weight:700;border:none;} }

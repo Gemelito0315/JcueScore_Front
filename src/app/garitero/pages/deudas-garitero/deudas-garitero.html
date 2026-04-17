@@ -1,0 +1,71 @@
+<div class="page-header">
+  <div><h2>💸 Deudas del Día</h2><p>Gestiona las cuentas pendientes de clientes</p></div>
+  <div class="header-right">
+    <div class="total-badge">Por cobrar: ${{ totalPendiente | number }}</div>
+    <button class="btn-primary" (click)="showModal.set(true)">+ Nueva deuda</button>
+  </div>
+</div>
+
+<div class="deudas-list">
+  @for (d of deudas(); track d.id) {
+    <div class="deuda-card" [class]="d.estado">
+      <div class="deuda-info">
+        <span class="deuda-nombre">{{ d.name }} {{ d.lastName }}</span>
+        <span class="deuda-desc">{{ d.descripcion }}</span>
+        @if (d.notas) { <span class="deuda-notas">📝 {{ d.notas }}</span> }
+      </div>
+      <div class="deuda-montos">
+        <span class="monto-total">${{ d.monto | number }}</span>
+        @if (d.estado === 'parcial') { <span class="monto-pagado">Pagado: ${{ d.montoPagado | number }}</span> }
+        <span class="monto-pendiente" [style.color]="getEstadoColor(d.estado)">Debe: ${{ getPendiente(d) | number }}</span>
+      </div>
+      <span class="estado-pill" [style.color]="getEstadoColor(d.estado)" [style.background]="getEstadoColor(d.estado)+'11'" [style.border-color]="getEstadoColor(d.estado)+'44'">{{ d.estado }}</span>
+      <button class="btn-pago" (click)="openPago(d)">💵 Cobrar</button>
+    </div>
+  }
+  @if (deudas().length === 0) {
+    <div class="empty"><span>✅</span><p>No hay deudas pendientes</p></div>
+  }
+</div>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>💸 Registrar Deuda</h3><button (click)="showModal.set(false)">✕</button></div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="field"><label>Cliente *</label>
+          <select formControlName="userId">
+            <option [value]="null">Seleccionar...</option>
+            @for (u of usuarios(); track u.id) { <option [value]="u.id">{{ u.name }} {{ u.lastName }}</option> }
+          </select>
+        </div>
+        <div class="field"><label>Descripción *</label><input formControlName="descripcion" placeholder="Partida + bebidas..." /></div>
+        <div class="field"><label>Monto *</label><input formControlName="monto" type="number" /></div>
+        <div class="field"><label>Notas</label><textarea formControlName="notas" rows="2"></textarea></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid||loading()">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+@if (showPagoModal()) {
+  <div class="modal-overlay" (click)="showPagoModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>💵 Registrar Pago</h3><button (click)="showPagoModal.set(false)">✕</button></div>
+      <div class="pago-info">
+        <span>{{ deudaSeleccionada()?.name }} {{ deudaSeleccionada()?.lastName }}</span>
+        <span class="pago-pendiente">Pendiente: ${{ getPendiente(deudaSeleccionada()) | number }}</span>
+      </div>
+      <form [formGroup]="pagoForm" (ngSubmit)="registrarPago()" class="modal-form">
+        <div class="field"><label>Monto a cobrar *</label><input formControlName="montoPago" type="number" /></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showPagoModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="pagoForm.invalid||loading()">✅ Confirmar cobro</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

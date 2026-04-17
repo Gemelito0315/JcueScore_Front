@@ -1,0 +1,38 @@
+.page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; h2{font-size:1.4rem;font-weight:700;color:#f1f5f9;} p{color:#64748b;font-size:0.85rem;margin-top:4px;} }
+.resumen-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:12px; margin-bottom:20px; }
+.resumen-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:12px; padding:16px; display:flex; align-items:center; gap:12px; .r-icon{font-size:1.5rem;} .r-val{display:block;font-size:1.4rem;font-weight:900;color:#f1f5f9;} .r-label{display:block;font-size:0.75rem;color:#64748b;} &.red{border-left:3px solid #f87171;} &.yellow{border-left:3px solid #f59e0b;} &.green{border-left:3px solid #34d399;} &.total{border-left:3px solid #06b6d4;} }
+.filtros { display:flex; gap:6px; margin-bottom:16px; flex-wrap:wrap; button{background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.07);color:#64748b;padding:6px 14px;border-radius:20px;cursor:pointer;font-size:0.82rem;transition:all 0.2s;&.active{background:rgba(6,182,212,0.1);border-color:rgba(6,182,212,0.3);color:#06b6d4;font-weight:600;}} }
+.deudas-list { display:flex; flex-direction:column; gap:10px; }
+.deuda-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:16px 20px; display:flex; align-items:center; gap:16px; flex-wrap:wrap; transition:border-color 0.2s; &.pendiente{border-left:4px solid #f87171;} &.parcial{border-left:4px solid #f59e0b;} &.pagada{border-left:4px solid #34d399;opacity:0.7;} }
+.deuda-left { display:flex; align-items:center; gap:12px; flex:1; min-width:200px; }
+.deuda-avatar { width:40px; height:40px; border-radius:10px; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:0.9rem; flex-shrink:0; }
+.deuda-info { display:flex; flex-direction:column; gap:2px; }
+.deuda-nombre { font-weight:700; color:#f1f5f9; font-size:0.9rem; }
+.deuda-desc { color:#94a3b8; font-size:0.82rem; }
+.deuda-notas { color:#64748b; font-size:0.75rem; font-style:italic; }
+.deuda-fecha { color:#475569; font-size:0.72rem; }
+.deuda-montos { display:flex; flex-direction:column; gap:4px; min-width:140px; }
+.monto-total { font-size:1.1rem; font-weight:900; color:#f1f5f9; }
+.monto-pagado { font-size:0.78rem; color:#34d399; }
+.monto-pendiente { font-size:0.85rem; font-weight:700; }
+.pago-track { height:4px; background:rgba(255,255,255,0.06); border-radius:2px; overflow:hidden; margin-top:4px; }
+.pago-fill { height:100%; border-radius:2px; transition:width 0.3s; }
+.deuda-estado { flex-shrink:0; }
+.estado-pill { padding:4px 12px; border-radius:20px; font-size:0.75rem; font-weight:700; border:1px solid; }
+.deuda-actions { display:flex; gap:8px; flex-shrink:0; }
+.btn-pago { background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.2); color:#34d399; padding:7px 14px; border-radius:8px; cursor:pointer; font-size:0.82rem; font-weight:600; &:hover{background:rgba(52,211,153,0.2);} }
+.btn-del { background:rgba(248,113,113,0.1); border:1px solid rgba(248,113,113,0.2); color:#f87171; padding:7px 10px; border-radius:8px; cursor:pointer; &:hover{background:rgba(248,113,113,0.2);} }
+.empty { text-align:center; padding:48px; color:#475569; span{font-size:2.5rem;display:block;margin-bottom:10px;} }
+.btn-primary { background:#06b6d4; color:#0f172a; border:none; padding:10px 20px; border-radius:10px; font-weight:700; cursor:pointer; &:hover{opacity:0.9;} &:disabled{opacity:0.5;cursor:not-allowed;} }
+.btn-secondary { background:rgba(30,41,59,0.8); border:1px solid rgba(255,255,255,0.08); color:#94a3b8; padding:10px 20px; border-radius:10px; cursor:pointer; }
+.modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.75); display:flex; align-items:center; justify-content:center; z-index:100; padding:16px; }
+.modal { background:#1e293b; border:1px solid rgba(255,255,255,0.08); border-radius:16px; padding:28px; width:100%; max-width:480px; max-height:90vh; overflow-y:auto; }
+.modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; h3{color:#06b6d4;font-size:1.1rem;font-weight:700;} button{background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer;} }
+.modal-form { display:flex; flex-direction:column; gap:14px; }
+.field { display:flex; flex-direction:column; gap:6px; label{color:#64748b;font-size:0.82rem;} input,select,textarea{background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:0.9rem;outline:none;resize:vertical;&:focus{border-color:#06b6d4;}option{background:#0f172a;}} }
+.modal-actions { display:flex; justify-content:flex-end; gap:12px; margin-top:8px; }
+.pago-info { background:rgba(15,23,42,0.5); border-radius:10px; padding:14px; margin-bottom:16px; display:flex; flex-direction:column; gap:4px; }
+.pago-cliente { font-weight:700; color:#f1f5f9; }
+.pago-desc { color:#64748b; font-size:0.85rem; }
+.pago-resumen { display:flex; gap:16px; margin-top:8px; font-size:0.82rem; color:#94a3b8; }
+.pago-pendiente { color:#f87171; font-weight:700; }

@@ -1,0 +1,87 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Configuración del Sistema</h2>
+      <p>Administra las opciones generales del sistema</p>
+    </div>
+  </div>
+
+  <!-- MODO MANTENIMIENTO -->
+  <div class="section-card" [class.danger-border]="maintenanceMode()">
+    <div class="section-header">
+      <div>
+        <h3>🔧 Modo Mantenimiento</h3>
+        <p>Cuando está activo, los usuarios no podrán acceder al sistema y verán un aviso de mantenimiento.</p>
+      </div>
+      <div class="toggle-wrapper">
+        <span class="toggle-label" [class.on]="maintenanceMode()">
+          {{ maintenanceMode() ? 'ACTIVO' : 'INACTIVO' }}
+        </span>
+        <button
+          class="toggle-switch"
+          [class.on]="maintenanceMode()"
+          (click)="toggleMaintenance()"
+        >
+          <span class="toggle-knob"></span>
+        </button>
+      </div>
+    </div>
+
+    @if (maintenanceMode()) {
+      <div class="maintenance-alert">
+        ⚠️ El sistema está en mantenimiento. Los usuarios no pueden acceder.
+      </div>
+    }
+
+    <form [formGroup]="form" (ngSubmit)="saveSettings()" class="maintenance-form">
+      <div class="field">
+        <label>Mensaje para los usuarios</label>
+        <textarea formControlName="message" rows="3"
+          placeholder="Estamos realizando mejoras..."></textarea>
+      </div>
+      <div class="field">
+        <label>Tiempo estimado (opcional)</label>
+        <input formControlName="estimatedTime" placeholder="Ej: 2 horas, 30 minutos..." />
+      </div>
+      <button type="submit" class="btn-save">
+        {{ saved() ? '✅ Guardado' : '💾 Guardar configuración' }}
+      </button>
+    </form>
+  </div>
+
+  <!-- PREVIEW -->
+  <div class="section-card">
+    <h3>👁️ Vista previa del aviso de mantenimiento</h3>
+    <p class="hint">Así verán los usuarios cuando el modo mantenimiento esté activo</p>
+    <div class="maintenance-preview">
+      <div class="preview-content">
+        <span class="preview-icon">🔧</span>
+        <h2>JcueScore</h2>
+        <h3>En Mantenimiento</h3>
+        <p>{{ form.value.message }}</p>
+        @if (form.value.estimatedTime) {
+          <p class="eta">⏱️ Tiempo estimado: {{ form.value.estimatedTime }}</p>
+        }
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIRM MODAL -->
+@if (confirmModal()) {
+  <div class="modal-overlay" (click)="confirmModal.set(false)">
+    <div class="confirm-modal" (click)="$event.stopPropagation()">
+      <span class="confirm-icon">{{ maintenanceMode() ? '✅' : '⚠️' }}</span>
+      <h3>{{ maintenanceMode() ? 'Desactivar mantenimiento' : 'Activar mantenimiento' }}</h3>
+      <p>
+        {{ maintenanceMode()
+          ? 'Los usuarios podrán acceder al sistema nuevamente.'
+          : 'Los usuarios serán bloqueados y verán el aviso de mantenimiento.' }}
+      </p>
+      <div class="confirm-actions">
+        <button class="btn-secondary" (click)="confirmModal.set(false)">Cancelar</button>
+        <button class="btn-danger" (click)="confirmToggle()">Confirmar</button>
+      </div>
+    </div>
+  </div>
+}

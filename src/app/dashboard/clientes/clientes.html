@@ -1,0 +1,104 @@
+<div class="page-header">
+  <div>
+    <h2>Clientes / Jugadores</h2>
+    <p>Base de datos de clientes con historial y puntos</p>
+  </div>
+  <button class="btn-primary" (click)="openCreate()">+ Nuevo Cliente</button>
+</div>
+
+<!-- BÚSQUEDA -->
+<div class="search-bar">
+  <span class="search-icon">🔍</span>
+  <input placeholder="Buscar por nombre, email o teléfono..."
+    (input)="busqueda.set($any($event.target).value)" />
+</div>
+
+<!-- TABLA -->
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>Cliente</th>
+        <th>Contacto</th>
+        <th>Visitas</th>
+        <th>Gasto total</th>
+        <th>Puntos</th>
+        <th>Nivel</th>
+        <th>Última visita</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (c of clientesFiltrados; track c.id) {
+        <tr>
+          <td>
+            <div class="cliente-cell">
+              <div class="avatar-cliente" [style.background]="getNivelColor(c.nivel)+'22'" [style.color]="getNivelColor(c.nivel)">
+                {{ c.firstName.charAt(0) }}{{ c.lastName.charAt(0) }}
+              </div>
+              <div>
+                <span class="cliente-nombre">{{ c.firstName }} {{ c.lastName }}</span>
+              </div>
+            </div>
+          </td>
+          <td>
+            <div class="contact-cell">
+              <span>{{ c.email }}</span>
+              <span class="phone">{{ c.phone }}</span>
+            </div>
+          </td>
+          <td><span class="visits-badge">{{ c.visitas }} visitas</span></td>
+          <td class="green-text">${{ c.gasto | number }}</td>
+          <td>
+            <div class="puntos-bar">
+              <span class="puntos-num">{{ c.puntos }} pts</span>
+              <div class="puntos-track">
+                <div class="puntos-fill" [style.width.%]="(c.puntos / 500) * 100" [style.background]="getNivelColor(c.nivel)"></div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="nivel-badge" [style.color]="getNivelColor(c.nivel)" [style.border-color]="getNivelColor(c.nivel)+'44'" [style.background]="getNivelColor(c.nivel)+'11'">
+              {{ getNivelIcon(c.nivel) }} {{ c.nivel }}
+            </span>
+          </td>
+          <td class="fecha-text">{{ c.ultimaVisita }}</td>
+          <td class="actions">
+            <button class="btn-icon edit" (click)="openEdit(c)">✏️</button>
+            <button class="btn-icon delete" (click)="delete(c.id)">🗑️</button>
+          </td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingId() ? 'Editar Cliente' : 'Nuevo Cliente' }}</h3>
+        <button (click)="showModal.set(false)">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="row">
+          <div class="field"><label>Nombre *</label><input formControlName="firstName" placeholder="Carlos" /></div>
+          <div class="field"><label>Apellido *</label><input formControlName="lastName" placeholder="Rodríguez" /></div>
+        </div>
+        <div class="field"><label>Email *</label><input formControlName="email" type="email" placeholder="correo@ejemplo.com" /></div>
+        <div class="row">
+          <div class="field"><label>Teléfono</label><input formControlName="phone" placeholder="3001234567" /></div>
+          <div class="field"><label>Documento</label><input formControlName="docNumber" placeholder="1234567890" /></div>
+        </div>
+        <div class="field"><label>Notas</label><textarea formControlName="notes" rows="2" placeholder="Observaciones..."></textarea></div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
+            {{ loading() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

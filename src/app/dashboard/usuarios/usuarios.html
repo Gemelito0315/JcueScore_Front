@@ -1,0 +1,125 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Gestión de Usuarios</h2>
+      <p>Administra los usuarios del sistema</p>
+    </div>
+    <button class="btn-primary" (click)="openCreate()">+ Nuevo Usuario</button>
+  </div>
+
+  <div class="table-container">
+    <table>
+      <thead>
+        <tr>
+          <th>Nombre</th>
+          <th>Documento</th>
+          <th>Email</th>
+          <th>Rol</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        @for (u of usuarios(); track u.id) {
+          <tr>
+            <td>
+              <div class="user-cell">
+                <span class="avatar">{{ u.name?.charAt(0) }}</span>
+                <span>{{ u.name }} {{ u.lastName }}</span>
+              </div>
+            </td>
+            <td>{{ u.docType }} {{ u.docNumber }}</td>
+            <td>{{ u.email }}</td>
+            <td>
+              @for (r of u.roles; track r.id) {
+                <span class="badge">{{ r.name }}</span>
+              }
+            </td>
+            <td>
+              <span class="status" [class.active]="u.isActive" (click)="toggleActive(u)">
+                {{ u.isActive ? 'Activo' : 'Inactivo' }}
+              </span>
+            </td>
+            <td class="actions">
+              <button class="btn-icon edit" (click)="openEdit(u)">✏️</button>
+              <button class="btn-icon delete" (click)="delete(u.id)">🗑️</button>
+            </td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- MODAL -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingId() ? 'Editar Usuario' : 'Nuevo Usuario' }}</h3>
+        <button (click)="showModal.set(false)">✕</button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="row">
+          <div class="field">
+            <label>Nombre</label>
+            <input formControlName="name" placeholder="Juan" />
+          </div>
+          <div class="field">
+            <label>Apellido</label>
+            <input formControlName="lastName" placeholder="Pérez" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Tipo Doc.</label>
+            <select formControlName="docType">
+              @for (t of docTypes; track t) {
+                <option [value]="t">{{ t }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label>Número Doc.</label>
+            <input formControlName="docNumber" placeholder="1234567890" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Email</label>
+          <input formControlName="email" type="email" placeholder="correo@ejemplo.com" />
+        </div>
+
+        <div class="field">
+          <label>Contraseña {{ editingId() ? '(dejar vacío para no cambiar)' : '' }}</label>
+          <input formControlName="password" type="password" placeholder="••••••••" />
+        </div>
+
+        <div class="field">
+          <label>Rol</label>
+          <select formControlName="roleIds">
+            @for (r of roles; track r.id) {
+              <option [value]="[r.id]">{{ r.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field checkbox">
+          <label>
+            <input type="checkbox" formControlName="isActive" />
+            Usuario activo
+          </label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
+            {{ loading() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

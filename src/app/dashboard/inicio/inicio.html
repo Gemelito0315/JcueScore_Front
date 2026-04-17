@@ -1,0 +1,107 @@
+<div class="welcome-banner">
+  <div>
+    <h2>Panel de Administración</h2>
+    <p>Gestiona todos los recursos del establecimiento desde aquí.</p>
+  </div>
+  @if (maintenance()) {
+    <div class="maint-alert">⚠️ Modo mantenimiento activo</div>
+  }
+</div>
+
+<!-- JUGADORES DESTACADOS -->
+<div class="section-title" style="margin-top: 2rem;">👤 Jugadores Destacados</div>
+<div style="display: flex; gap: 1.5rem; margin-bottom: 2rem; overflow-x: auto; padding-bottom: 10px;">
+  <!-- Carta Diamante -->
+  <app-player-card></app-player-card>
+  
+  <!-- Carta Oro Muestra Dinamica -->
+  <app-player-card [player]="{ name: 'Carlos', lastName: 'Gómez', eloRating: 2100, winRate: 72, jcueCoins: 850, rank: 'Gold', clubName: 'Club Los Reyes' }"></app-player-card>
+
+  <!-- Carta Plata Muestra Dinamica -->
+  <app-player-card [player]="{ name: 'Andrés', lastName: 'Ruíz', eloRating: 1450, winRate: 45, jcueCoins: 120, rank: 'Silver', clubName: 'Sin Club' }"></app-player-card>
+</div>
+
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-icon yellow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    </div>
+    <div>
+      <span class="stat-num">{{ totalUsuarios() }}</span>
+      <span class="stat-label">Usuarios registrados</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+      </svg>
+    </div>
+    <div>
+      <span class="stat-num">{{ totalProductos() }}</span>
+      <span class="stat-label">Productos en inventario</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+      </svg>
+    </div>
+    <div>
+      <span class="stat-num">{{ totalMesas() }}</span>
+      <span class="stat-label">Mesas / Recursos</span>
+    </div>
+  </div>
+
+  <div class="stat-card" [class.danger]="maintenance()">
+    <div class="stat-icon" [class.red]="maintenance()" [class.gray]="!maintenance()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14"/>
+      </svg>
+    </div>
+    <div>
+      <span class="stat-num" [class.red-text]="maintenance()">{{ maintenance() ? 'Activo' : 'Inactivo' }}</span>
+      <span class="stat-label">Modo mantenimiento</span>
+    </div>
+  </div>
+</div>
+
+<div class="section-title">Accesos rápidos</div>
+<div class="quick-grid">
+  <a routerLink="/dashboard/usuarios" class="quick-card yellow">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+    </svg>
+    <h4>Gestionar Usuarios</h4>
+    <p>Crear, editar y administrar cuentas</p>
+  </a>
+  <a routerLink="/dashboard/productos" class="quick-card cyan">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
+    </svg>
+    <h4>Inventario</h4>
+    <p>Productos, categorías y stock</p>
+  </a>
+  <a routerLink="/dashboard/mesas" class="quick-card green">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>
+    </svg>
+    <h4>Mesas y Recursos</h4>
+    <p>Billar, tejo y bolirama</p>
+  </a>
+  <a routerLink="/dashboard/sistema" class="quick-card orange">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+      <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+    </svg>
+    <h4>Sistema</h4>
+    <p>Mantenimiento y configuración</p>
+  </a>
+</div>

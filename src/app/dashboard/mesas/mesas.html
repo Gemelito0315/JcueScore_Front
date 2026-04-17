@@ -1,0 +1,111 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Mesas y Recursos</h2>
+      <p>Gestiona las mesas de billar, chanchas de tejo y máquinas de bolirama</p>
+    </div>
+    <button class="btn-primary" (click)="openCreate()">+ Agregar Mesa</button>
+  </div>
+
+  <!-- FILTROS -->
+  <div class="filters">
+    <button [class.active]="filterTipo() === 'todos'" (click)="filterTipo.set('todos')">Todos</button>
+    @for (t of tiposJuego(); track t.id) {
+      <button [class.active]="filterTipo() === t.name.toLowerCase()" (click)="filterTipo.set(t.name.toLowerCase())">
+        {{ t.name }}
+      </button>
+    }
+  </div>
+
+  <!-- GRID DE MESAS -->
+  <div class="mesas-grid">
+    @for (r of filteredRecursos; track r.id) {
+      <div class="mesa-card">
+        <div class="mesa-img">
+          @if (r.imageUrl) {
+            <img [src]="r.imageUrl" [alt]="r.name" />
+          } @else {
+            <span class="no-img">🎱</span>
+          }
+          <span class="tipo-badge">{{ r.gameType?.name }}</span>
+        </div>
+        <div class="mesa-info">
+          <h4>{{ r.code }}</h4>
+          <p>{{ r.gameType?.name }}</p>
+          <div class="mesa-meta">
+            <span class="price">${{ r.pricePerHour | number }}/hora</span>
+            <span class="status-dot" [style.background]="getStatusColor(r.status)">
+              {{ getStatusLabel(r.status) }}
+            </span>
+          </div>
+        </div>
+        <div class="mesa-actions">
+          <button class="btn-icon play" (click)="abrirMesa(r)">▶ Jugar</button>
+          <button class="btn-icon" (click)="openEdit(r)">✏️ Editar</button>
+          <button class="btn-icon danger" (click)="delete(r.id)">🗑️</button>
+        </div>
+      </div>
+    }
+  </div>
+</div>
+
+<!-- MODAL -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingId() ? 'Editar Mesa' : 'Nueva Mesa' }}</h3>
+        <button (click)="showModal.set(false)">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="img-upload">
+          <div class="img-preview">
+            @if (previewImg()) { <img [src]="previewImg()!" /> } @else { <span>🎱</span> }
+          </div>
+          <label class="upload-btn">
+            📷 Foto referencial
+            <input type="file" accept="image/*" (change)="onImageChange($event)" hidden />
+          </label>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Código / Nombre *</label>
+            <input formControlName="code" placeholder="Mesa 1, Cancha A..." />
+          </div>
+          <div class="field">
+            <label>Tipo de juego *</label>
+            <select formControlName="gameTypeId">
+              <option [value]="null">Seleccionar...</option>
+              @for (t of tiposJuego(); track t.id) {
+                <option [value]="t.id">{{ t.name }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Precio por hora *</label>
+            <input formControlName="pricePerHour" type="number" placeholder="15000" />
+          </div>
+          <div class="field">
+            <label>Estado</label>
+            <select formControlName="status">
+              @for (s of statusOptions; track s.value) {
+                <option [value]="s.value">{{ s.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        <div class="field checkbox">
+          <label><input type="checkbox" formControlName="isActive" /> Recurso activo</label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
+            {{ loading() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

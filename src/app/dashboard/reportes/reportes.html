@@ -1,0 +1,130 @@
+<div class="page-header">
+  <div>
+    <h2>Reportes y Estadísticas</h2>
+    <p>Análisis del rendimiento del establecimiento</p>
+  </div>
+  <div class="periodo-tabs">
+    <button [class.active]="periodoActivo()==='hoy'" (click)="periodoActivo.set('hoy')">Hoy</button>
+    <button [class.active]="periodoActivo()==='semana'" (click)="periodoActivo.set('semana')">Esta semana</button>
+    <button [class.active]="periodoActivo()==='mes'" (click)="periodoActivo.set('mes')">Este mes</button>
+  </div>
+</div>
+
+<!-- KPIs -->
+<div class="kpi-grid">
+  <div class="kpi-card">
+    <div class="kpi-icon green">💰</div>
+    <div class="kpi-info">
+      <span class="kpi-val">${{ stats().ingresoTotal | number }}</span>
+      <span class="kpi-label">Ingresos totales</span>
+      <span class="kpi-delta" [class.up]="variacionIngreso > 0" [class.down]="variacionIngreso < 0">
+        {{ variacionIngreso > 0 ? '▲' : '▼' }} {{ variacionIngreso | number }}% vs anterior
+      </span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon cyan">🎱</div>
+    <div class="kpi-info">
+      <span class="kpi-val">{{ stats().totalPartidas }}</span>
+      <span class="kpi-label">Partidas jugadas</span>
+      <span class="kpi-delta" [class.up]="variacionPartidas > 0">
+        {{ variacionPartidas > 0 ? '▲' : '▼' }} {{ variacionPartidas }}% vs anterior
+      </span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon purple">⏱</div>
+    <div class="kpi-info">
+      <span class="kpi-val">{{ stats().horasJugadas }}h</span>
+      <span class="kpi-label">Horas de juego</span>
+      <span class="kpi-sub">Promedio ${{ stats().promedioPartida | number }}/partida</span>
+    </div>
+  </div>
+  <div class="kpi-card">
+    <div class="kpi-icon orange">👥</div>
+    <div class="kpi-info">
+      <span class="kpi-val">{{ stats().clientesUnicos }}</span>
+      <span class="kpi-label">Clientes únicos</span>
+      <span class="kpi-sub">Hora pico: {{ stats().horaPico }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- GRÁFICA + TIPOS -->
+<div class="charts-row">
+
+  <!-- BARRAS DE INGRESOS -->
+  <div class="chart-card wide">
+    <h4>Ingresos por día</h4>
+    <div class="bar-chart">
+      @for (d of ingresosDia(); track d.dia) {
+        <div class="bar-col">
+          <span class="bar-val">${{ d.valor / 1000 | number:'1.0-0' }}k</span>
+          <div class="bar-wrap">
+            <div class="bar-fill" [style.height.%]="(d.valor / maxIngreso) * 100"></div>
+          </div>
+          <span class="bar-label">{{ d.dia }}</span>
+        </div>
+      }
+    </div>
+  </div>
+
+  <!-- USO POR TIPO -->
+  <div class="chart-card">
+    <h4>Uso por modalidad</h4>
+    <div class="tipo-list">
+      @for (t of usoTipos(); track t.tipo) {
+        <div class="tipo-item">
+          <div class="tipo-header">
+            <span class="tipo-name">{{ t.tipo }}</span>
+            <span class="tipo-count">{{ t.partidas }} partidas</span>
+          </div>
+          <div class="tipo-bar">
+            <div class="tipo-fill" [style.width.%]="t.porcentaje" [style.background]="t.color"></div>
+          </div>
+          <span class="tipo-pct">{{ t.porcentaje }}%</span>
+        </div>
+      }
+    </div>
+  </div>
+</div>
+
+<!-- TABLAS -->
+<div class="tables-row">
+
+  <!-- TOP MESAS -->
+  <div class="table-card">
+    <h4>🎱 Top Mesas</h4>
+    <table>
+      <thead><tr><th>Mesa</th><th>Horas</th><th>Partidas</th><th>Ingresos</th></tr></thead>
+      <tbody>
+        @for (m of topMesas(); track m.code) {
+          <tr>
+            <td><strong>{{ m.code }}</strong></td>
+            <td>{{ m.horas }}h</td>
+            <td>{{ m.partidas }}</td>
+            <td class="green-text">${{ m.ingresos | number }}</td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- TOP CLIENTES -->
+  <div class="table-card">
+    <h4>👥 Top Clientes</h4>
+    <table>
+      <thead><tr><th>Cliente</th><th>Visitas</th><th>Gasto</th><th>Nivel</th></tr></thead>
+      <tbody>
+        @for (c of topClientes(); track c.nombre) {
+          <tr>
+            <td><strong>{{ c.nombre }}</strong></td>
+            <td>{{ c.visitas }}</td>
+            <td class="green-text">${{ c.gasto | number }}</td>
+            <td><span class="nivel-badge" [style.color]="getNivelColor(c.nivel)" [style.border-color]="getNivelColor(c.nivel)+'44'" [style.background]="getNivelColor(c.nivel)+'11'">{{ c.nivel }}</span></td>
+          </tr>
+        }
+      </tbody>
+    </table>
+  </div>
+</div>

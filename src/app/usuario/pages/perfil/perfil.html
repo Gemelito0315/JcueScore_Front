@@ -1,0 +1,96 @@
+<div class="page-header">
+  <h2>Mi Perfil</h2>
+  <p>Gestiona tu información personal</p>
+</div>
+
+@if (saved()) {
+  <div class="toast">✅ Cambios guardados correctamente</div>
+}
+
+<div class="profile-layout">
+  <!-- AVATAR CARD -->
+  <div class="avatar-card">
+    <div class="avatar-wrapper">
+      @if (avatarUrl()) {
+        <img [src]="avatarUrl()!" class="big-avatar-img" alt="Foto de perfil" />
+      } @else {
+        <div class="big-avatar">{{ currentUser()?.name?.charAt(0) }}{{ currentUser()?.lastName?.charAt(0) }}</div>
+      }
+      <label class="avatar-upload-btn" title="Cambiar foto">
+        📷
+        <input type="file" accept="image/*" (change)="onAvatarChange($event)" hidden />
+      </label>
+    </div>
+    @if (avatarUrl()) {
+      <button class="btn-remove-avatar" (click)="removeAvatar()">Quitar foto</button>
+    }
+    <h3>{{ currentUser()?.name }} {{ currentUser()?.lastName }}</h3>
+    <p>{{ currentUser()?.email }}</p>
+    <span class="role-badge">Usuario</span>
+    <div class="stats-mini">
+      <div class="stat-mini"><span class="num">5</span><span class="lbl">Juegos</span></div>
+      <div class="stat-mini"><span class="num gold">150</span><span class="lbl">Puntos</span></div>
+      <div class="stat-mini"><span class="num">Bronce</span><span class="lbl">Nivel</span></div>
+    </div>
+  </div>
+
+  <!-- FORMS -->
+  <div class="forms-col">
+    <!-- Datos personales -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <h4>Datos personales</h4>
+        <button class="btn-edit" (click)="editMode.update(v => !v)">
+          {{ editMode() ? 'Cancelar' : '✏️ Editar' }}
+        </button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="saveProfile()">
+        <div class="row">
+          <div class="field">
+            <label>Nombre</label>
+            <input formControlName="name" [readonly]="!editMode()" />
+          </div>
+          <div class="field">
+            <label>Apellido</label>
+            <input formControlName="lastName" [readonly]="!editMode()" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input formControlName="email" type="email" [readonly]="!editMode()" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Tipo doc.</label>
+            <input formControlName="docType" [readonly]="!editMode()" />
+          </div>
+          <div class="field">
+            <label>Número doc.</label>
+            <input formControlName="docNumber" [readonly]="!editMode()" />
+          </div>
+        </div>
+        @if (editMode()) {
+          <button type="submit" class="btn-primary">Guardar cambios</button>
+        }
+      </form>
+    </div>
+
+    <!-- Cambiar contraseña -->
+    <div class="form-card">
+      <div class="form-card-header">
+        <h4>Cambiar contraseña</h4>
+      </div>
+      <form [formGroup]="passForm" (ngSubmit)="changePassword()">
+        <div class="field">
+          <label>Contraseña actual</label>
+          <input formControlName="currentPassword" type="password" placeholder="••••••••" />
+        </div>
+        <div class="field">
+          <label>Nueva contraseña</label>
+          <input formControlName="newPassword" type="password" placeholder="Mínimo 6 caracteres" />
+        </div>
+        <button type="submit" class="btn-primary" [disabled]="passForm.invalid">Actualizar contraseña</button>
+      </form>
+    </div>
+  </div>
+</div>

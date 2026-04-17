@@ -1,0 +1,53 @@
+<div class="page-header">
+  <div>
+    <h2>Reservas</h2>
+    <p>Gestión de reservas del establecimiento</p>
+  </div>
+  <div class="header-stats">
+    <span class="stat-pill cyan">📅 {{ totalHoy }} reservas hoy</span>
+    <span class="stat-pill green">💰 ${{ ingresoHoy | number }} completadas</span>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<div class="filters-row">
+  <div class="estado-tabs">
+    @for (e of ['todas','pendiente','confirmada','completada','cancelada']; track e) {
+      <button [class.active]="filtroEstado()===e" (click)="filtroEstado.set(e)">
+        {{ e.charAt(0).toUpperCase() + e.slice(1) }}
+      </button>
+    }
+  </div>
+  <input type="date" class="date-filter" [value]="filtroFecha()" (change)="filtroFecha.set($any($event.target).value)" />
+</div>
+
+<!-- LISTA -->
+<div class="reservas-list">
+  @for (r of reservasFiltradas; track r.id) {
+    <div class="reserva-row" [class]="r.estado">
+      <div class="reserva-icon">{{ getGameIcon(r.tipo) }}</div>
+      <div class="reserva-info">
+        <span class="reserva-cliente">{{ r.cliente }}</span>
+        <span class="reserva-detalle">{{ r.mesa }} · {{ r.tipo }} · {{ r.fecha }} · {{ r.hora }}</span>
+      </div>
+      <span class="reserva-monto">${{ r.monto | number }}</span>
+      <span class="estado-badge" [style.color]="getEstadoColor(r.estado)" [style.border-color]="getEstadoColor(r.estado)+'44'" [style.background]="getEstadoColor(r.estado)+'11'">
+        {{ r.estado }}
+      </span>
+      <div class="reserva-actions">
+        @if (r.estado === 'pendiente') {
+          <button class="btn-confirm" (click)="confirmar(r.id)">✅ Confirmar</button>
+        }
+        @if (r.estado !== 'cancelada' && r.estado !== 'completada') {
+          <button class="btn-cancel" (click)="cancelar(r.id)">✕</button>
+        }
+      </div>
+    </div>
+  }
+  @if (reservasFiltradas.length === 0) {
+    <div class="empty-state">
+      <span>📅</span>
+      <p>No hay reservas con este filtro</p>
+    </div>
+  }
+</div>

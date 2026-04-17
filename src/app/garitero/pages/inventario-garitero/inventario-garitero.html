@@ -1,0 +1,60 @@
+<div class="page-header">
+  <div><h2>📦 Inventario</h2><p>Ingresa productos y verifica el stock</p></div>
+</div>
+
+<div class="productos-list">
+  @for (p of productos(); track p.id) {
+    <div class="producto-row" [class.low]="p.stock <= p.minStock" [class.empty]="p.stock <= 0">
+      <div class="p-info">
+        <span class="p-nombre">{{ p.name }}</span>
+        <span class="p-sku">SKU: {{ p.sku }}</span>
+      </div>
+      <div class="p-stock">
+        <span class="stock-num" [style.color]="getStockColor(p)">{{ p.stock }}</span>
+        <span class="stock-label">en stock</span>
+        @if (p.stock <= p.minStock && p.stock > 0) {
+          <span class="alerta-stock">⚠️ Stock bajo</span>
+        }
+        @if (p.stock <= 0) {
+          <span class="alerta-stock red">❌ Agotado</span>
+        }
+      </div>
+      <span class="p-precio">${{ p.price | number }}</span>
+      <button class="btn-ingreso" (click)="openIngreso(p)">+ Ingresar</button>
+    </div>
+  }
+  @if (productos().length === 0) {
+    <div class="empty"><span>📦</span><p>No hay productos registrados</p></div>
+  }
+</div>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📦 Ingresar Stock</h3>
+        <button (click)="showModal.set(false)">✕</button>
+      </div>
+      <div class="producto-info">
+        <span class="p-nombre-modal">{{ productoSeleccionado()?.name }}</span>
+        <span>Stock actual: <strong>{{ productoSeleccionado()?.stock }}</strong></span>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="field">
+          <label>Cantidad a ingresar *</label>
+          <input formControlName="cantidad" type="number" placeholder="0" />
+        </div>
+        <div class="field">
+          <label>Notas (opcional)</label>
+          <input formControlName="notas" placeholder="Ej: Pedido del proveedor..." />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid||loading()">
+            {{ loading() ? 'Guardando...' : '✅ Confirmar ingreso' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

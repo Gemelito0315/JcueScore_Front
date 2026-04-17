@@ -1,0 +1,265 @@
+<!-- CONFIG SCREEN -->
+@if (!partidaIniciada()) {
+  <div class="config-screen">
+    <div class="glass-card">
+      <div>
+        <h1>JCUESCORE</h1>
+        <div class="subtitle">E-Sports Match Setup</div>
+      </div>
+
+      <div class="config-section">
+        <label>Modalidad de Juego</label>
+        <div class="btn-grid">
+          @for (m of modalidades; track m) {
+            <button class="cfg-btn" [class.active]="modalidad()===m" (click)="modalidad.set(m)">{{ m }}</button>
+          }
+        </div>
+      </div>
+
+      <div class="config-section">
+        <label>Meta de Puntos (Target)</label>
+        <div class="btn-grid">
+          @for (meta of [50,100,150,200,300]; track meta) {
+            <button class="cfg-btn" [class.active]="jugadores()[0].meta === meta" (click)="setMeta(meta)">{{ meta }} PTS</button>
+          }
+        </div>
+      </div>
+
+      <div class="config-section">
+        <label>Jugadores</label>
+        <div class="vs-container">
+          <input [value]="jugadores()[0].nombre" (input)="setNombre(0,$any($event.target).value)" placeholder="Jugador 1" />
+          <span class="vs">VS</span>
+          <input [value]="jugadores()[1].nombre" (input)="setNombre(1,$any($event.target).value)" placeholder="Jugador 2" />
+        </div>
+      </div>
+
+      <button class="btn-start" (click)="iniciarPartida()">▶ Iniciar Partida Oficial</button>
+    </div>
+  </div>
+}
+
+<!-- GAME SCREEN -->
+@if (partidaIniciada()) {
+  <div class="game-screen">
+    
+    <!-- TOP BAR -->
+    <header class="top-bar">
+      <div class="brand-group">
+        <span class="brand-logo">JCUESCORE</span>
+        <span class="badge">{{ mesaId() }}</span>
+        <span class="badge" style="border-color: rgba(255,255,255,0.2); color:white;">{{ modalidad() }}</span>
+      </div>
+      <div class="timer-group">
+        <div class="timer-display" [class.paused]="!timerActivo()">{{ tiempoFormateado }}</div>
+        <button class="btn-pause" (click)="pausarTimer()">{{ timerActivo() ? '⏸ PAUSAR' : '▶ REANUDAR' }}</button>
+      </div>
+      <button class="btn-reset" (click)="resetPartida()">↻ ABANDONAR PARTIDA</button>
+    </header>
+
+    <!-- MAIN BOARD -->
+    <main class="main-board">
+      
+      <!-- PLAYER 1 (LEFT) -->
+      <div class="player-panel p1" [class.active-turn]="turnoActual()===0">
+        @if (turnoActual()===0) { <div class="colored-bar p1"></div> }
+        
+        <div class="panel-header">
+          <div class="name-block">
+            <div class="name">
+              {{ jugadores()[0].nombre }} 
+              <span class="elo-badge p1">{{jugadores()[0].rank}} {{jugadores()[0].eloRating}}</span>
+            </div>
+            @if (jugadores()[0].handicap > 0) { 
+              <div class="handicap">+{{jugadores()[0].handicap}} PTS de Ventaja</div> 
+            }
+          </div>
+          <div class="turn-indicator" [class.active]="turnoActual()===0"></div>
+        </div>
+
+        <div class="score-display">
+          <span class="score p1">{{ jugadores()[0].puntos }}</span>
+        </div>
+
+        <div class="progress-tracker">
+          <div class="tracker-labels">
+            <span>Racha Real: {{jugadores()[0].rachaActual}}</span>
+            <span>Meta: {{jugadores()[0].meta}}</span>
+          </div>
+          <div class="track-bg">
+            <div class="track-fill p1" [style.width]="(jugadores()[0].puntos/jugadores()[0].meta)*100 + '%'"></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="add-buttons">
+            @for (n of [1,2,3,4,5]; track n) {
+              <button class="p1" (click)="sumarPuntos(0,n)">+{{ n }}</button>
+            }
+          </div>
+          <button class="btn-minus" (click)="restarPuntos(0)">− Restar Punto</button>
+        </div>
+
+        <div class="stats-footer">
+          <div class="stat-box">
+            <span class="val">{{ jugadores()[0].promedio }}</span>
+            <span class="lbl">Promedio</span>
+          </div>
+          <div class="stat-box">
+            <span class="val">{{ jugadores()[0].rachMax }}</span>
+            <span class="lbl">Racha Máx</span>
+          </div>
+          <div class="stat-box">
+            <span class="val">{{ jugadores()[0].historial.length }}</span>
+            <span class="lbl">Turnos</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- CAMERA FEED (CENTER) -->
+      <div class="camera-feed">
+        <div class="live-badge">
+          <div class="pulse"></div> EN VIVO
+          <button class="btn-var-mini" (click)="abrirVarCompleto()" title="Revisar VAR de todo el partido">
+            ⏪ V.A.R
+          </button>
+        </div>
+        <div class="scanline"></div>
+
+        @if (!camaraActiva()) {
+          <img src="https://images.unsplash.com/photo-1616853609808-1cc67baec46c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1280&q=80" alt="Mesa Background" />
+        } @else {
+          <video #videoEl autoplay muted playsinline></video>
+        }
+
+        @if (ultimaJugada()) {
+          <div class="flash-overlay">
+            <span class="fo-player">{{ ultimaJugada()!.jugador }} Anotó</span>
+            <span class="fo-pts">+{{ ultimaJugada()!.puntos }}</span>
+          </div>
+        }
+      </div>
+
+      <!-- PLAYER 2 (RIGHT) -->
+      <div class="player-panel p2" [class.active-turn]="turnoActual()===1">
+        @if (turnoActual()===1) { <div class="colored-bar p2"></div> }
+        
+        <div class="panel-header">
+          <div class="name-block">
+            <div class="name">
+              {{ jugadores()[1].nombre }} 
+              <span class="elo-badge p2">{{jugadores()[1].rank}} {{jugadores()[1].eloRating}}</span>
+            </div>
+            @if (jugadores()[1].handicap > 0) { 
+              <div class="handicap">+{{jugadores()[1].handicap}} PTS de Ventaja</div> 
+            }
+          </div>
+          <div class="turn-indicator" [class.active]="turnoActual()===1"></div>
+        </div>
+
+        <div class="score-display">
+          <span class="score p2">{{ jugadores()[1].puntos }}</span>
+        </div>
+
+        <div class="progress-tracker">
+          <div class="tracker-labels">
+            <span>Racha Real: {{jugadores()[1].rachaActual}}</span>
+            <span>Meta: {{jugadores()[1].meta}}</span>
+          </div>
+          <div class="track-bg">
+            <div class="track-fill p2" [style.width]="(jugadores()[1].puntos/jugadores()[1].meta)*100 + '%'"></div>
+          </div>
+        </div>
+
+        <div class="controls">
+          <div class="add-buttons">
+            @for (n of [1,2,3,4,5]; track n) {
+              <button class="p2" (click)="sumarPuntos(1,n)">+{{ n }}</button>
+            }
+          </div>
+          <button class="btn-minus" (click)="restarPuntos(1)">− Restar Punto</button>
+        </div>
+
+        <div class="stats-footer">
+          <div class="stat-box">
+            <span class="val">{{ jugadores()[1].promedio }}</span>
+            <span class="lbl">Promedio</span>
+          </div>
+          <div class="stat-box">
+            <span class="val">{{ jugadores()[1].rachMax }}</span>
+            <span class="lbl">Racha Máx</span>
+          </div>
+          <div class="stat-box">
+            <span class="val">{{ jugadores()[1].historial.length }}</span>
+            <span class="lbl">Turnos</span>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- BOTTOM BAR -->
+    <footer class="bottom-bar">
+      <div class="history-group">
+        <div class="plays-count">
+          <span class="num">{{ jugadas().length }}</span>
+          <span class="lbl">Jugadas Totales</span>
+        </div>
+        <div class="bubbles">
+          @for (h of jugadas().slice(0,10); track h.id) {
+            <span class="bubble" [class.p1]="h.jugador===jugadores()[0].nombre" [class.p2]="h.jugador!==jugadores()[0].nombre">
+              +{{ h.puntos }}
+            </span>
+          }
+        </div>
+      </div>
+      @if (jugadas().length > 0 && tieneReplay(jugadas()[0])) {
+        <button class="btn-replay" (click)="verReplay(jugadas()[0])">▶ V.A.R. / REPLAY DISPONIBLE</button>
+      }
+    </footer>
+
+    <!-- WINNER MODAL -->
+    @if (ganador) {
+      <div class="winner-overlay">
+        <div class="winner-card">
+          <span class="trophy">🏆</span>
+          <h2>¡{{ ganador.nombre }} GANA!</h2>
+          <p class="stats">Desempeño: {{ ganador.puntos }} PTS · Prom. {{ ganador.promedio }}</p>
+          <div class="coin-robbery">
+            🟡 <span>+100 JcueCoins</span> ganados y robados al perdedor
+          </div>
+          <button class="btn-new" (click)="resetPartida()">FINALIZAR Y GUARDAR HIGHLIGHTS</button>
+        </div>
+      </div>
+    }
+  </div>
+}
+
+<!-- REPLAY MODAL (HIGHLIGHT CORTOS) -->
+@if (modoReplay()) {
+  <div class="replay-overlay" (click)="cerrarReplay()">
+    <div class="replay-header" (click)="$event.stopPropagation()">
+      <div class="info">
+        <span class="badge-rec">🔴 REPLAY HIGHLIGHT</span>
+        <span class="j-name">{{ replayJugada()?.jugador }}</span>
+        <span class="j-pts">+{{ replayJugada()?.puntos }} PTS</span>
+      </div>
+      <button (click)="cerrarReplay()">✕ CERRAR</button>
+    </div>
+    <video #replayEl controls autoplay loop (click)="$event.stopPropagation()"></video>
+  </div>
+}
+
+<!-- VAR CONTINUO (PARTIDO COMPLETO) -->
+@if (modoVarCompleto()) {
+  <div class="replay-overlay" (click)="cerrarVarCompleto()">
+    <div class="replay-header" style="border-color: #ffd700;" (click)="$event.stopPropagation()">
+      <div class="info">
+        <span class="badge-rec" style="background:#ffd700; color:black; box-shadow:0 0 10px rgba(255,215,0,0.5);">⏪ V.A.R. MODO ARBITRAJE</span>
+        <span class="j-name" style="color: #ccc; font-size: 0.9rem;">Grabación de toda la partida. Puedes retroceder en cualquier momento.</span>
+      </div>
+      <button style="border-color:#ffd700; color:#ffd700;" (click)="cerrarVarCompleto()">✕ CERRAR V.A.R</button>
+    </div>
+    <video id="varVideoEl" controls autoplay (click)="$event.stopPropagation()" style="border-color:#ffd700; box-shadow: 0 0 40px rgba(255,215,0,0.3);"></video>
+  </div>
+}

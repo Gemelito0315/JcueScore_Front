@@ -1,0 +1,120 @@
+import { Component, inject, signal, OnInit } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
+import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import { Router } from '@angular/router';
+
+const API = 'http://localhost:3000';
+
+@Component({
+  selector: 'app-mesas',
+  imports: [CommonModule, ReactiveFormsModule],
+  templateUrl: './mesas.html',
+  styleUrl: './mesas.scss'
+})
+export class Mesas implements OnInit {
+  private http = inject(HttpClient);
+  private fb = inject(FormBuilder);
+  private router = inject(Router);
+
+  recursos = signal<any[]>([]);
+  tiposJuego = signal<any[]>([]);
+  showModal = signal(false);
+  editingId = signal<number | null>(null);
+  loading = signal(false);
+  previewImg = signal<string | null>(null);
+  filterTipo = signal<string>('todos');
+
+  form = this.fb.group({
+    code: ['', Validators.required],
+    gameTypeId: [null, Validators.required],
+    venueId: [1],
+    pricePerHour: [0, Validators.required],
+    status: ['available'],
+    isActive: [true],
+    specifications: [null],
+  });
+
+  statusOptions = [
+    { value: 'available', label: 'Disponible', color: '#a6e3a1' },
+    { value: 'occupied', label: 'Ocupada', color: '#fab387' },
+    { value: 'maintenance', label: 'Mantenimiento', color: '#f38ba8' },
+  ];
+
+  ngOnInit() {
+    this.loadRecursos();
+    this.http.get<any[]>(`${API}/tipos-juego`).subscribe(d => this.tiposJuego.set(d));
+  }
+
+  loadRecursos() {
+    this.http.get<any[]>(`${API}/recursos`).subscribe(d => this.recursos.set(d));
+  }
+
+  get filteredRecursos() {
+    const f = this.filterTipo();
+    if (f === 'todos') return this.recursos();
+    return this.recursos().filter(r => r.gameType?.name?.toLowerCase() === f);
+  }
+
+  openCreate() {
+    this.editingId.set(null);
+    this.previewImg.set(null);
+    this.form.reset({ status: 'available', venueId: 1, pricePerHour: 0, isActive: true });
+    this.showModal.set(true);
+  }
+
+  openEdit(r: any) {
+    this.editingId.set(r.id);
+    this.previewImg.set(null);
+    this.form.patchValue({ ...r, gameTypeId: r.gameType?.id });
+    this.showModal.set(true);
+  }
+
+  onImageChange(event: any) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e: any) => this.previewImg.set(e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  save() {
+    if (this.form.invalid) return;
+    this.loading.set(true);
+    const val = this.form.value;
+    const payload = {
+      ...val,
+      venueId: 1,
+      gameTypeId: Number(val.gameTypeId),
+      pricePerHour: Number(val.pricePerHour),
+    };
+    const req = this.editingId()
+      ? this.http.put(`${API}/recursos/${this.editingId()}`, payload)
+      : this.http.post(`${API}/recursos`, payload);
+
+    req.subscribe({
+      next: () => { this.loadRecursos(); this.showModal.set(false); this.loading.set(false); },
+      error: (err) => { console.error(err); this.loading.set(false); }
+    });
+  }
+
+  delete(id: number) {
+    if (!confirm('¿Eliminar esta mesa/recurso?')) return;
+    this.http.delete(`${API}/recursos/${id}`).subscribe(() => this.loadRecursos());
+  }
+
+  abrirMesa(r: any) {
+    const url = this.router.serializeUrl(
+      this.router.createUrlTree(['/mesa', r.code])
+    );
+    window.open(url, '_blank');
+  }
+
+  getStatusColor(status: string) {
+    return this.statusOptions.find(s => s.value === status)?.color ?? '#8892a4';
+  }
+
+  getStatusLabel(status: string) {
+    return this.statusOptions.find(s => s.value === status)?.label ?? status;
+  }
+}

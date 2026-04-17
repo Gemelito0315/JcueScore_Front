@@ -1,0 +1,177 @@
+<div class="pedidos-container">
+  <div class="header">
+    <h1>Mis Pedidos</h1>
+    <button mat-raised-button color="primary" (click)="mostrarFormularioNuevo()">
+      <mat-icon>add</mat-icon>
+      Nuevo Pedido
+    </button>
+  </div>
+
+  <!-- Lista de Pedidos Existentes -->
+  <div class="pedidos-list" *ngIf="!mostrandoFormulario()">
+    <mat-card *ngFor="let pedido of pedidos()" class="pedido-card">
+      <mat-card-header>
+        <mat-card-title>Pedido #{{ pedido.id }}</mat-card-title>
+        <mat-card-subtitle>
+          {{ pedido.createdAt | date:'short' }} - 
+          <span [style.color]="getEstadoColor(pedido.estado)" [style.font-weight]="'bold'">
+            {{ getEstadoLabel(pedido.estado) }}
+          </span>
+        </mat-card-subtitle>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="pedido-info">
+          <div class="mesa-info" *ngIf="pedido.recurso">
+            <mat-icon>table_restaurant</mat-icon>
+            {{ pedido.recurso.code }} - {{ pedido.recurso.gameType }}
+          </div>
+          
+          <div class="items-list">
+            <div class="item" *ngFor="let item of pedido.items">
+              <span class="cantidad">{{ item.cantidad }}x</span>
+              <span class="nombre">{{ getProductoNombre(item.productId) }}</span>
+              <span class="precio">${{ item.subtotal | number:'1.0-0' }}</span>
+            </div>
+          </div>
+          
+          <div class="notas" *ngIf="pedido.notas">
+            <mat-icon>note</mat-icon>
+            {{ pedido.notas }}
+          </div>
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions align="end">
+        <div class="total">
+          <strong>Total: ${{ pedido.total | number:'1.0-0' }}</strong>
+        </div>
+        <button mat-button color="warn" 
+                *ngIf="pedido.estado === 'pendiente'" 
+                (click)="cancelarPedido(pedido.id)">
+          Cancelar
+        </button>
+      </mat-card-actions>
+    </mat-card>
+    
+    <div class="no-pedidos" *ngIf="pedidos().length === 0">
+      <mat-icon>shopping_cart</mat-icon>
+      <p>No tienes pedidos aún</p>
+      <button mat-raised-button color="primary" (click)="mostrarFormularioNuevo()">
+        Hacer tu primer pedido
+      </button>
+    </div>
+  </div>
+
+  <!-- Formulario de Nuevo Pedido -->
+  <div class="pedido-form" *ngIf="mostrandoFormulario()">
+    <mat-card class="form-card">
+      <mat-card-header>
+        <mat-card-title>Nuevo Pedido</mat-card-title>
+        <button mat-icon-button (click)="ocultarFormulario()">
+          <mat-icon>close</mat-icon>
+        </button>
+      </mat-card-header>
+      
+      <mat-card-content>
+        <div class="form-content">
+          <!-- Selección de Mesa -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Mesa (Opcional)</mat-label>
+            <mat-select [(ngModel)]="nuevoPedido().recursoId" name="mesa">
+              <mat-option value="">Sin mesa específica</mat-option>
+              <mat-option *ngFor="let mesa of mesasDisponibles()" [value]="mesa.id">
+                {{ mesa.code }} - {{ mesa.gameType }}
+                <span class="mesa-status" [class.ocupada]="mesa.status === 'occupied'">
+                  ({{ mesa.status === 'available' ? 'Disponible' : 'Ocupada' }})
+                </span>
+              </mat-option>
+            </mat-select>
+          </mat-form-field>
+
+          <!-- Agregar Items -->
+          <div class="items-section">
+            <h3>Agregar Productos</h3>
+            
+            <div class="add-item-form">
+              <mat-form-field appearance="outline" class="product-select">
+                <mat-label>Producto</mat-label>
+                <mat-select [(ngModel)]="itemActual().productId" name="producto">
+                  <mat-option value="">Selecciona un producto</mat-option>
+                  <mat-option *ngFor="let product of productos()" [value]="product.id">
+                    {{ product.name }} - ${{ product.price | number:'1.0-0' }}
+                  </mat-option>
+                </mat-select>
+              </mat-form-field>
+              
+              <mat-form-field appearance="outline" class="cantidad-input">
+                <mat-label>Cantidad</mat-label>
+                <input matInput type="number" [(ngModel)]="itemActual().cantidad" min="1" name="cantidad">
+              </mat-form-field>
+              
+              <mat-form-field appearance="outline" class="notas-input">
+                <mat-label>Notas (Opcional)</mat-label>
+                <input matInput [(ngModel)]="itemActual().notas" placeholder="Ej: sin hielo, extra caliente" name="notas">
+              </mat-form-field>
+              
+              <button mat-raised-button color="primary" (click)="agregarItem()" class="add-btn">
+                <mat-icon>add</mat-icon>
+                Agregar
+              </button>
+            </div>
+
+            <!-- Lista de Items Agregados -->
+            <div class="items-agregados" *ngIf="nuevoPedido().items.length > 0">
+              <h4>Productos Agregados</h4>
+              <div class="item-agregado" *ngFor="let item of nuevoPedido().items; let i = index">
+                <span class="item-info">
+                  {{ item.cantidad }}x {{ getProductoNombre(item.productId) }} 
+                  ${{ getProductoPrecio(item.productId) * item.cantidad | number:'1.0-0' }}
+                </span>
+                <button mat-icon-button color="warn" (click)="quitarItem(i)">
+                  <mat-icon>delete</mat-icon>
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Notas del Pedido -->
+          <mat-form-field appearance="outline" class="full-width">
+            <mat-label>Notas del Pedido</mat-label>
+            <textarea matInput [(ngModel)]="nuevoPedido().notas" 
+                      placeholder="Instrucciones especiales para tu pedido"
+                      rows="3" name="notasPedido"></textarea>
+          </mat-form-field>
+
+          <!-- Resumen del Pedido -->
+          <div class="resumen" *ngIf="nuevoPedido().items.length > 0">
+            <h3>Resumen del Pedido</h3>
+            <div class="resumen-line">
+              <span>Subtotal:</span>
+              <span>${{ calcularSubtotal() | number:'1.0-0' }}</span>
+            </div>
+            <div class="resumen-line">
+              <span>Impuestos (19%):</span>
+              <span>${{ (calcularSubtotal() * 0.19) | number:'1.0-0' }}</span>
+            </div>
+            <div class="resumen-line total">
+              <span>Total:</span>
+              <span>${{ calcularTotal() | number:'1.0-0' }}</span>
+            </div>
+          </div>
+        </div>
+      </mat-card-content>
+      
+      <mat-card-actions align="end">
+        <button mat-button (click)="ocultarFormulario()">Cancelar</button>
+        <button mat-raised-button color="primary" 
+                (click)="crearPedido()"
+                [disabled]="nuevoPedido().items.length === 0 || procesando()"
+                class="crear-btn">
+          <mat-icon>shopping_cart</mat-icon>
+          {{ procesando() ? 'Procesando...' : 'Crear Pedido' }}
+        </button>
+      </mat-card-actions>
+    </mat-card>
+  </div>
+</div>

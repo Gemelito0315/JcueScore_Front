@@ -1,0 +1,144 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+.register-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  background: #1a1a2e;
+  padding: 24px;
+}
+
+.register-card {
+  background: #16213e;
+  border-radius: 16px;
+  padding: 40px 32px;
+  width: 100%;
+  max-width: 520px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.brand-title {
+  font-size: 2rem;
+  font-weight: 800;
+  color: #00bcd4;
+  letter-spacing: 1px;
+}
+
+.brand-subtitle {
+  color: #8892a4;
+  font-size: 0.95rem;
+  margin-top: 4px;
+}
+
+form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.row {
+  display: flex;
+  gap: 16px;
+}
+.row .field-group {
+  flex: 1;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.field-group label {
+  color: #cdd6f4;
+  font-size: 0.9rem;
+}
+
+.input-field {
+  background: #0f3460;
+  border: none;
+  border-radius: 10px;
+  padding: 14px 16px;
+  color: #fff;
+  font-size: 1rem;
+  outline: none;
+  width: 100%;
+}
+.input-field::-moz-placeholder {
+  color: #8892a4;
+}
+.input-field::placeholder {
+  color: #8892a4;
+}
+.input-field:focus {
+  box-shadow: 0 0 0 2px #00bcd4;
+}
+.input-field option {
+  background: #0f3460;
+}
+
+.password-wrapper {
+  position: relative;
+}
+.password-wrapper .toggle-pass {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.error-msg {
+  color: #f38ba8;
+  text-align: center;
+  font-size: 0.9rem;
+}
+
+.btn-primary {
+  background: #00bcd4;
+  color: #0d0d0d;
+  border: none;
+  border-radius: 10px;
+  padding: 14px;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  width: 100%;
+  transition: opacity 0.2s;
+}
+.btn-primary:hover {
+  opacity: 0.9;
+}
+.btn-primary:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.login-link {
+  text-align: center;
+  color: #8892a4;
+  font-size: 0.9rem;
+}
+.login-link a {
+  color: #00bcd4;
+  font-weight: 600;
+  text-decoration: none;
+}
+.login-link a:hover {
+  text-decoration: underline;
+}/*# sourceMappingURL=sign-in.css.map */

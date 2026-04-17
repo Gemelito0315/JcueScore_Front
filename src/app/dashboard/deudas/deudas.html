@@ -1,0 +1,177 @@
+<div class="page-header">
+  <div>
+    <h2>💸 Cuentas Pendientes</h2>
+    <p>Gestión de deudas y pagos de clientes</p>
+  </div>
+  <button class="btn-primary" (click)="openCreate()">+ Registrar deuda</button>
+</div>
+
+<!-- RESUMEN -->
+<div class="resumen-grid">
+  <div class="resumen-card red">
+    <span class="r-icon">🔴</span>
+    <div>
+      <span class="r-val">{{ deudas().length > 0 ? (deudas() | json).split('"pendiente"').length - 1 : resumen().pendientes }}</span>
+      <span class="r-label">Pendientes</span>
+    </div>
+  </div>
+  <div class="resumen-card yellow">
+    <span class="r-icon">🟡</span>
+    <div>
+      <span class="r-val">{{ resumen().parciales }}</span>
+      <span class="r-label">Pagos parciales</span>
+    </div>
+  </div>
+  <div class="resumen-card green">
+    <span class="r-icon">🟢</span>
+    <div>
+      <span class="r-val">{{ resumen().pagadas }}</span>
+      <span class="r-label">Pagadas</span>
+    </div>
+  </div>
+  <div class="resumen-card total">
+    <span class="r-icon">💰</span>
+    <div>
+      <span class="r-val">${{ totalPendiente | number:'1.0-0' }}</span>
+      <span class="r-label">Total por cobrar</span>
+    </div>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<div class="filtros">
+  @for (f of ['todas','pendiente','parcial','pagada']; track f) {
+    <button [class.active]="filtro()===f" (click)="filtro.set(f)">
+      {{ f.charAt(0).toUpperCase() + f.slice(1) }}
+    </button>
+  }
+</div>
+
+<!-- LISTA -->
+<div class="deudas-list">
+  @for (d of deudasFiltradas; track d.id) {
+    <div class="deuda-card" [class]="d.estado">
+      <div class="deuda-left">
+        <div class="deuda-avatar" [style.background]="getEstadoColor(d.estado)+'22'" [style.color]="getEstadoColor(d.estado)">
+          {{ d.name?.charAt(0) }}{{ d.lastName?.charAt(0) }}
+        </div>
+        <div class="deuda-info">
+          <span class="deuda-nombre">{{ d.name }} {{ d.lastName }}</span>
+          <span class="deuda-desc">{{ d.descripcion }}</span>
+          @if (d.notas) { <span class="deuda-notas">📝 {{ d.notas }}</span> }
+          <span class="deuda-fecha">{{ d.fechaCreacion | date:'dd/MM/yyyy' }}</span>
+        </div>
+      </div>
+
+      <div class="deuda-montos">
+        <div class="monto-total">${{ d.monto | number }}</div>
+        @if (d.estado !== 'pendiente') {
+          <div class="monto-pagado">Pagado: ${{ d.montoPagado | number }}</div>
+        }
+        @if (d.estado !== 'pagada') {
+          <div class="monto-pendiente" [style.color]="getEstadoColor(d.estado)">
+            Debe: ${{ getPendiente(d) | number }}
+          </div>
+        }
+        <!-- BARRA DE PROGRESO -->
+        <div class="pago-track">
+          <div class="pago-fill" [style.width.%]="(d.montoPagado / d.monto) * 100" [style.background]="getEstadoColor(d.estado)"></div>
+        </div>
+      </div>
+
+      <div class="deuda-estado">
+        <span class="estado-pill" [style.color]="getEstadoColor(d.estado)" [style.border-color]="getEstadoColor(d.estado)+'44'" [style.background]="getEstadoColor(d.estado)+'11'">
+          {{ d.estado }}
+        </span>
+      </div>
+
+      <div class="deuda-actions">
+        @if (d.estado !== 'pagada') {
+          <button class="btn-pago" (click)="openPago(d)">💵 Registrar pago</button>
+        }
+        <button class="btn-del" (click)="delete(d.id)">🗑️</button>
+      </div>
+    </div>
+  }
+
+  @if (deudasFiltradas.length === 0) {
+    <div class="empty">
+      <span>✅</span>
+      <p>No hay deudas con este filtro</p>
+    </div>
+  }
+</div>
+
+<!-- MODAL NUEVA DEUDA -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>💸 Registrar Deuda</h3>
+        <button (click)="showModal.set(false)">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="field">
+          <label>Cliente *</label>
+          <select formControlName="userId">
+            <option [value]="null">Seleccionar cliente...</option>
+            @for (u of usuarios(); track u.id) {
+              <option [value]="u.id">{{ u.name }} {{ u.lastName }} — {{ u.email }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Descripción *</label>
+          <input formControlName="descripcion" placeholder="Ej: Partida del 10 de abril + bebidas" />
+        </div>
+        <div class="field">
+          <label>Monto total *</label>
+          <input formControlName="monto" type="number" placeholder="25000" />
+        </div>
+        <div class="field">
+          <label>Notas (opcional)</label>
+          <textarea formControlName="notas" rows="2" placeholder="Prometió pagar el viernes..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
+            {{ loading() ? 'Guardando...' : 'Registrar deuda' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL PAGO -->
+@if (showPagoModal()) {
+  <div class="modal-overlay" (click)="showPagoModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>💵 Registrar Pago</h3>
+        <button (click)="showPagoModal.set(false)">✕</button>
+      </div>
+      <div class="pago-info">
+        <span class="pago-cliente">{{ deudaSeleccionada()?.name }} {{ deudaSeleccionada()?.lastName }}</span>
+        <span class="pago-desc">{{ deudaSeleccionada()?.descripcion }}</span>
+        <div class="pago-resumen">
+          <span>Total: ${{ deudaSeleccionada()?.monto | number }}</span>
+          <span>Pagado: ${{ deudaSeleccionada()?.montoPagado | number }}</span>
+          <span class="pago-pendiente">Pendiente: ${{ getPendiente(deudaSeleccionada()) | number }}</span>
+        </div>
+      </div>
+      <form [formGroup]="pagoForm" (ngSubmit)="registrarPago()" class="modal-form">
+        <div class="field">
+          <label>Monto a pagar *</label>
+          <input formControlName="montoPago" type="number" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showPagoModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="pagoForm.invalid || loading()">
+            {{ loading() ? 'Procesando...' : '✅ Confirmar pago' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

@@ -1,0 +1,49 @@
+<div class="page-header">
+  <div><h2>💼 Cuadre de Caja</h2><p>Registra gastos internos y consumos del día</p></div>
+  <div class="header-right">
+    <div class="total-badge red">Total gastos: ${{ totalGastos | number }}</div>
+    <button class="btn-primary" (click)="showModal.set(true)">+ Registrar gasto</button>
+  </div>
+</div>
+
+<div class="gastos-list">
+  @for (g of gastos(); track g.id) {
+    <div class="gasto-card">
+      <div class="gasto-tipo">{{ getTipoLabel(g.tipo) }}</div>
+      <div class="gasto-info">
+        <span class="gasto-desc">{{ g.descripcion }}</span>
+        <span class="gasto-hora">{{ g.hora }}</span>
+      </div>
+      <span class="gasto-monto">-${{ g.monto | number }}</span>
+      <button class="btn-del" (click)="delete(g.id)">🗑️</button>
+    </div>
+  }
+  @if (gastos().length === 0) {
+    <div class="empty"><span>💼</span><p>No hay gastos registrados hoy</p></div>
+  }
+</div>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header"><h3>💼 Registrar Gasto</h3><button (click)="showModal.set(false)">✕</button></div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="field">
+          <label>Tipo</label>
+          <select formControlName="tipo">
+            @for (t of tipos; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+          </select>
+        </div>
+        <div class="field"><label>Descripción *</label><input formControlName="descripcion" placeholder="Ej: 2 cervezas propietario" /></div>
+        <div class="field">
+          <label>Monto *</label>
+          <div class="input-prefix"><span>$</span><input formControlName="monto" type="number" /></div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

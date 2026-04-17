@@ -1,0 +1,18 @@
+.deudas-page { padding: 0; }
+.page-header { margin-bottom: 20px; h2{font-size:1.3rem;font-weight:700;color:#f1f5f9;} p{color:#64748b;font-size:0.85rem;margin-top:4px;} }
+.alerta-deuda { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.2); border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:14px; margin-bottom:20px; .alerta-icon{font-size:1.8rem;} .alerta-titulo{display:block;font-weight:700;color:#f87171;} .alerta-monto{display:block;font-size:0.85rem;color:#94a3b8;margin-top:2px;} }
+.alerta-ok { background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2); border-radius:12px; padding:14px 20px; display:flex; align-items:center; gap:10px; color:#34d399; font-weight:600; margin-bottom:20px; span:first-child{font-size:1.3rem;} }
+.deudas-list { display:flex; flex-direction:column; gap:12px; }
+.deuda-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:10px; &.pendiente{border-left:4px solid #f87171;} &.parcial{border-left:4px solid #f59e0b;} &.pagada{border-left:4px solid #34d399;opacity:0.75;} }
+.deuda-header { display:flex; justify-content:space-between; align-items:center; gap:10px; }
+.deuda-desc { font-weight:600; color:#f1f5f9; font-size:0.9rem; }
+.estado-pill { padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:700; border:1px solid; flex-shrink:0; }
+.deuda-montos { display:flex; flex-direction:column; gap:4px; }
+.monto-row { display:flex; justify-content:space-between; font-size:0.85rem; }
+.m-label { color:#64748b; }
+.m-val { font-weight:600; color:#e2e8f0; &.green{color:#34d399;} &.red{color:#f87171;} }
+.pago-track { height:5px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
+.pago-fill { height:100%; border-radius:3px; transition:width 0.3s; }
+.deuda-notas { color:#64748b; font-size:0.78rem; font-style:italic; }
+.deuda-fecha { color:#475569; font-size:0.72rem; }
+.empty { text-align:center; padding:48px; color:#475569; span{font-size:2.5rem;display:block;margin-bottom:10px;} }

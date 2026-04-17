@@ -1,0 +1,257 @@
+<div class="torneos-layout">
+  <header class="torneos-header">
+    <div class="title-area">
+      <h1>🏆 Gestor Oficial de Torneos</h1>
+      <p>
+        @if (torneoActivo()) {
+          {{ torneoActivo()!.nombre }} · {{ getEstadoLabel(torneoActivo()!.estado) }}
+        } @else {
+          Modo Administrador - Reglamento UMB Billar 3 Bandas
+        }
+      </p>
+    </div>
+    
+    <div class="chips-area">
+      <div class="pool-chip">
+        <span class="icon">💰</span>
+        <div class="text">
+          <span class="lbl">Pozo JcueCoins</span>
+          <span class="val">{{ jcueCoinsPool() | number }} JC</span>
+        </div>
+      </div>
+      <div class="pool-chip accent">
+        <span class="icon">👥</span>
+        <div class="text">
+          <span class="lbl">Inscritos Totales</span>
+          <span class="val">{{ registeredPlayers().length }} Jugadores</span>
+        </div>
+      </div>
+      <button class="btn-nuevo-torneo" (click)="mostrarModalCrear.set(true)">
+        + Nuevo Torneo
+      </button>
+    </div>
+  </header>
+
+  <!-- LOADING STATE -->
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Cargando torneos...</p>
+    </div>
+  } @else {
+
+    <nav class="torneos-tabs">
+      <button [class.active]="activeTab() === 'inscripcion'" (click)="switchTab('inscripcion')">1. Inscripciones (Hándicap)</button>
+      <button [class.active]="activeTab() === 'grupos'" (click)="switchTab('grupos')">2. Fase de Grupos</button>
+      <button [class.active]="activeTab() === 'eliminatoria'" (click)="switchTab('eliminatoria')">3. Bracket Eliminatoria</button>
+    </nav>
+
+    <!-- BANNER: Torneo activo del backend -->
+    @if (torneoActivo()) {
+      <div class="active-tourney-banner">
+        <div class="at-info">
+          <span class="at-icon">🎯</span>
+          <div>
+            <strong>{{ torneoActivo()!.nombre }}</strong>
+            <span class="at-fmt">{{ getFormatoLabel(torneoActivo()!.formato) }} · hasta {{ torneoActivo()!.maxJugadores }} jugadores</span>
+          </div>
+        </div>
+        <div class="at-tags">
+          <span class="tag green">{{ getEstadoLabel(torneoActivo()!.estado) }}</span>
+          <span class="tag yellow">Inscripción: {{ torneoActivo()!.costoInscripcion | number }} JC</span>
+        </div>
+      </div>
+    } @else {
+      <div class="empty-tourney-banner">
+        <span>⚠️ No hay torneos activos. Los datos mostrados son de demostración.</span>
+        <button class="btn-primary small" (click)="mostrarModalCrear.set(true)">Crear Primer Torneo</button>
+      </div>
+    }
+
+    <main class="torneos-content">
+      
+      <!-- PESTAÑA: INSCRIPCIONES -->
+      @if (activeTab() === 'inscripcion') {
+        <div class="fade-in">
+          <div class="section-top">
+            <h3>Jugadores Matriculados</h3>
+            <button class="btn-primary">+ Añadir Participante</button>
+          </div>
+          
+          @if (registeredPlayers().length === 0) {
+            <div class="empty-state">
+              <span>👤</span>
+              <p>No hay jugadores inscritos aún. Inscribe el primero.</p>
+            </div>
+          } @else {
+            <table class="modern-table">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Jugador</th>
+                  <th>Club</th>
+                  <th>Hándicap (Meta)</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of registeredPlayers(); track p.id) {
+                  <tr>
+                    <td>#{{ p.id }}</td>
+                    <td class="bold">{{ p.name }}</td>
+                    <td><span class="badge">{{ p.club }}</span></td>
+                    <td>🎯 <strong>{{ p.handicap }}</strong> carambolas</td>
+                    <td><button class="btn-sec small">Editar</button></td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+      }
+
+      <!-- PESTAÑA: GRUPOS (ROUND ROBIN) -->
+      @if (activeTab() === 'grupos') {
+        <div class="fade-in grid-groups">
+          @for (group of groups(); track group.id) {
+            <div class="group-card">
+              <h3 class="group-title">{{ group.name }}</h3>
+              
+              <table class="group-table">
+                <thead>
+                  <tr>
+                    <th>Jugador</th>
+                    <th title="Partidos Jugados">PJ</th>
+                    <th title="Promedio General">P.G.</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (p of group.players; track p.id) {
+                    <tr>
+                      <td>{{ p.name }} <span class="h-sub">({{ p.handicap }})</span></td>
+                      <td class="center">{{ getMatchesPlayed(p.id, group) }}</td>
+                      <td class="center highlight">{{ getPromedio(p.id, group) }}</td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+
+              <div class="matches-list">
+                <h4>Partidos del Grupo</h4>
+                @for (m of group.matches; track m.id) {
+                  <div class="match-mini" [class.played]="m.played">
+                    <div class="names">
+                      <span>{{ getPlayerName(m.p1Id, group) }}</span>
+                      <span class="vs">vs</span>
+                      <span>{{ getPlayerName(m.p2Id, group) }}</span>
+                    </div>
+                    @if (m.played) {
+                      <div class="result">{{ m.p1Score }} - {{ m.p2Score }} <span class="in">({{ m.innings }} E)</span></div>
+                    } @else {
+                      <button class="btn-action-small">Anotar</button>
+                    }
+                  </div>
+                }
+              </div>
+              
+            </div>
+          }
+        </div>
+      }
+
+      <!-- PESTAÑA: ELIMINATORIA (BRACKET) -->
+      @if (activeTab() === 'eliminatoria') {
+        <div class="fade-in bracket-container">
+          
+          <div class="bracket-wrapper">
+            @for (round of bracketRounds(); track round.name; let isLast = $last) {
+              <div class="bracket-col">
+                <h4 class="round-title">{{ round.name }}</h4>
+                
+                <div class="matches-col">
+                  @for (m of round.matches; track m.id) {
+                    <div class="bracket-match">
+                      
+                      <div class="competitor" [class.winner]="m.p1Score > m.p2Score && m.status === 'finished'">
+                        <div class="det">
+                          <span class="nm">{{ m.p1 }}</span>
+                          <span class="sb">{{ m.p1Sub }}</span>
+                        </div>
+                        <div class="sc">{{ m.status === 'waiting' ? '-' : m.p1Score }}</div>
+                      </div>
+
+                      <div class="competitor" [class.winner]="m.p2Score > m.p1Score && m.status === 'finished'">
+                        <div class="det">
+                          <span class="nm">{{ m.p2 }}</span>
+                          <span class="sb">{{ m.p2Sub }}</span>
+                        </div>
+                        <div class="sc">{{ m.status === 'waiting' ? '-' : m.p2Score }}</div>
+                      </div>
+
+                      @if (!isLast) {
+                        <div class="connector"></div>
+                      }
+
+                    </div>
+                  }
+                </div>
+
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+    </main>
+  }
+</div>
+
+<!-- MODAL: Crear Torneo -->
+@if (mostrarModalCrear()) {
+  <div class="modal-overlay" (click)="mostrarModalCrear.set(false)">
+    <div class="modal-card" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🏆 Crear Nuevo Torneo</h3>
+        <button class="modal-close" (click)="mostrarModalCrear.set(false)">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>Nombre del Torneo *</label>
+          <input type="text" [(ngModel)]="nuevoTorneo.nombre" placeholder="ej. Torneo Nacional 3 Bandas 2026" />
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Formato</label>
+            <select [(ngModel)]="nuevoTorneo.formato">
+              <option value="round_robin">Round Robin</option>
+              <option value="eliminacion_directa">Eliminación Directa</option>
+              <option value="doble_eliminacion">Doble Eliminación</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>Máx. Jugadores</label>
+            <input type="number" [(ngModel)]="nuevoTorneo.maxJugadores" min="2" max="64" />
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>Costo Inscripción (JC)</label>
+            <input type="number" [(ngModel)]="nuevoTorneo.costoInscripcion" min="0" />
+          </div>
+          <div class="form-group">
+            <label>Premio Total (JC)</label>
+            <input type="number" [(ngModel)]="nuevoTorneo.premioTotal" min="0" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label>Descripción</label>
+          <textarea [(ngModel)]="nuevoTorneo.descripcion" rows="3" placeholder="Descripción opcional..."></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-sec" (click)="mostrarModalCrear.set(false)">Cancelar</button>
+        <button class="btn-primary" (click)="crearTorneo()">Crear Torneo</button>
+      </div>
+    </div>
+  </div>
+}

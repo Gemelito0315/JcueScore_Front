@@ -1,0 +1,191 @@
+<!-- APERTURA DE TURNO -->
+@if (!turnoActivo() && !horaFin()) {
+  <div class="apertura-screen">
+    <div class="apertura-card">
+      <div class="apertura-icon">⏰</div>
+      <h2>Iniciar Turno</h2>
+      <p>Configura tu turno antes de comenzar</p>
+
+      <form [formGroup]="formApertura" (ngSubmit)="iniciarTurno()" class="apertura-form">
+        <div class="field">
+          <label>Base de caja inicial (COP)</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input formControlName="baseCaja" type="number" placeholder="100000" />
+          </div>
+          <small>Dinero en efectivo con el que inicias el turno</small>
+        </div>
+        <div class="field">
+          <label>Valor por hora (COP)</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input formControlName="valorHora" type="number" placeholder="7000" />
+          </div>
+          <small>Tu tarifa acordada con el propietario</small>
+        </div>
+        <div class="field">
+          <label>Notas de apertura (opcional)</label>
+          <textarea formControlName="notasApertura" rows="2" placeholder="Ej: Falta 1 taco en mesa 2, nevera llena..."></textarea>
+        </div>
+        <button type="submit" class="btn-iniciar" [disabled]="formApertura.invalid">
+          ▶ Iniciar Turno Ahora
+        </button>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- TURNO ACTIVO -->
+@if (turnoActivo() && !horaFin()) {
+  <div class="turno-activo">
+
+    <!-- HEADER DEL TURNO -->
+    <div class="turno-header">
+      <div class="turno-timer">
+        <span class="timer-label">Tiempo de turno</span>
+        <span class="timer-value">{{ duracionFormateada }}</span>
+        <span class="timer-inicio">Inicio: {{ horaInicio() | date:'hh:mm a' }}</span>
+      </div>
+      <div class="turno-salario">
+        <span class="salario-label">Salario acumulado</span>
+        <span class="salario-value">${{ salarioCalculado | number }}</span>
+        <span class="salario-rate">${{ formApertura.value.valorHora | number }}/hora · {{ (horasTrabajadas) | number:'1.1-1' }}h trabajadas</span>
+      </div>
+      <div class="turno-base">
+        <span class="base-label">Base de caja</span>
+        <span class="base-value">${{ formApertura.value.baseCaja | number }}</span>
+      </div>
+    </div>
+
+    <!-- RESUMEN EN TIEMPO REAL -->
+    <div class="resumen-grid">
+      <div class="resumen-card green">
+        <span class="r-icon">💵</span>
+        <div>
+          <span class="r-val">${{ resumenDia().ventasEfectivo | number }}</span>
+          <span class="r-label">Ventas efectivo</span>
+        </div>
+      </div>
+      <div class="resumen-card cyan">
+        <span class="r-icon">📱</span>
+        <div>
+          <span class="r-val">${{ resumenDia().ventasTransferencia | number }}</span>
+          <span class="r-label">Transferencias</span>
+        </div>
+      </div>
+      <div class="resumen-card yellow">
+        <span class="r-icon">💰</span>
+        <div>
+          <span class="r-val">${{ resumenDia().deudasCobradas | number }}</span>
+          <span class="r-label">Deudas cobradas</span>
+        </div>
+      </div>
+      <div class="resumen-card red">
+        <span class="r-icon">⚠️</span>
+        <div>
+          <span class="r-val">${{ resumenDia().deudasPendientes | number }}</span>
+          <span class="r-label">Deudas pendientes</span>
+        </div>
+      </div>
+      <div class="resumen-card orange">
+        <span class="r-icon">🍺</span>
+        <div>
+          <span class="r-val">${{ resumenDia().gastosInternos | number }}</span>
+          <span class="r-label">Consumo propietario</span>
+        </div>
+      </div>
+      <div class="resumen-card total">
+        <span class="r-icon">📊</span>
+        <div>
+          <span class="r-val">${{ totalIngresos | number }}</span>
+          <span class="r-label">Total ingresos</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- BOTÓN CERRAR TURNO -->
+    <div class="cierre-section">
+      <h3>🔒 Cerrar Turno</h3>
+      <p>Cuenta el efectivo físico en caja y registra el total</p>
+      <form [formGroup]="formCierre" class="cierre-form">
+        <div class="field">
+          <label>Efectivo contado en caja (COP)</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input formControlName="efectivoContado" type="number" placeholder="0" />
+          </div>
+          <small>Cuenta físicamente el dinero en caja y escribe el total</small>
+        </div>
+
+        @if ((formCierre.value.efectivoContado ?? 0) > 0) {
+          <div class="cuadre-preview">
+            <div class="cuadre-row">
+              <span>Base inicial</span>
+              <span>${{ formApertura.value.baseCaja | number }}</span>
+            </div>
+            <div class="cuadre-row">
+              <span>+ Ventas efectivo</span>
+              <span class="green">${{ resumenDia().ventasEfectivo | number }}</span>
+            </div>
+            <div class="cuadre-row">
+              <span>+ Deudas cobradas</span>
+              <span class="green">${{ resumenDia().deudasCobradas | number }}</span>
+            </div>
+            <div class="cuadre-row">
+              <span>- Consumo propietario</span>
+              <span class="red">-${{ resumenDia().gastosInternos | number }}</span>
+            </div>
+            <div class="cuadre-row">
+              <span>- Tu salario</span>
+              <span class="red">-${{ salarioCalculado | number }}</span>
+            </div>
+            <div class="cuadre-row total-row">
+              <span>= Esperado en caja</span>
+              <span>${{ totalEsperadoEnCaja | number }}</span>
+            </div>
+            <div class="cuadre-row total-row">
+              <span>Contado físicamente</span>
+              <span>${{ formCierre.value.efectivoContado | number }}</span>
+            </div>
+            <div class="estado-cuadre" [style.color]="estadoCuadre.color" [style.border-color]="estadoCuadre.color+'44'" [style.background]="estadoCuadre.color+'11'">
+              {{ estadoCuadre.texto }}
+            </div>
+          </div>
+        }
+
+        <div class="field">
+          <label>Notas de cierre (opcional)</label>
+          <textarea formControlName="notasCierre" rows="2" placeholder="Ej: Quedó pendiente deuda de Carlos, nevera con 5 cervezas..."></textarea>
+        </div>
+
+        <button type="button" class="btn-cerrar" (click)="cerrarTurno()" [disabled]="formCierre.invalid">
+          🔒 Cerrar Turno y Generar Reporte
+        </button>
+      </form>
+    </div>
+  </div>
+}
+
+<!-- REPORTE DE CIERRE -->
+@if (horaFin()) {
+  <div class="reporte-cierre">
+    <div class="reporte-card">
+      <div class="reporte-icon">📋</div>
+      <h2>Turno Cerrado</h2>
+      <p>{{ horaInicio() | date:'hh:mm a' }} — {{ horaFin() | date:'hh:mm a' }}</p>
+
+      <div class="reporte-resumen">
+        <div class="rep-row"><span>Duración</span><span>{{ duracionFormateada }}</span></div>
+        <div class="rep-row"><span>Horas trabajadas</span><span>{{ horasTrabajadas | number:'1.1-1' }}h</span></div>
+        <div class="rep-row"><span>Salario del turno</span><span class="green">${{ salarioCalculado | number }}</span></div>
+        <div class="rep-row"><span>Total ingresos</span><span class="green">${{ totalIngresos | number }}</span></div>
+        <div class="rep-row"><span>Efectivo para propietario</span><span>${{ (formCierre.value.efectivoContado ?? 0) - salarioCalculado | number }}</span></div>
+        <div class="rep-row estado" [style.color]="estadoCuadre.color">
+          <span>Estado de caja</span><span>{{ estadoCuadre.texto }}</span>
+        </div>
+      </div>
+
+      <button class="btn-iniciar" (click)="resetTurno()">Iniciar Nuevo Turno</button>
+    </div>
+  </div>
+}

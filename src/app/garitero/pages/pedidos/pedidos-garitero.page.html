@@ -1,0 +1,276 @@
+<div class="pedidos-garitero-container">
+  <div class="header">
+    <h1>Gestión de Pedidos</h1>
+    <div class="header-actions">
+      <button mat-icon-button (click)="actualizarDatos()" [disabled]="actualizando()">
+        <mat-icon [class.rotating]="actualizando()">refresh</mat-icon>
+      </button>
+      <span class="badge" *ngIf="pedidosPendientes().length > 0">{{ pedidosPendientes().length }}</span>
+      <span class="last-update" *ngIf="actualizando()">Actualizando...</span>
+    </div>
+  </div>
+
+  <!-- Estadísticas Rápidas -->
+  <div class="stats-container">
+    <mat-card class="stat-card">
+      <div class="stat-content">
+        <div class="stat-number">{{ estadisticas().pendientes }}</div>
+        <div class="stat-label">Pendientes</div>
+      </div>
+      <mat-icon class="stat-icon pending">schedule</mat-icon>
+    </mat-card>
+    
+    <mat-card class="stat-card">
+      <div class="stat-content">
+        <div class="stat-number">{{ estadisticas().enPreparacion }}</div>
+        <div class="stat-label">En Preparación</div>
+      </div>
+      <mat-icon class="stat-icon preparing">restaurant</mat-icon>
+    </mat-card>
+    
+    <mat-card class="stat-card">
+      <div class="stat-content">
+        <div class="stat-number">{{ estadisticas().listos }}</div>
+        <div class="stat-label">Listos</div>
+      </div>
+      <mat-icon class="stat-icon ready">check_circle</mat-icon>
+    </mat-card>
+    
+    <mat-card class="stat-card">
+      <div class="stat-content">
+        <div class="stat-number">${{ estadisticas().ingresosTotales | number:'1.0-0' }}</div>
+        <div class="stat-label">Ingresos Hoy</div>
+      </div>
+      <mat-icon class="stat-icon income">attach_money</mat-icon>
+    </mat-card>
+  </div>
+
+  <!-- Tabs de Pedidos -->
+  <mat-tab-group [(selectedIndex)]="selectedTab" class="pedidos-tabs">
+    <!-- Pedidos Pendientes -->
+    <mat-tab label="Pendientes">
+      <div class="pedidos-list">
+        <mat-card *ngFor="let pedido of pedidosPendientes()" class="pedido-card estado-pendiente">
+          <mat-card-header>
+            <mat-card-title>
+              Pedido #{{ pedido.id }}
+              <span class="badge" [style.background-color]="getEstadoColor(pedido.estado)">
+                {{ getEstadoLabel(pedido.estado) }}
+              </span>
+            </mat-card-title>
+            <mat-card-subtitle>
+              {{ pedido.usuario?.name }} {{ pedido.usuario?.lastName }}
+              <span *ngIf="pedido.recurso"> - {{ pedido.recurso.code }}</span>
+              <span class="tiempo-espera">{{ getTiempoEspera(pedido.createdAt) }}</span>
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <div class="pedido-items">
+              <div class="item" *ngFor="let item of pedido.items">
+                <span class="cantidad">{{ item.cantidad }}x</span>
+                <span class="nombre">{{ getProductoNombre(item.productId) }}</span>
+                <span class="notas" *ngIf="item.notas">{{ item.notas }}</span>
+              </div>
+            </div>
+            
+            <div class="pedido-notas" *ngIf="pedido.notas">
+              <mat-icon>note</mat-icon>
+              {{ pedido.notas }}
+            </div>
+            
+            <div class="pedido-total">
+              <strong>Total: ${{ pedido.total | number:'1.0-0' }}</strong>
+            </div>
+          </mat-card-content>
+          
+          <mat-card-actions align="end">
+            <button mat-button color="warn" (click)="cancelarPedido(pedido.id)">
+              Cancelar
+            </button>
+            <button mat-raised-button color="primary" (click)="iniciarPreparacion(pedido.id)">
+              <mat-icon>restaurant</mat-icon>
+              Iniciar Preparación
+            </button>
+          </mat-card-actions>
+        </mat-card>
+        
+        <div class="no-pedidos" *ngIf="pedidosPendientes().length === 0">
+          <mat-icon>schedule</mat-icon>
+          <p>No hay pedidos pendientes</p>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Pedidos en Preparación -->
+    <mat-tab label="En Preparación">
+      <div class="pedidos-list">
+        <mat-card *ngFor="let pedido of pedidosEnPreparacion()" class="pedido-card estado-en_preparacion">
+          <mat-card-header>
+            <mat-card-title>
+              Pedido #{{ pedido.id }}
+              <span class="badge" [style.background-color]="getEstadoColor(pedido.estado)">
+                {{ getEstadoLabel(pedido.estado) }}
+              </span>
+            </mat-card-title>
+            <mat-card-subtitle>
+              {{ pedido.usuario?.name }} {{ pedido.usuario?.lastName }}
+              <span *ngIf="pedido.recurso"> - {{ pedido.recurso.code }}</span>
+              <span class="tiempo-preparacion">
+                Preparando por: {{ getTiempoEspera(pedido.fechaPreparacion!) }}
+              </span>
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <div class="pedido-items">
+              <div class="item" *ngFor="let item of pedido.items">
+                <span class="cantidad">{{ item.cantidad }}x</span>
+                <span class="nombre">{{ getProductoNombre(item.productId) }}</span>
+                <span class="notas" *ngIf="item.notas">{{ item.notas }}</span>
+              </div>
+            </div>
+            
+            <div class="pedido-total">
+              <strong>Total: ${{ pedido.total | number:'1.0-0' }}</strong>
+            </div>
+          </mat-card-content>
+          
+          <mat-card-actions align="end">
+            <button mat-raised-button color="success" (click)="marcarComoListo(pedido.id)">
+              <mat-icon>check_circle</mat-icon>
+              Marcar como Listo
+            </button>
+          </mat-card-actions>
+        </mat-card>
+        
+        <div class="no-pedidos" *ngIf="pedidosEnPreparacion().length === 0">
+          <mat-icon>restaurant</mat-icon>
+          <p>No hay pedidos en preparación</p>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Pedidos Listos -->
+    <mat-tab label="Listos para Entregar">
+      <div class="pedidos-list">
+        <mat-card *ngFor="let pedido of pedidosListos()" class="pedido-card estado-listo">
+          <mat-card-header>
+            <mat-card-title>
+              Pedido #{{ pedido.id }}
+              <span class="badge" [style.background-color]="getEstadoColor(pedido.estado)">
+                {{ getEstadoLabel(pedido.estado) }}
+              </span>
+            </mat-card-title>
+            <mat-card-subtitle>
+              {{ pedido.usuario?.name }} {{ pedido.usuario?.lastName }}
+              <span *ngIf="pedido.recurso"> - {{ pedido.recurso.code }}</span>
+              <span class="tiempo-espera">
+                Esperando por: {{ getTiempoEspera(pedido.fechaEntregado!) }}
+              </span>
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <div class="pedido-items">
+              <div class="item" *ngFor="let item of pedido.items">
+                <span class="cantidad">{{ item.cantidad }}x</span>
+                <span class="nombre">{{ getProductoNombre(item.productId) }}</span>
+              </div>
+            </div>
+            
+            <div class="pedido-total">
+              <strong>Total: ${{ pedido.total | number:'1.0-0' }}</strong>
+              <span class="metodo-pago">{{ pedido.metodoPago }}</span>
+            </div>
+          </mat-card-content>
+          
+          <mat-card-actions align="end">
+            <button mat-raised-button color="primary" (click)="entregarPedido(pedido.id)">
+              <mat-icon>delivery_dining</mat-icon>
+              Entregar Pedido
+            </button>
+          </mat-card-actions>
+        </mat-card>
+        
+        <div class="no-pedidos" *ngIf="pedidosListos().length === 0">
+          <mat-icon>check_circle</mat-icon>
+          <p>No hay pedidos listos para entregar</p>
+        </div>
+      </div>
+    </mat-tab>
+
+    <!-- Todos los Pedidos -->
+    <mat-tab label="Todos">
+      <div class="pedidos-list">
+        <mat-card *ngFor="let pedido of pedidosActivos()" class="pedido-card" 
+                 [ngClass]="'estado-' + pedido.estado">
+          <mat-card-header>
+            <mat-card-title>
+              Pedido #{{ pedido.id }}
+              <span class="badge" [style.background-color]="getEstadoColor(pedido.estado)">
+                {{ getEstadoLabel(pedido.estado) }}
+              </span>
+            </mat-card-title>
+            <mat-card-subtitle>
+              {{ pedido.usuario?.name }} {{ pedido.usuario?.lastName }}
+              <span *ngIf="pedido.recurso"> - {{ pedido.recurso.code }}</span>
+              <span class="fecha">{{ pedido.createdAt | date:'short' }}</span>
+            </mat-card-subtitle>
+          </mat-card-header>
+          
+          <mat-card-content>
+            <div class="pedido-items">
+              <div class="item" *ngFor="let item of pedido.items">
+                <span class="cantidad">{{ item.cantidad }}x</span>
+                <span class="nombre">{{ getProductoNombre(item.productId) }}</span>
+                <span class="notas" *ngIf="item.notas">{{ item.notas }}</span>
+              </div>
+            </div>
+            
+            <div class="pedido-info">
+              <div class="tiempo-info">
+                <mat-icon *ngIf="pedido.estado === 'en_preparacion'">restaurant</mat-icon>
+                <mat-icon *ngIf="pedido.estado === 'listo'">check_circle</mat-icon>
+                {{ getTiempoEspera(pedido.estado === 'en_preparacion' ? pedido.fechaPreparacion! : pedido.createdAt) }}
+              </div>
+              
+              <div class="pedido-total">
+                <strong>Total: ${{ pedido.total | number:'1.0-0' }}</strong>
+                <span *ngIf="pedido.metodoPago" class="metodo-pago">{{ pedido.metodoPago }}</span>
+              </div>
+            </div>
+          </mat-card-content>
+          
+          <mat-card-actions align="end">
+            <button mat-button color="warn" 
+                    *ngIf="pedido.estado === 'pendiente'" 
+                    (click)="cancelarPedido(pedido.id)">
+              Cancelar
+            </button>
+            <button mat-raised-button color="primary" 
+                    *ngIf="pedido.estado === 'pendiente'" 
+                    (click)="iniciarPreparacion(pedido.id)">
+              Iniciar Preparación
+            </button>
+            <button mat-raised-button color="success" 
+                    *ngIf="pedido.estado === 'en_preparacion'" 
+                    (click)="marcarComoListo(pedido.id)">
+              Marcar como Listo
+            </button>
+            <button mat-raised-button color="primary" 
+                    *ngIf="pedido.estado === 'listo'" 
+                    (click)="entregarPedido(pedido.id)">
+              Entregar
+            </button>
+          </mat-card-actions>
+        </mat-card>
+        
+        <div class="no-pedidos" *ngIf="pedidosActivos().length === 0">
+          <mat-icon>shopping_cart</mat-icon>
+          <p>No hay pedidos activos</p>
+        </div>
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+</div>

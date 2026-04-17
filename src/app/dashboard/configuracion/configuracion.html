@@ -1,0 +1,129 @@
+<div class="page-header">
+  <div>
+    <h2>Configuración del Establecimiento</h2>
+    <p>Personaliza la información y parámetros del sistema</p>
+  </div>
+  @if (saved()) {
+    <span class="saved-badge">✅ Guardado correctamente</span>
+  }
+</div>
+
+<form [formGroup]="form" (ngSubmit)="save()" class="config-layout">
+
+  <!-- IDENTIDAD -->
+  <div class="config-card">
+    <h4>🏢 Identidad del establecimiento</h4>
+    <div class="logo-section">
+      <div class="logo-preview">
+        @if (logoPreview()) {
+          <img [src]="logoPreview()!" alt="Logo" />
+        } @else {
+          <span>🎱</span>
+        }
+      </div>
+      <label class="btn-upload">
+        📷 Subir logo
+        <input type="file" accept="image/*" (change)="onLogoChange($event)" hidden />
+      </label>
+    </div>
+    <div class="fields-grid">
+      <div class="field full">
+        <label>Nombre del establecimiento *</label>
+        <input formControlName="nombre" placeholder="Billar JJ" />
+      </div>
+      <div class="field full">
+        <label>Slogan</label>
+        <input formControlName="slogan" placeholder="Sports Center" />
+      </div>
+      <div class="field full">
+        <label>Dirección</label>
+        <input formControlName="direccion" placeholder="Calle 45 # 23-10" />
+      </div>
+      <div class="field">
+        <label>Teléfono</label>
+        <input formControlName="telefono" placeholder="3001234567" />
+      </div>
+      <div class="field">
+        <label>Email</label>
+        <input formControlName="email" type="email" placeholder="contacto@billar.com" />
+      </div>
+    </div>
+  </div>
+
+  <!-- HORARIOS Y PRECIOS -->
+  <div class="config-card">
+    <h4>⏰ Horarios y precios</h4>
+    <div class="fields-grid">
+      <div class="field">
+        <label>Hora apertura</label>
+        <input formControlName="horarioApertura" type="time" />
+      </div>
+      <div class="field">
+        <label>Hora cierre</label>
+        <input formControlName="horarioCierre" type="time" />
+      </div>
+      <div class="field">
+        <label>Precio Billar/hora</label>
+        <input formControlName="precioDefaultBillar" type="number" />
+      </div>
+      <div class="field">
+        <label>Precio Tejo/hora</label>
+        <input formControlName="precioDefaultTejo" type="number" />
+      </div>
+      <div class="field">
+        <label>Precio Bolirama/hora</label>
+        <input formControlName="precioDefaultBolirama" type="number" />
+      </div>
+      <div class="field">
+        <label>Moneda</label>
+        <select formControlName="moneda">
+          <option value="COP">COP - Peso colombiano</option>
+          <option value="USD">USD - Dólar</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- SISTEMA DE PUNTOS -->
+  <div class="config-card">
+    <h4>⭐ Sistema de puntos y niveles</h4>
+    <div class="fields-grid">
+      <div class="field">
+        <label>Puntos por partida</label>
+        <input formControlName="puntosXPartida" type="number" />
+      </div>
+      <div class="field">
+        <label>Puntos por hora</label>
+        <input formControlName="puntosXHora" type="number" />
+      </div>
+    </div>
+    <div class="niveles-row">
+      <div class="nivel-config bronce">
+        <span>🥉 Bronce</span>
+        <div class="field">
+          <label>Puntos mínimos</label>
+          <input formControlName="metaBronce" type="number" />
+        </div>
+      </div>
+      <div class="nivel-config plata">
+        <span>🥈 Plata</span>
+        <div class="field">
+          <label>Puntos mínimos</label>
+          <input formControlName="metaPlata" type="number" />
+        </div>
+      </div>
+      <div class="nivel-config oro">
+        <span>🥇 Oro</span>
+        <div class="field">
+          <label>Puntos mínimos</label>
+          <input formControlName="metaOro" type="number" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button type="submit" class="btn-save" [disabled]="form.invalid">
+    💾 Guardar configuración
+  </button>
+
+</form>

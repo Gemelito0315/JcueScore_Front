@@ -1,0 +1,13 @@
+<div class="maintenance-page">
+  <div class="content">
+    <div class="icon">🔧</div>
+    <h1 class="brand">JcueScore</h1>
+    <h2>En Mantenimiento</h2>
+    <p class="message">{{ message() }}</p>
+    @if (estimatedTime()) {
+      <p class="eta">⏱️ Tiempo estimado: {{ estimatedTime() }}</p>
+    }
+    <div class="divider"></div>
+    <p class="footer">Disculpa las molestias. Pronto estaremos de vuelta.</p>
+  </div>
+</div>

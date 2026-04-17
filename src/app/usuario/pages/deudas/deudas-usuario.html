@@ -1,0 +1,66 @@
+<div class="deudas-page">
+  <div class="page-header">
+    <h2>💸 Mis Cuentas</h2>
+    <p>Historial de deudas y pagos</p>
+  </div>
+
+  @if (totalPendiente > 0) {
+    <div class="alerta-deuda">
+      <span class="alerta-icon">⚠️</span>
+      <div>
+        <span class="alerta-titulo">Tienes una cuenta pendiente</span>
+        <span class="alerta-monto">Total por pagar: ${{ totalPendiente | number }}</span>
+      </div>
+    </div>
+  } @else if (deudas().length > 0) {
+    <div class="alerta-ok">
+      <span>✅</span>
+      <span>¡Estás al día con tus pagos!</span>
+    </div>
+  }
+
+  <div class="deudas-list">
+    @for (d of deudas(); track d.id) {
+      <div class="deuda-card" [class]="d.estado">
+        <div class="deuda-header">
+          <span class="deuda-desc">{{ d.descripcion }}</span>
+          <span class="estado-pill" [style.color]="getEstadoColor(d.estado)" [style.border-color]="getEstadoColor(d.estado)+'44'" [style.background]="getEstadoColor(d.estado)+'11'">
+            {{ d.estado }}
+          </span>
+        </div>
+        <div class="deuda-montos">
+          <div class="monto-row">
+            <span class="m-label">Total</span>
+            <span class="m-val">${{ d.monto | number }}</span>
+          </div>
+          @if (d.montoPagado > 0) {
+            <div class="monto-row">
+              <span class="m-label">Pagado</span>
+              <span class="m-val green">${{ d.montoPagado | number }}</span>
+            </div>
+          }
+          @if (d.estado !== 'pagada') {
+            <div class="monto-row">
+              <span class="m-label">Pendiente</span>
+              <span class="m-val red">${{ getPendiente(d) | number }}</span>
+            </div>
+          }
+        </div>
+        <div class="pago-track">
+          <div class="pago-fill" [style.width.%]="(d.montoPagado / d.monto) * 100" [style.background]="getEstadoColor(d.estado)"></div>
+        </div>
+        @if (d.notas) {
+          <p class="deuda-notas">📝 {{ d.notas }}</p>
+        }
+        <span class="deuda-fecha">{{ d.fechaCreacion | date:'dd/MM/yyyy' }}</span>
+      </div>
+    }
+
+    @if (deudas().length === 0) {
+      <div class="empty">
+        <span>✅</span>
+        <p>No tienes cuentas registradas</p>
+      </div>
+    }
+  </div>
+</div>

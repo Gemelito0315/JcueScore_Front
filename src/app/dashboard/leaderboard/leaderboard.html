@@ -1,0 +1,51 @@
+<div class="leaderboard-container">
+  <div class="leaderboard-header">
+    <div class="title-wrap">
+      <h2>Ranking de Jugadores</h2>
+      <p>Clasificación general por puntuación ELO</p>
+    </div>
+    <div class="header-actions">
+      <button class="btn-filter active">Rango ELO</button>
+      <button class="btn-filter">JcueCoins</button>
+    </div>
+  </div>
+  
+  <div class="leaderboard-list">
+    @for (player of topPlayers(); track player.id; let i = $index) {
+      <div class="leaderboard-row" [class.top-3]="i < 3" [class.gold]="i === 0" [class.silver]="i === 1" [class.bronze]="i === 2">
+        <div class="rank-pos">#{{ i + 1 }}</div>
+        
+        <div class="player-info">
+          @if (player.avatarUrl) {
+            <img [src]="player.avatarUrl" alt="Avatar">
+          } @else {
+            <div class="default-avatar">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </div>
+          }
+          <div class="details">
+            <span class="name">{{ player.name }}</span>
+            <span class="club">{{ player.club }}</span>
+          </div>
+        </div>
+        
+        <div class="stats-box">
+          <div class="stat">
+            <span class="value">{{ player.winRate }}%</span>
+            <span class="label">WIN RATE</span>
+          </div>
+          <div class="stat primary">
+            <span class="value">{{ player.elo }}</span>
+            <span class="label">PUNTOS ELO</span>
+          </div>
+          <div class="badge-rank" [ngClass]="player.rank.toLowerCase()">
+            {{ player.rank }}
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+</div>

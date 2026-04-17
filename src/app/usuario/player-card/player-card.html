@@ -1,0 +1,36 @@
+<div class="player-card-container" [ngClass]="player.rank.toLowerCase()">
+  <div class="profile-header">
+    <div class="player-image-wrapper">
+      @if (avatarUrl) {
+        <img [src]="avatarUrl" alt="Player" class="player-img" />
+      } @else {
+        <div class="default-avatar">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+            <circle cx="12" cy="7" r="4" />
+          </svg>
+        </div>
+      }
+    </div>
+    
+    <div class="player-info">
+      <h3 class="player-name">{{ player.name }} {{ player.lastName }}</h3>
+      <span class="club-name">{{ player.clubName || 'Sin Club' }}</span>
+    </div>
+  </div>
+
+  <div class="stats-grid">
+    <div class="stat-item elo">
+      <span class="stat-label">Rango / ELO</span>
+      <span class="stat-value">{{ player.rank }} · {{ player.eloRating }}</span>
+    </div>
+    <div class="stat-item">
+      <span class="stat-label">Win Rate</span>
+      <span class="stat-value">{{ player.winRate }}%</span>
+    </div>
+    <div class="stat-item coins">
+      <span class="stat-label">JcueCoins</span>
+      <span class="stat-value">{{ player.jcueCoins }}</span>
+    </div>
+  </div>
+</div>

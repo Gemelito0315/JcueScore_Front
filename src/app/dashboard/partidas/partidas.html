@@ -1,0 +1,77 @@
+<div class="page-header">
+  <div>
+    <h2>Partidas en Curso</h2>
+    <p>Monitoreo en tiempo real de todas las mesas del establecimiento</p>
+  </div>
+  <div class="header-badges">
+    <span class="badge occupied">🎱 {{ mesasOcupadas }} en juego</span>
+    <span class="badge available">✅ {{ mesasLibres }} disponibles</span>
+    <span class="badge income">💰 ${{ ingresoEstimado | number:'1.0-0' }} estimado</span>
+  </div>
+</div>
+
+<!-- GRID DE MESAS -->
+<div class="mesas-grid">
+  @for (mesa of mesas(); track mesa.id) {
+    <div class="mesa-card" [class]="mesa.status">
+
+      <!-- HEADER -->
+      <div class="mesa-header">
+        <div class="mesa-title">
+          <span class="game-icon">{{ getGameIcon(mesa.gameType) }}</span>
+          <span class="mesa-name">{{ mesa.code }}</span>
+        </div>
+        <span class="status-pill" [style.background]="getStatusColor(mesa.status) + '22'" [style.color]="getStatusColor(mesa.status)" [style.border-color]="getStatusColor(mesa.status) + '44'">
+          {{ getStatusLabel(mesa.status) }}
+        </span>
+      </div>
+
+      <!-- CONTENIDO SEGÚN ESTADO -->
+      @if (mesa.status === 'occupied') {
+        <!-- MARCADOR EN VIVO -->
+        <div class="live-score">
+          <div class="player-score">
+            <span class="player-name-sm">{{ mesa.jugadores?.[0] ?? 'J1' }}</span>
+            <span class="score-sm p1">{{ mesa.marcador?.j1 ?? 0 }}</span>
+          </div>
+          <div class="score-divider">VS</div>
+          <div class="player-score">
+            <span class="player-name-sm">{{ mesa.jugadores?.[1] ?? 'J2' }}</span>
+            <span class="score-sm p2">{{ mesa.marcador?.j2 ?? 0 }}</span>
+          </div>
+        </div>
+
+        <!-- TIMER -->
+        <div class="timer-row">
+          <span class="timer-live">⏱ {{ tiempos()[mesa.id] || '00:00:00' }}</span>
+          <span class="price-sm">${{ mesa.pricePerHour | number }}/h</span>
+        </div>
+
+        <!-- INGRESO ACUMULADO -->
+        <div class="income-row">
+          <span class="income-label">Ingreso acumulado</span>
+          <span class="income-val">${{ ingresos()[mesa.id] || 0 | number:'1.0-0' }}</span>
+        </div>
+
+        <button class="btn-open" (click)="abrirMesa(mesa)">📺 Ver pantalla</button>
+      }
+
+      @if (mesa.status === 'available') {
+        <div class="available-content">
+          <span class="available-icon">✅</span>
+          <p>Mesa disponible</p>
+          <span class="price-tag">${{ mesa.pricePerHour | number }}/hora</span>
+        </div>
+        <button class="btn-open available" (click)="abrirMesa(mesa)">▶ Iniciar partida</button>
+      }
+
+      @if (mesa.status === 'maintenance') {
+        <div class="maintenance-content">
+          <span class="maint-icon">🔧</span>
+          <p>En mantenimiento</p>
+        </div>
+      }
+
+    </div>
+  }
+</div>

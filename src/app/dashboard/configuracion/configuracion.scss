@@ -1,0 +1,12 @@
+.page-header { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:24px; h2{font-size:1.4rem;font-weight:700;color:#f1f5f9;} p{color:#64748b;font-size:0.85rem;margin-top:4px;} }
+.saved-badge { background:rgba(52,211,153,0.1); border:1px solid rgba(52,211,153,0.2); color:#34d399; padding:8px 16px; border-radius:10px; font-size:0.85rem; font-weight:600; }
+.config-layout { display:flex; flex-direction:column; gap:16px; }
+.config-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:24px; h4{color:#f1f5f9;font-size:0.95rem;font-weight:600;margin-bottom:20px;} }
+.logo-section { display:flex; align-items:center; gap:16px; margin-bottom:20px; }
+.logo-preview { width:72px; height:72px; background:#0f172a; border:1px solid rgba(255,255,255,0.08); border-radius:12px; display:flex; align-items:center; justify-content:center; overflow:hidden; font-size:2rem; img{width:100%;height:100%;object-fit:cover;} }
+.btn-upload { background:rgba(30,41,59,0.8); border:1px solid rgba(255,255,255,0.08); color:#94a3b8; padding:8px 14px; border-radius:8px; cursor:pointer; font-size:0.85rem; &:hover{border-color:#06b6d4;color:#06b6d4;} }
+.fields-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+.field { display:flex; flex-direction:column; gap:6px; &.full{grid-column:1/-1;} label{color:#64748b;font-size:0.82rem;} input,select{background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:0.9rem;outline:none;&:focus{border-color:#06b6d4;}option{background:#0f172a;}} }
+.niveles-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-top:16px; }
+.nivel-config { background:rgba(15,23,42,0.5); border-radius:10px; padding:14px; display:flex; flex-direction:column; gap:10px; span{font-size:0.9rem;font-weight:600;color:#e2e8f0;} &.bronce{border-left:3px solid #f59e0b;} &.plata{border-left:3px solid #94a3b8;} &.oro{border-left:3px solid #fbbf24;} }
+.btn-save { background:#06b6d4; color:#0f172a; border:none; padding:14px 32px; border-radius:10px; font-size:1rem; font-weight:700; cursor:pointer; align-self:flex-start; &:hover{opacity:0.9;} &:disabled{opacity:0.5;cursor:not-allowed;} }

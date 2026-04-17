@@ -1,0 +1,67 @@
+<div class="pos-layout">
+  <!-- PRODUCTOS -->
+  <div class="productos-panel">
+    <h3>📦 Productos</h3>
+    <div class="productos-grid">
+      @for (p of productos(); track p.id) {
+        <button class="producto-btn" (click)="agregarAlCarrito(p)">
+          <span class="p-nombre">{{ p.name }}</span>
+          <span class="p-precio">${{ p.price | number }}</span>
+        </button>
+      }
+      @if (productos().length === 0) {
+        <p class="no-productos">No hay productos disponibles</p>
+      }
+    </div>
+  </div>
+
+  <!-- CARRITO -->
+  <div class="carrito-panel">
+    <h3>🛒 Venta actual</h3>
+    <div class="carrito-items">
+      @for (item of carrito(); track item.id) {
+        <div class="carrito-item">
+          <span class="item-nombre">{{ item.nombre }}</span>
+          <div class="item-controls">
+            <button (click)="quitarDelCarrito(item.id)">−</button>
+            <span>{{ item.cantidad }}</span>
+            <button (click)="agregarAlCarrito({id:item.id,name:item.nombre,price:item.precio,isActive:true})">+</button>
+          </div>
+          <span class="item-total">${{ item.precio * item.cantidad | number }}</span>
+        </div>
+      }
+      @if (carrito().length === 0) {
+        <p class="carrito-vacio">Selecciona productos</p>
+      }
+    </div>
+
+    <div class="carrito-footer">
+      <div class="total-row">
+        <span>Total</span>
+        <span class="total-val">${{ total | number }}</span>
+      </div>
+      <div class="metodo-tabs">
+        <button [class.active]="metodoPago()==='efectivo'" (click)="metodoPago.set('efectivo')">💵 Efectivo</button>
+        <button [class.active]="metodoPago()==='transferencia'" (click)="metodoPago.set('transferencia')">📱 Transferencia</button>
+      </div>
+      <button class="btn-cobrar" (click)="cobrar()" [disabled]="carrito().length === 0">
+        ✅ Cobrar ${{ total | number }}
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- HISTORIAL DEL DÍA -->
+@if (ventas().length > 0) {
+  <div class="historial">
+    <h3>📋 Ventas del día ({{ ventas().length }})</h3>
+    @for (v of ventas(); track v.id) {
+      <div class="venta-row">
+        <span class="v-hora">{{ v.hora }}</span>
+        <span class="v-items">{{ v.items.length }} producto(s)</span>
+        <span class="v-metodo">{{ v.metodo === 'efectivo' ? '💵' : '📱' }}</span>
+        <span class="v-total">${{ v.total | number }}</span>
+      </div>
+    }
+  </div>
+}

@@ -1,0 +1,65 @@
+<div class="welcome-banner">
+  <div class="welcome-text">
+    <h2>Inicio y Lealtad</h2>
+    <p>Bienvenido de vuelta. Tu vista registra los puntos generados durante tu sesión en el local.</p>
+  </div>
+  <div class="welcome-illustration">🎱</div>
+</div>
+
+<div class="loyalty-container">
+  <!-- Tarjeta de jugador (Perfil) -->
+  <div class="player-profile-section">
+    <app-player-card [avatarUrl]="avatarUrl()"></app-player-card>
+  </div>
+
+  <!-- Panel limpio de Lealtad (GPS) -->
+  <div class="loyalty-status-card">
+    <div class="status-header">
+      <div class="icon-circle">📍</div>
+      <div class="status-titles">
+        <h3>Motor de Geo-Lealtad</h3>
+        @if (statusGPS() === 'Buscando') {
+          <p class="status text-muted">Comprobando red local...</p>
+        } @else if (statusGPS() === 'Conectado') {
+          <p class="status text-success">
+            <span class="dot"></span> Conectado al local
+          </p>
+        }
+      </div>
+    </div>
+    
+    <div class="loyalty-metrics">
+       <div class="metric">
+         <span class="label">JcueCoins Acumulados</span>
+         <span class="value gold">{{ jcueCoins() }}</span>
+       </div>
+       <div class="metric">
+         <span class="label">Puntos Globales ELO</span>
+         <span class="value">{{ puntos() }}</span>
+       </div>
+    </div>
+
+    @if (statusGPS() === 'Conectado') {
+      <p class="hint">Recibiendo JcueCoins automáticamente por el tiempo activo en el establecimiento.</p>
+    }
+  </div>
+</div>
+
+<div class="section-title">ACCESOS RÁPIDOS</div>
+<div class="quick-grid">
+  <a routerLink="/usuario/reservas" class="quick-card cyan">
+    <span>📅</span>
+    <h4>Nueva Reserva</h4>
+    <p>Asegura tu mesa VIP</p>
+  </a>
+  <a routerLink="/usuario/disponibilidad" class="quick-card purple">
+    <span>🕐</span>
+    <h4>Disponibilidad</h4>
+    <p>Mesas en tiempo real</p>
+  </a>
+  <a routerLink="/usuario/perfil" class="quick-card green">
+    <span>👤</span>
+    <h4>Mi Perfil</h4>
+    <p>Actualizar datos</p>
+  </a>
+</div>

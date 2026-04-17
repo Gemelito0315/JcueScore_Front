@@ -1,0 +1,191 @@
+<div class="page">
+  <div class="page-header">
+    <div>
+      <h2>Inventario de Productos</h2>
+      <p>Gestiona los productos disponibles en el establecimiento</p>
+    </div>
+    <div class="header-actions">
+      <div class="view-toggle">
+        <button [class.active]="viewMode() === 'grid'" (click)="viewMode.set('grid')">⊞</button>
+        <button [class.active]="viewMode() === 'list'" (click)="viewMode.set('list')">☰</button>
+      </div>
+      <button class="btn-primary" (click)="openCreate()">+ Nuevo Producto</button>
+    </div>
+  </div>
+
+  <!-- GRID VIEW -->
+  @if (viewMode() === 'grid') {
+    <div class="products-grid">
+      @for (p of productos(); track p.id) {
+        <div class="product-card" [class.inactive]="!p.isActive">
+          <div class="product-img">
+            @if (p.imageUrl) {
+              <img [src]="p.imageUrl" [alt]="p.name" />
+            } @else {
+              <span class="no-img">📦</span>
+            }
+            <span class="status-badge" [class.active]="p.isActive">
+              {{ p.isActive ? 'Disponible' : 'No disponible' }}
+            </span>
+          </div>
+          <div class="product-info">
+            <h4>{{ p.name }}</h4>
+            <p class="sku">SKU: {{ p.sku }}</p>
+            <p class="desc">{{ p.description }}</p>
+            <div class="product-meta">
+              <span class="price">${{ p.price | number }}</span>
+              <span class="stock" [class.low]="p.stock <= p.minStock">
+                Stock: {{ p.stock }}
+              </span>
+            </div>
+          </div>
+          <div class="product-actions">
+            <button class="btn-icon" (click)="openEdit(p)">✏️ Editar</button>
+            <button class="btn-icon danger" (click)="delete(p.id)">🗑️</button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+
+  <!-- LIST VIEW -->
+  @if (viewMode() === 'list') {
+    <div class="table-container">
+      <table>
+        <thead>
+          <tr>
+            <th>Producto</th><th>SKU</th><th>Precio</th>
+            <th>Costo</th><th>Stock</th><th>Estado</th><th>Acciones</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (p of productos(); track p.id) {
+            <tr>
+              <td>
+                <div class="product-cell">
+                  @if (p.imageUrl) {
+                    <img [src]="p.imageUrl" class="thumb" />
+                  } @else {
+                    <span class="thumb-placeholder">📦</span>
+                  }
+                  <span>{{ p.name }}</span>
+                </div>
+              </td>
+              <td>{{ p.sku }}</td>
+              <td>${{ p.price | number }}</td>
+              <td>${{ p.cost | number }}</td>
+              <td [class.low-stock]="p.stock <= p.minStock">{{ p.stock }}</td>
+              <td>
+                <span class="status" [class.active]="p.isActive" (click)="toggleActive(p)">
+                  {{ p.isActive ? 'Activo' : 'Inactivo' }}
+                </span>
+              </td>
+              <td class="actions">
+                <button class="btn-icon" (click)="openEdit(p)">✏️</button>
+                <button class="btn-icon" (click)="delete(p.id)">🗑️</button>
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+  }
+</div>
+
+<!-- MODAL -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>{{ editingId() ? 'Editar Producto' : 'Nuevo Producto' }}</h3>
+        <button (click)="showModal.set(false)">✕</button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+
+        <!-- Imagen -->
+        <div class="img-upload">
+          <div class="img-preview">
+            @if (previewImg()) {
+              <img [src]="previewImg()!" alt="preview" />
+            } @else {
+              <span>📦</span>
+            }
+          </div>
+          <label class="upload-btn">
+            📷 Subir imagen
+            <input type="file" accept="image/*" (change)="onImageChange($event)" hidden />
+          </label>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Nombre *</label>
+            <input formControlName="name" placeholder="Coca-Cola 350ml" />
+          </div>
+          <div class="field">
+            <label>SKU *</label>
+            <input formControlName="sku" placeholder="SKU001" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Descripción</label>
+          <textarea formControlName="description" placeholder="Descripción del producto..." rows="2"></textarea>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Precio *</label>
+            <input formControlName="price" type="number" placeholder="3000" />
+          </div>
+          <div class="field">
+            <label>Costo *</label>
+            <input formControlName="cost" type="number" placeholder="1500" />
+          </div>
+        </div>
+
+        <div class="row">
+          <div class="field">
+            <label>Stock</label>
+            <input formControlName="stock" type="number" placeholder="0" />
+          </div>
+          <div class="field">
+            <label>Stock mínimo</label>
+            <input formControlName="minStock" type="number" placeholder="5" />
+          </div>
+          <div class="field">
+            <label>Unidad</label>
+            <select formControlName="unit">
+              <option value="unidad">Unidad</option>
+              <option value="caja">Caja</option>
+              <option value="litro">Litro</option>
+              <option value="kg">Kg</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Tipo de producto *</label>
+          <select formControlName="productTypeId">
+            <option [value]="null">Seleccionar...</option>
+            @for (c of categorias(); track c.id) {
+              <option [value]="c.id">{{ c.name }}</option>
+            }
+          </select>
+        </div>
+
+        <div class="field checkbox">
+          <label><input type="checkbox" formControlName="isActive" /> Producto disponible</label>
+        </div>
+
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
+            {{ loading() ? 'Guardando...' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+}

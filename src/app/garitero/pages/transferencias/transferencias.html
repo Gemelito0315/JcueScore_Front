@@ -1,0 +1,82 @@
+<div class="page-header">
+  <div>
+    <h2>📱 Transferencias Recibidas</h2>
+    <p>Registra los pagos por transferencia del día</p>
+  </div>
+  <div class="header-right">
+    <div class="total-badge">Total: ${{ totalTransferencias | number }}</div>
+    <button class="btn-primary" (click)="showModal.set(true)">+ Registrar</button>
+  </div>
+</div>
+
+<div class="transferencias-list">
+  @for (t of transferencias(); track t.id) {
+    <div class="trans-card">
+      <div class="trans-left">
+        <div class="trans-icon">📱</div>
+        <div class="trans-info">
+          <span class="trans-cliente">{{ t.cliente }}</span>
+          <span class="trans-concepto">{{ t.concepto }}</span>
+          <span class="trans-hora">{{ t.hora }}</span>
+        </div>
+      </div>
+      <span class="trans-monto">${{ t.monto | number }}</span>
+      @if (t.foto) {
+        <img [src]="t.foto" class="trans-foto" alt="Comprobante" />
+      } @else {
+        <span class="no-foto">Sin foto</span>
+      }
+      <button class="btn-del" (click)="delete(t.id)">🗑️</button>
+    </div>
+  }
+  @if (transferencias().length === 0) {
+    <div class="empty">
+      <span>📱</span>
+      <p>No hay transferencias registradas hoy</p>
+    </div>
+  }
+</div>
+
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>📱 Registrar Transferencia</h3>
+        <button (click)="showModal.set(false)">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="field">
+          <label>Nombre del cliente *</label>
+          <input formControlName="cliente" placeholder="Nombre de quien transfirió" />
+        </div>
+        <div class="field">
+          <label>Monto recibido *</label>
+          <div class="input-prefix">
+            <span>$</span>
+            <input formControlName="monto" type="number" placeholder="0" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Concepto</label>
+          <input formControlName="concepto" placeholder="Pago partida, bebidas..." />
+        </div>
+        <div class="field">
+          <label>Foto del comprobante</label>
+          <div class="foto-upload">
+            @if (fotoPreview()) {
+              <img [src]="fotoPreview()!" class="foto-preview" />
+            }
+            <label class="btn-foto">
+              📷 {{ fotoPreview() ? 'Cambiar foto' : 'Subir comprobante' }}
+              <input type="file" accept="image/*" (change)="onFotoChange($event)" hidden />
+            </label>
+          </div>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid">Registrar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+}
