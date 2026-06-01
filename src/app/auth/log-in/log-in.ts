@@ -4,6 +4,7 @@ import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { LoginInterface } from '../interfaces/login';
 import { Auth } from '../services/auth';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-log-in',
@@ -41,7 +42,7 @@ export class LogIn {
           } else if (isGaritero) {
             this.router.navigate(['/garitero']);
           } else {
-            this.http.get<any>('http://localhost:3000/maintenance').subscribe({
+            this.http.get<any>(`${environment.apiBaseUrl}/maintenance`).subscribe({
               next: (m) => this.router.navigate([m.active ? '/mantenimiento' : '/usuario']),
               error: () => this.router.navigate(['/usuario'])
             });

@@ -70,7 +70,11 @@ export class WebsocketsService {
 
   private connect() {
     try {
-      this.socket = new WebSocket(environment.wsUrl);
+      let wsUrl = environment.wsUrl;
+      if (wsUrl && !wsUrl.endsWith('/ws')) {
+        wsUrl = wsUrl.replace(/\/$/, '') + '/ws';
+      }
+      this.socket = new WebSocket(wsUrl);
       this.setupEventListeners();
     } catch (error) {
       console.error('Error conectando WebSocket:', error);
