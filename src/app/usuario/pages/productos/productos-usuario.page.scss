@@ -508,7 +508,52 @@
   }
 
   .productos-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+    gap: 16px;
+  }
+
+  @media (max-width: 480px) {
+    .productos-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 10px;
+    }
+
+    .producto-card {
+      border-radius: 12px;
+      .card-img-container {
+        height: 110px;
+        .stock-badge {
+          font-size: 0.7rem;
+          padding: 2px 6px;
+        }
+      }
+      .card-body {
+        padding: 10px;
+        .producto-name {
+          font-size: 0.9rem;
+          line-height: 1.2;
+        }
+        .producto-brand {
+          font-size: 0.75rem;
+          margin-bottom: 6px;
+        }
+        .producto-desc {
+          display: none;
+        }
+        .producto-details .precio {
+          font-size: 1.05rem;
+        }
+      }
+      .card-footer {
+        padding: 10px;
+        padding-top: 0;
+        .btn-agregar {
+          padding: 8px;
+          font-size: 0.8rem;
+          border-radius: 8px;
+        }
+      }
+    }
   }
 
   .carrito-flotante {

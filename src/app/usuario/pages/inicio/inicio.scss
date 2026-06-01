@@ -5,8 +5,20 @@
   align-items: center; margin-bottom: 28px;
   h2 { font-size: 1.5rem; font-weight: 700; color: #f1f5f9; margin-bottom: 6px; }
   p { color: #64748b; font-size: 0.9rem; }
+  
+  @media (max-width: 580px) {
+    padding: 20px;
+    flex-direction: column;
+    text-align: center;
+    gap: 16px;
+  }
 }
-.welcome-illustration { font-size: 3rem; opacity: 0.5; }
+.welcome-illustration { 
+  font-size: 3rem; opacity: 0.5;
+  @media (max-width: 580px) {
+    display: none;
+  }
+}
 
 .loyalty-container {
   display: flex; gap: 24px; margin-bottom: 36px; flex-wrap: wrap;
@@ -253,6 +265,22 @@
         transform: translateY(-1px);
       }
     }
+
+    @media (max-width: 768px) {
+      justify-content: center;
+      width: 100%;
+      flex-wrap: wrap;
+      a, button {
+        flex: 1 1 120px;
+      }
+    }
+    @media (max-width: 480px) {
+      flex-direction: column;
+      a, button {
+        width: 100%;
+        text-align: center;
+      }
+    }
   }
 }
 
@@ -465,7 +493,8 @@
   background: rgba(30, 41, 59, 0.9);
   border: 1px solid rgba(255, 255, 255, 0.08);
   border-radius: 24px;
-  width: 100%;
+  width: calc(100% - 24px);
+  margin: 12px;
   max-width: 520px;
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.4);
   display: flex;
@@ -512,7 +541,7 @@
 
   .mesas-seleccion-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
     gap: 12px;
     max-height: 220px;
     overflow-y: auto;
@@ -637,6 +666,15 @@
 
       &:hover:not(:disabled) { opacity: 0.95; }
       &:disabled { opacity: 0.4; cursor: not-allowed; }
+    }
+
+    @media (max-width: 480px) {
+      flex-direction: column-reverse;
+      gap: 8px;
+      button {
+        width: 100%;
+        padding: 14px;
+      }
     }
   }
 }

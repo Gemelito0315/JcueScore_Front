@@ -120,3 +120,26 @@
   color: #64748b; cursor: not-allowed; opacity: 0.7;
   &:hover { background: rgba(30,41,59,0.8); }
 }
+
+@media (max-width: 480px) {
+  .recursos-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+  }
+  .recurso-card {
+    padding: 14px;
+    gap: 6px;
+    h4 { font-size: 0.85rem; }
+    .tipo { font-size: 0.7rem; }
+    .precio { font-size: 0.78rem; }
+    .btn-reservar { font-size: 0.78rem; padding: 6px; }
+  }
+  .status-summary {
+    gap: 8px;
+  }
+  .summary-chip {
+    padding: 6px 12px;
+    font-size: 0.78rem;
+    strong { font-size: 0.95rem; }
+  }
+}

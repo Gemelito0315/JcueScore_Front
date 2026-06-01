@@ -104,3 +104,16 @@ form { display: flex; flex-direction: column; gap: 14px; }
   border-radius: 10px; font-weight: 700; cursor: pointer; align-self: flex-start;
   &:hover { opacity: 0.9; } &:disabled { opacity: 0.5; cursor: not-allowed; }
 }
+
+@media (max-width: 480px) {
+  .row {
+    flex-direction: column;
+    gap: 14px;
+  }
+  .btn-primary {
+    width: 100%;
+    align-self: stretch;
+    text-align: center;
+    padding: 14px;
+  }
+}
