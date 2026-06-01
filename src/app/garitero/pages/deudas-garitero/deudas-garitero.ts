@@ -2,13 +2,13 @@ import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 const API = 'http://localhost:3000';
 
 @Component({
   selector: 'app-deudas-garitero',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, RouterLink],
   templateUrl: './deudas-garitero.html',
   styleUrl: './deudas-garitero.scss'
 })
@@ -25,6 +25,13 @@ export class DeudasGaritero implements OnInit {
   loading           = signal(false);
   errorMsg          = signal('');
 
+  // Shift status
+  turnoActivo = signal(false);
+
+  // Archive to History Modal signals
+  showConfirmarPasarHistorial = signal(false);
+  deudaParaPasarHistorial = signal<any>(null);
+
   // Pestaña activa: 'activas' (clientes en sala con cuenta pendiente) | 'pagadas' (historial de pagadas hoy)
   tabActiva = signal<'activas' | 'pagadas'>('activas');
 
@@ -38,7 +45,12 @@ export class DeudasGaritero implements OnInit {
 
   // Señales computadas reactivas
   cuentasActivas = computed(() => {
-    // Mesas vivas formateadas como deudas
+    // Si estamos en Historial de Deudas, no mostramos mesas vivas (solo deudas no pagadas en DB)
+    if (!this.esCuentas()) {
+      return this.deudas().filter(d => d.estado !== 'pagada');
+    }
+
+    // Si estamos en Cuentas Hoy, mostramos mesas vivas y deudas de hoy
     const mesasComoDeudas = this.mesasActivas().map(m => ({
       id: 'mesa-' + m.id,
       name: m.jugadores?.[0]?.split(' ')[0] || 'Jugador',
@@ -52,23 +64,15 @@ export class DeudasGaritero implements OnInit {
       isLive: true
     }));
 
-    // Las cuentas activas SIEMPRE son las que no están pagadas, sin importar la fecha
     const deudasReales = this.deudas().filter(d => d.estado !== 'pagada');
     
     return [...mesasComoDeudas, ...deudasReales];
   });
 
   cuentasPagadas = computed(() => {
-    const isCuentas = this.esCuentas();
-    const todayStr = new Date().toDateString();
-    
-    // Si estamos en "Cuentas (Hoy)", mostramos el historial de las pagadas HOY.
-    // Si estamos en "Historial", mostramos las pagadas en días ANTERIORES.
-    return this.deudas().filter(d => {
-      if (d.estado !== 'pagada') return false; // Solo pagadas
-      const createdToday = new Date(d.fechaPago || d.fechaCreacion).toDateString() === todayStr;
-      return isCuentas ? createdToday : !createdToday;
-    });
+    // Para Cuentas Hoy o Deudas Historial, simplemente filtramos las pagadas de la lista de deudas cargada
+    // (ya que loadDeudas ya filtra por hoy o global desde la API!)
+    return this.deudas().filter(d => d.estado === 'pagada');
   });
 
   form = this.fb.group({
@@ -100,13 +104,19 @@ export class DeudasGaritero implements OnInit {
   ngOnInit() {
     this.http.get<any[]>(`${API}/users/names`).subscribe({ next: u => this.usuarios.set(u), error: () => {} });
     
+    this.verificarTurnoActivo();
     this.cargarTodo();
     
     // Tick local
-    this.intervalId = setInterval(() => this.tickMesas(), 1000);
+    this.intervalId = setInterval(() => {
+      this.tickMesas();
+    }, 1000);
     
     // Polling remoto
-    this.pollId = setInterval(() => this.cargarTodo(), 10000);
+    this.pollId = setInterval(() => {
+      this.verificarTurnoActivo();
+      this.cargarTodo();
+    }, 8000);
   }
 
   ngOnDestroy() {
@@ -114,9 +124,23 @@ export class DeudasGaritero implements OnInit {
     if (this.pollId) clearInterval(this.pollId);
   }
 
+  verificarTurnoActivo() {
+    this.http.get<any>(`${API}/operaciones/turno/activo`).subscribe({
+      next: (t) => {
+        this.turnoActivo.set(!!t);
+      },
+      error: () => this.turnoActivo.set(false)
+    });
+  }
+
   cargarTodo() {
     this.loadDeudas();
-    this.cargarMesasVivas();
+    // Solo cargar mesas si es Cuentas Hoy
+    if (this.esCuentas()) {
+      this.cargarMesasVivas();
+    } else {
+      this.mesasActivas.set([]);
+    }
   }
 
   cargarMesasVivas() {
@@ -145,6 +169,7 @@ export class DeudasGaritero implements OnInit {
   }
 
   tickMesas() {
+    if (!this.esCuentas() || this.mesasActivas().length === 0) return;
     this.mesasActivas.update(mesas => mesas.map(m => {
       const diffMs = Date.now() - new Date(m.tiempoInicio).getTime();
       const horas = diffMs / (1000 * 3600);
@@ -154,7 +179,8 @@ export class DeudasGaritero implements OnInit {
   }
 
   loadDeudas() {
-    this.http.get<any[]>(`${API}/deudas`).subscribe({
+    const endpoint = this.esCuentas() ? `${API}/deudas/hoy` : `${API}/deudas`;
+    this.http.get<any[]>(endpoint).subscribe({
       next: d => this.deudas.set(d),
       error: () => {}
     });
@@ -162,7 +188,6 @@ export class DeudasGaritero implements OnInit {
 
   setModo(modo: 'registrado' | 'externo') {
     this.modoCliente.set(modo);
-    // Limpiar campos del otro modo al cambiar
     if (modo === 'registrado') {
       this.form.patchValue({ nombreCliente: '', telefonoCliente: '' });
     } else {
@@ -195,6 +220,25 @@ export class DeudasGaritero implements OnInit {
     });
   }
 
+  openPasarHistorial(d: any) {
+    this.deudaParaPasarHistorial.set(d);
+    this.showConfirmarPasarHistorial.set(true);
+  }
+
+  confirmarPasarHistorial() {
+    const d = this.deudaParaPasarHistorial();
+    if (!d) return;
+    this.loading.set(true);
+    this.http.post(`${API}/deudas/${d.id}/pasar-historial`, {}).subscribe({
+      next: () => {
+        this.loadDeudas();
+        this.showConfirmarPasarHistorial.set(false);
+        this.loading.set(false);
+      },
+      error: () => this.loading.set(false)
+    });
+  }
+
   openModal() {
     this.form.reset({ monto: 0 });
     this.modoCliente.set('registrado');
@@ -207,7 +251,6 @@ export class DeudasGaritero implements OnInit {
     const val = this.form.value;
     const esExterno = this.modoCliente() === 'externo';
 
-    // Validaciones específicas por modo
     if (!esExterno && !val.userId) {
       this.errorMsg.set('Selecciona un cliente registrado.');
       return;

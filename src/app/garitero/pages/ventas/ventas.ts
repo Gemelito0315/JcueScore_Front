@@ -174,7 +174,7 @@ export class Ventas implements OnInit, OnDestroy {
     });
 
     // 4. Obtener deudas pendientes (cuentas por cobrar)
-    this.http.get<any[]>(`${API}/deudas`).subscribe({
+    this.http.get<any[]>(`${API}/deudas/hoy`).subscribe({
       next: (deudas) => {
         // Filtrar deudas que no estén pagadas
         this.deudasActivas.set(deudas.filter(d => d.estado !== 'pagada'));

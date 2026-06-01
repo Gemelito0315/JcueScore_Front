@@ -1,24 +1,40 @@
 <div class="page-header-premium">
   <div class="header-titles">
-    <h2>👥 Cuentas y Consumos en Establecimiento</h2>
-    <p>Control de comandas activas, cuentas de juego transferidas y saldos pendientes</p>
+    <h2>{{ esCuentas() ? '👥 Cuentas Hoy (Turno Activo)' : '📜 Historial General de Deudas' }}</h2>
+    <p>{{ esCuentas() ? 'Control de consumos, mesas en curso y saldos pendientes del turno actual.' : 'Registro y consulta histórica de todas las deudas registradas en el establecimiento.' }}</p>
   </div>
   <div class="header-actions">
     <div class="total-badge">
-      Por cobrar en sala: <span>${{ totalPendiente | number:'1.0-0' }}</span>
+      {{ esCuentas() ? 'Por cobrar hoy:' : 'Deuda histórica total:' }} <span>${{ totalPendiente | number:'1.0-0' }}</span>
     </div>
-    <button class="btn-primary-glow" (click)="openModal()">+ Registrar Deuda Manual</button>
+    @if (esCuentas() && turnoActivo()) {
+      <button class="btn-primary-glow" (click)="openModal()">+ Registrar Deuda Manual</button>
+    }
   </div>
 </div>
+
+<!-- ADVERTENCIA DE TURNO NO ACTIVO -->
+@if (esCuentas() && !turnoActivo()) {
+  <div class="empty-banner-glass animate-fade-in" style="border: 1px solid rgba(239, 68, 68, 0.2); background: rgba(239, 68, 68, 0.05); margin-bottom: 25px; border-radius: 12px; padding: 30px;">
+    <span class="empty-icon" style="font-size: 3rem; margin-bottom: 15px; display: block;">🔒</span>
+    <h4 style="color: #f87171; font-size: 1.25rem; margin-bottom: 8px;">No hay un turno abierto actualmente</h4>
+    <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 20px auto; font-size: 0.95rem; line-height: 1.5;">
+      Para registrar nuevas cuentas o realizar cobros de consumos del día, primero debes abrir una jornada laboral desde el panel de caja.
+    </p>
+    <button class="btn-primary-glow" routerLink="/garitero/caja" style="padding: 10px 24px; font-size: 0.95rem; display: inline-flex; align-items: center; gap: 8px;">
+      📂 Ir al Control de Caja
+    </button>
+  </div>
+}
 
 <!-- SELECTOR DE PESTAÑAS (TABS SELECTOR) -->
 <div class="tabs-selector-container">
   <button class="tab-btn" [class.active]="tabActiva() === 'activas'" (click)="tabActiva.set('activas')">
-    👥 Clientes en Establecimiento (Cuentas Activas)
+    {{ esCuentas() ? '👥 Clientes en Sala (Cuentas Activas)' : '⚠️ Deudas Pendientes (Historial)' }}
     <span class="count-badge active">{{ cuentasActivas().length }}</span>
   </button>
   <button class="tab-btn" [class.active]="tabActiva() === 'pagadas'" (click)="tabActiva.set('pagadas')">
-    ✅ Historial de Pagos Recibidos
+    {{ esCuentas() ? '✅ Cobros Recibidos Hoy' : '✅ Deudas Solventadas' }}
     <span class="count-badge paid">{{ cuentasPagadas().length }}</span>
   </button>
 </div>
@@ -80,10 +96,20 @@
           </span>
 
           @if (!d.isLive) {
-            <button class="btn-cobrar-premium" (click)="openPago(d)">💵 Cobrar Cuenta</button>
+            <div class="actions-row-flex" style="display: flex; gap: 8px; margin-top: 10px; width: 100%; justify-content: flex-end;">
+              <button class="btn-cobrar-premium" (click)="openPago(d)" style="min-width: 100px;">💵 Cobrar</button>
+              @if (esCuentas()) {
+                <button class="btn-archive-premium" (click)="openPasarHistorial(d)" 
+                        style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 4px;"
+                        onmouseover="this.style.background='rgba(245, 158, 11, 0.2)'; this.style.borderColor='#f59e0b'"
+                        onmouseout="this.style.background='rgba(245, 158, 11, 0.1)'; this.style.borderColor='rgba(245, 158, 11, 0.3)'">
+                  📤 Historial
+                </button>
+              }
+            </div>
           } @else {
-            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa; text-align: right;">
-              ⚠️ Cierra esta mesa desde el Punto de Venta
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #f59e0b; text-align: right; font-weight: 500;">
+              ⚠️ Cierra esta mesa ocupada desde Ventas
             </div>
           }
         </div>
@@ -93,7 +119,7 @@
       <div class="empty-banner-glass">
         <span class="empty-icon">✅</span>
         <h4>¡Excelente! Todo al día</h4>
-        <p>No hay cuentas activas o consumos de clientes pendientes de pago en el establecimiento.</p>
+        <p>{{ esCuentas() ? 'No tienes deudas activas ni mesas en juego pendientes de cobro en este turno.' : 'No existen deudas pendientes registradas en el historial general.' }}</p>
       </div>
     }
   }
@@ -131,7 +157,7 @@
       <div class="empty-banner-glass">
         <span class="empty-icon">📋</span>
         <h4>Historial vacío</h4>
-        <p>Aún no se han cobrado cuentas durante esta sesión.</p>
+        <p>{{ esCuentas() ? 'Aún no has registrado cobros de deudas durante la jornada actual.' : 'No hay registros de deudas solventadas en el historial.' }}</p>
       </div>
     }
   }
@@ -204,7 +230,7 @@
         </div>
         <div class="field-premium">
           <label>Notas de la Deuda <span class="opcional">(opcional)</span></label>
-          <textarea formControlName="notas" rows="2" placeholder="Observaciones de pago..."></textarea>
+          <textarea formControlName="notes" rows="2" placeholder="Observaciones de pago..."></textarea>
         </div>
 
         @if (errorMsg()) {
@@ -271,6 +297,29 @@
           </button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL CONFIRMAR PASAR A HISTORIAL -->
+@if (showConfirmarPasarHistorial()) {
+  <div class="modal-overlay-glass" (click)="showConfirmarPasarHistorial.set(false)">
+    <div class="modal-premium confirmation" (click)="$event.stopPropagation()" style="max-width: 420px; text-align: center; border: 1px solid rgba(245, 158, 11, 0.2);">
+      <div class="modal-header-premium" style="justify-content: center; border-bottom: none; padding-bottom: 0;">
+        <span style="font-size: 3rem; margin-bottom: 10px; display: block;">📤</span>
+      </div>
+      <h3 style="color: #f59e0b; margin-top: 5px; font-size: 1.35rem;">¿Pasar cuenta a Historial?</h3>
+      <p style="color: var(--text-secondary); font-size: 0.9rem; margin: 15px 0 25px 0; line-height: 1.5; text-align: left;">
+        La cuenta de <strong style="color: #fff;">{{ getNombreCliente(deudaParaPasarHistorial()) }}</strong> por valor de <strong style="color: #f87171;">${{ getPendiente(deudaParaPasarHistorial()) | number }}</strong> se transferirá al historial general de deudas.
+        <br/><br/>
+        Esto **liberará el bloqueo del turno de hoy**, permitiéndote cerrar la caja normalmente al finalizar tu jornada, pero el saldo seguirá guardado como pendiente para su cobro posterior.
+      </p>
+      <div class="modal-actions-premium" style="justify-content: center; gap: 12px; margin-top: 15px;">
+        <button type="button" class="btn-secondary-premium" (click)="showConfirmarPasarHistorial.set(false)">Cancelar</button>
+        <button type="button" class="btn-primary-premium" style="background: linear-gradient(135deg, #f59e0b, #d97706); box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);" (click)="confirmarPasarHistorial()" [disabled]="loading()">
+          @if (loading()) { ⏳ Procesando... } @else { Confirmar y Traspasar }
+        </button>
+      </div>
     </div>
   </div>
 }
