@@ -1,0 +1,150 @@
+<div class="mi-partida-container">
+  <div class="page-header">
+    <div>
+      <h2>Mi Partida en Vivo</h2>
+      <p>Supervisa tu mesa activa y el tiempo transcurrido</p>
+    </div>
+  </div>
+
+  @if (loading()) {
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <p>Conectando con tu mesa...</p>
+    </div>
+  } @else {
+    @if (partidaActiva()) {
+      <div class="live-dashboard">
+        <!-- Tarjeta Principal de la Mesa -->
+        <div class="mesa-card">
+          <div class="card-glow"></div>
+          <div class="mesa-header">
+            <span class="status-badge live">
+              <span class="pulse-dot"></span> EN VIVO
+            </span>
+            <h3>{{ partidaActiva().recursoCode }}</h3>
+          </div>
+          
+          <div class="mesa-content">
+            <div class="timer-section">
+              <span class="label">TIEMPO TRANSCURRIDO</span>
+              <div class="timer-display">{{ cronometroActivo() }}</div>
+            </div>
+
+            <div class="info-grid">
+              <div class="info-item">
+                <span class="label">Costo Acumulado</span>
+                <span class="value gold">{{ formatCurrency(costoAcumulado()) }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Jugador 1</span>
+                <span class="value">{{ partidaActiva().jugador1Name || 'Sin Registrar' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Jugador 2</span>
+                <span class="value">{{ partidaActiva().jugador2Name || 'Juego Libre' }}</span>
+              </div>
+              <div class="info-item">
+                <span class="label">Inicio</span>
+                <span class="value">{{ partidaActiva().horaInicio | date:'shortTime' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="actions-panel">
+          <h3>Acciones de la Mesa</h3>
+          <div class="actions-grid">
+            <a [routerLink]="['/mesa', partidaActiva().recursoCode]" target="_blank" class="action-btn cyan">
+              <span class="icon">📺</span>
+              <span class="text">Ver Marcador &amp; VAR</span>
+            </a>
+            <button class="action-btn red" (click)="abrirModalLlamado()">
+              <span class="icon">🔔</span>
+              <span class="text">Llamar Garitero</span>
+            </button>
+            <a routerLink="/usuario/productos" class="action-btn green">
+              <span class="icon">🍔</span>
+              <span class="text">Pedir Comida/Bebida</span>
+            </a>
+            <a routerLink="/usuario/pedidos" class="action-btn purple">
+              <span class="icon">📋</span>
+              <span class="text">Ver mis Pedidos</span>
+            </a>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <div class="empty-state">
+        <span class="icon">🎱</span>
+        <h3>No tienes ninguna partida activa</h3>
+        <p>Cuando te asignen una mesa, podrás ver el tiempo y costo en vivo aquí.</p>
+        <a routerLink="/usuario/inicio" class="btn-primary">Ir al Inicio</a>
+      </div>
+    }
+  }
+</div>
+
+<!-- ===== MODAL LLAMAR AL GARITERO ===== -->
+@if (showLlamadoModal()) {
+  <div class="modal-overlay" (click)="showLlamadoModal.set(false)">
+    <div class="modal-llamado" (click)="$event.stopPropagation()">
+
+      @if (llamadoEnviado()) {
+        <!-- ESTADO ÉXITO -->
+        <div class="llamado-success">
+          <div class="success-icon">✅</div>
+          <h3>¡Llamado Enviado!</h3>
+          <p>El garitero ha sido notificado y se dirigirá a tu mesa en breve.</p>
+        </div>
+      } @else {
+        <!-- FORMULARIO -->
+        <div class="modal-header">
+          <h3>🔔 Llamar al Garitero</h3>
+          <button class="btn-cerrar-modal" (click)="showLlamadoModal.set(false)">✕</button>
+        </div>
+
+        <div class="modal-body">
+          <p class="instruccion">Selecciona una opción rápida o escribe tu mensaje:</p>
+
+          <div class="opciones-rapidas">
+            @for (op of opcionesRapidas; track op.value) {
+              <button
+                class="opcion-btn"
+                [class.selected]="mensajeLlamado() === op.value"
+                (click)="seleccionarOpcionRapida(op.value)"
+              >
+                {{ op.label }}
+              </button>
+            }
+          </div>
+
+          <div class="campo-personalizado">
+            <label>O escribe un mensaje personalizado:</label>
+            <textarea
+              rows="3"
+              placeholder="Ej: Necesito una cerveza y tiza extra..."
+              [value]="mensajeLlamado()"
+              (input)="mensajeLlamado.set($any($event.target).value)"
+            ></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button class="btn-cancelar" (click)="showLlamadoModal.set(false)">Cancelar</button>
+          <button
+            class="btn-enviar"
+            [disabled]="!mensajeLlamado().trim() || enviandoLlamado()"
+            (click)="enviarLlamado()"
+          >
+            @if (enviandoLlamado()) {
+              <span class="spinner-inline"></span> Enviando...
+            } @else {
+              🔔 Llamar Garitero
+            }
+          </button>
+        </div>
+      }
+    </div>
+  </div>
+}

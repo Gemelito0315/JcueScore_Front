@@ -1,7 +1,8 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, computed, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
+import { Router } from '@angular/router';
 
 const API = 'http://localhost:3000';
 
@@ -14,15 +15,31 @@ const API = 'http://localhost:3000';
 export class Deudas implements OnInit {
   private http = inject(HttpClient);
   private fb = inject(FormBuilder);
+  private router = inject(Router);
 
   deudas = signal<any[]>([]);
   usuarios = signal<any[]>([]);
-  resumen = signal({ pendientes: 0, parciales: 0, pagadas: 0, total_pendiente: 0 });
   showModal = signal(false);
   showPagoModal = signal(false);
   deudaSeleccionada = signal<any>(null);
   loading = signal(false);
   filtro = signal('todas');
+
+  esCuentas = computed(() => this.router.url.includes('cuentas'));
+
+  deudasPorModulo = computed(() => {
+    const isCuentas = this.esCuentas();
+    const todayStr = new Date().toDateString();
+    return this.deudas().filter(d => {
+      const createdToday = new Date(d.fechaCreacion).toDateString() === todayStr;
+      return isCuentas ? createdToday : !createdToday;
+    });
+  });
+
+  // Señales computadas reactivas para los contadores y filtros de resumen
+  pendientesCount = computed(() => this.deudasPorModulo().filter(d => d.estado === 'pendiente').length);
+  parcialesCount  = computed(() => this.deudasPorModulo().filter(d => d.estado === 'parcial').length);
+  pagadasCount    = computed(() => this.deudasPorModulo().filter(d => d.estado === 'pagada').length);
 
   form = this.fb.group({
     userId: [null, Validators.required],
@@ -37,38 +54,29 @@ export class Deudas implements OnInit {
 
   ngOnInit() {
     this.loadDeudas();
-    this.loadResumen();
     this.http.get<any[]>(`${API}/users`).subscribe(u => this.usuarios.set(u));
   }
 
   loadDeudas() {
     this.http.get<any[]>(`${API}/deudas`).subscribe({
       next: d => this.deudas.set(d),
-      error: () => this.deudas.set(this.mockDeudas)
+      error: () => this.deudas.set([])
     });
   }
 
-  loadResumen() {
-    this.http.get<any>(`${API}/deudas/resumen`).subscribe({
-      next: r => this.resumen.set(r),
-      error: () => {}
-    });
+  getNombreCliente(d: any): string {
+    if (d.esExterno || !d.name) return d.nombreCliente || 'Visitante';
+    const lastName = d.lastName || '';
+    return `${d.name} ${lastName}`.trim();
   }
-
-  // Mock mientras se conecta el back
-  mockDeudas = [
-    { id: 1, name: 'Carlos', lastName: 'Rodríguez', descripcion: 'Partida del 8 de abril', monto: 25000, montoPagado: 0, estado: 'pendiente', fechaCreacion: '2026-04-08', notas: 'Prometió pagar el viernes' },
-    { id: 2, name: 'Andrés', lastName: 'Martínez', descripcion: 'Bebidas + partida', monto: 35000, montoPagado: 15000, estado: 'parcial', fechaCreacion: '2026-04-07', notas: '' },
-    { id: 3, name: 'Luis', lastName: 'Pérez', descripcion: 'Partida del 5 de abril', monto: 20000, montoPagado: 20000, estado: 'pagada', fechaCreacion: '2026-04-05', notas: '' },
-  ];
 
   get deudasFiltradas() {
-    if (this.filtro() === 'todas') return this.deudas();
-    return this.deudas().filter(d => d.estado === this.filtro());
+    if (this.filtro() === 'todas') return this.deudasPorModulo();
+    return this.deudasPorModulo().filter(d => d.estado === this.filtro());
   }
 
   get totalPendiente() {
-    return this.deudas()
+    return this.deudasPorModulo()
       .filter(d => d.estado !== 'pagada')
       .reduce((a, d) => a + (parseFloat(d.monto) - parseFloat(d.montoPagado)), 0);
   }
@@ -81,9 +89,20 @@ export class Deudas implements OnInit {
   save() {
     if (this.form.invalid) return;
     this.loading.set(true);
-    this.http.post(`${API}/deudas`, this.form.value).subscribe({
-      next: () => { this.loadDeudas(); this.loadResumen(); this.showModal.set(false); this.loading.set(false); },
-      error: () => this.loading.set(false)
+    const val = this.form.value;
+    const payload = {
+      userId:      Number(val.userId),
+      descripcion: val.descripcion,
+      monto:       Number(val.monto),
+      notas:       val.notas || null,
+    };
+    this.http.post(`${API}/deudas`, payload).subscribe({
+      next: () => { this.loadDeudas(); this.showModal.set(false); this.loading.set(false); },
+      error: (err) => {
+        this.loading.set(false);
+        const msg = err.error?.message;
+        alert(Array.isArray(msg) ? msg[0] : msg || 'Error al registrar deuda');
+      }
     });
   }
 
@@ -99,7 +118,7 @@ export class Deudas implements OnInit {
     this.loading.set(true);
     const id = this.deudaSeleccionada()?.id;
     this.http.post(`${API}/deudas/${id}/pago`, this.pagoForm.value).subscribe({
-      next: () => { this.loadDeudas(); this.loadResumen(); this.showPagoModal.set(false); this.loading.set(false); },
+      next: () => { this.loadDeudas(); this.showPagoModal.set(false); this.loading.set(false); },
       error: () => this.loading.set(false)
     });
   }
@@ -110,7 +129,7 @@ export class Deudas implements OnInit {
   }
 
   getEstadoColor(estado: string) {
-    return { pendiente: '#f87171', parcial: '#f59e0b', pagada: '#34d399' }[estado] ?? '#64748b';
+    return { pendiente: '#f87171', parcial: '#f59e0b', pagada: '#10b981' }[estado] ?? '#64748b';
   }
 
   getPendiente(d: any) {

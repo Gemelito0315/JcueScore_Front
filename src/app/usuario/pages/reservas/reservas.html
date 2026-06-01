@@ -6,30 +6,38 @@
   <button class="btn-primary" (click)="showForm.set(true)">+ Nueva Reserva</button>
 </div>
 
-<!-- LISTA -->
-<div class="reservas-list">
-  @for (r of reservas(); track r.id) {
-    <div class="reserva-card">
-      <div class="reserva-icon">
-        {{ r.tipo === 'Billar' ? '🎱' : r.tipo === 'Tejo' ? '🎯' : '🎳' }}
+@if (loading()) {
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando reservas...</p>
+  </div>
+} @else {
+  <div class="reservas-list">
+    @for (r of reservas(); track r.id) {
+      <div class="reserva-card">
+        <div class="reserva-icon">
+          {{ r.tipo === 'Billar' ? '🎱' : r.tipo === 'Tejo' ? '🎯' : r.tipo === 'Bolirama' ? '🎳' : '🎮' }}
+        </div>
+        <div class="reserva-info">
+          <h4>{{ r.tipo }} · {{ r.mesa }}</h4>
+          <p>📅 {{ r.fecha }} &nbsp; 🕐 {{ r.hora }}</p>
+          @if (r.notas) { <p class="notas">📝 {{ r.notas }}</p> }
+        </div>
+        <span class="badge" [class]="getEstadoClass(r.estado)">{{ r.estado }}</span>
+        @if (r.estado === 'confirmada' || r.estado === 'pendiente') {
+          <button class="btn-cancel" (click)="cancelar(r.id)">Cancelar</button>
+        }
       </div>
-      <div class="reserva-info">
-        <h4>{{ r.tipo }} · {{ r.mesa }}</h4>
-        <p>📅 {{ r.fecha }} &nbsp; 🕐 {{ r.hora }}</p>
+    }
+    @if (reservas().length === 0) {
+      <div class="empty-state">
+        <span>📅</span>
+        <p>No tienes reservas activas</p>
+        <button class="btn-primary" (click)="showForm.set(true)">Crear mi primera reserva</button>
       </div>
-      <span class="badge" [class]="getEstadoClass(r.estado)">{{ r.estado }}</span>
-      @if (r.estado === 'confirmada') {
-        <button class="btn-cancel" (click)="cancelar(r.id)">Cancelar</button>
-      }
-    </div>
-  }
-  @if (reservas().length === 0) {
-    <div class="empty-state">
-      <span>📅</span>
-      <p>No tienes reservas activas</p>
-    </div>
-  }
-</div>
+    }
+  </div>
+}
 
 <!-- MODAL NUEVA RESERVA -->
 @if (showForm()) {
@@ -40,18 +48,25 @@
         <button (click)="showForm.set(false)">✕</button>
       </div>
       <form [formGroup]="form" (ngSubmit)="guardar()" class="modal-form">
+
         <div class="field">
-          <label>Tipo de juego</label>
-          <select formControlName="tipo">
-            @for (t of tiposJuego; track t) {
-              <option [value]="t.toLowerCase()">{{ t }}</option>
+          <label>Mesa / Recurso</label>
+          <select formControlName="recursoId">
+            <option [value]="null">— Seleccionar —</option>
+            @for (r of recursos(); track r.id) {
+              <option [value]="r.id">{{ r.code }} · {{ r.gameType?.name ?? r.gameType }}</option>
             }
           </select>
+          @if (recursos().length === 0) {
+            <small class="hint">No hay recursos disponibles en este momento</small>
+          }
         </div>
+
         <div class="field">
           <label>Fecha</label>
-          <input type="date" formControlName="fecha" />
+          <input type="date" formControlName="fecha" [min]="hoy" />
         </div>
+
         <div class="row">
           <div class="field">
             <label>Hora inicio</label>
@@ -62,13 +77,17 @@
             <input type="time" formControlName="horaFin" />
           </div>
         </div>
+
         <div class="field">
           <label>Notas (opcional)</label>
           <textarea formControlName="notas" rows="2" placeholder="Alguna indicación..."></textarea>
         </div>
+
         <div class="modal-actions">
           <button type="button" class="btn-secondary" (click)="showForm.set(false)">Cancelar</button>
-          <button type="submit" class="btn-primary">Confirmar reserva</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">
+            {{ saving() ? 'Guardando...' : 'Confirmar reserva' }}
+          </button>
         </div>
       </form>
     </div>

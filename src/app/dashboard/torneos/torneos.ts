@@ -1,4 +1,4 @@
-import { Component, signal, inject, OnInit } from '@angular/core';
+import { Component, signal, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TorneosService, Torneo } from '../../core/services/torneos.service';
@@ -32,7 +32,8 @@ export interface Group {
   standalone: true,
   imports: [CommonModule, FormsModule],
   templateUrl: './torneos.html',
-  styleUrls: ['./torneos.scss']
+  styleUrls: ['./torneos.scss'],
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class Torneos implements OnInit {
   private torneosService = inject(TorneosService);
@@ -65,60 +66,53 @@ export class Torneos implements OnInit {
   groups = signal<Group[]>([]);
   bracketRounds = signal<any[]>([]);
 
-  // ── Datos mock de demo (fallback si no hay torneo) ────
-  private readonly MOCK_PLAYERS: TournamentPlayer[] = [
-    { id: 1, name: 'Juan Pérez', handicap: 30, club: 'Los Héroes' },
-    { id: 2, name: 'Carlos Díaz', handicap: 25, club: 'Sin Club' },
-    { id: 3, name: 'Manuel Rojas', handicap: 30, club: 'JcueScore Elite' },
-    { id: 4, name: 'Alberto Solis', handicap: 20, club: 'Master Club' },
-    { id: 5, name: 'Miguel Gómez', handicap: 40, club: 'Los Héroes' },
-    { id: 6, name: 'Fernando Paz', handicap: 25, club: 'Diamante' },
-  ];
+  // ── Ruleta de Sorteos ─────────────────────────────────
+  ruletaActiva = signal(false);
+  ruletaGirando = signal(false);
+  nombreAnimado1 = signal('???');
+  nombreAnimado2 = signal('???');
 
-  private readonly MOCK_GROUPS: Group[] = [
-    {
-      id: 1, name: 'Grupo A',
-      players: [
-        { id: 1, name: 'Juan Pérez', handicap: 30 },
-        { id: 2, name: 'Carlos Díaz', handicap: 25 },
-        { id: 3, name: 'Manuel Rojas', handicap: 30 }
-      ],
-      matches: [
-        { id: 'g1m1', p1Id: 1, p2Id: 2, p1Score: 30, p2Score: 18, innings: 24, played: true },
-        { id: 'g1m2', p1Id: 1, p2Id: 3, p1Score: 30, p2Score: 28, innings: 31, played: true },
-        { id: 'g1m3', p1Id: 2, p2Id: 3, p1Score: 0, p2Score: 0, innings: 0, played: false },
-      ]
-    },
-    {
-      id: 2, name: 'Grupo B',
-      players: [
-        { id: 4, name: 'Alberto Solis', handicap: 20 },
-        { id: 5, name: 'Miguel Gómez', handicap: 40 },
-        { id: 6, name: 'Fernando Paz', handicap: 25 }
-      ],
-      matches: [
-        { id: 'g2m1', p1Id: 4, p2Id: 5, p1Score: 20, p2Score: 38, innings: 30, played: true },
-        { id: 'g2m2', p1Id: 4, p2Id: 6, p1Score: 18, p2Score: 25, innings: 28, played: true },
-        { id: 'g2m3', p1Id: 5, p2Id: 6, p1Score: 0, p2Score: 0, innings: 0, played: false },
-      ]
-    }
-  ];
+  iniciarSorteo() {
+    const activo = this.torneoActivo();
+    if (!activo) return;
 
-  private readonly MOCK_BRACKET = [
-    {
-      name: 'Semifinal',
-      matches: [
-        { id: 'sf1', p1: 'Juan Pérez', p1Sub: 'PG 1.090', p2: 'Alberto Solis', p2Sub: 'PG 0.655', p1Score: 30, p2Score: 19, status: 'finished' },
-        { id: 'sf2', p1: 'Miguel Gómez', p1Sub: 'PG 1.266', p2: 'Fernando Paz', p2Sub: 'PG 0.892', p1Score: 15, p2Score: 14, status: 'live' }
-      ]
-    },
-    {
-      name: 'Gran Final',
-      matches: [
-        { id: 'f1', p1: 'Juan Pérez', p1Sub: 'Ganador SF1', p2: 'TBD', p2Sub: 'Ganador SF2', p1Score: 0, p2Score: 0, status: 'waiting' }
-      ]
-    }
-  ];
+    this.ruletaActiva.set(true);
+    this.ruletaGirando.set(true);
+    this.nombreAnimado1.set('Preparando...');
+    this.nombreAnimado2.set('Preparando...');
+
+    const players = this.registeredPlayers();
+    
+    // Animación de ruleta
+    const interval = setInterval(() => {
+      if (players.length >= 2) {
+         this.nombreAnimado1.set(players[Math.floor(Math.random() * players.length)].name);
+         this.nombreAnimado2.set(players[Math.floor(Math.random() * players.length)].name);
+      }
+    }, 100);
+
+    this.torneosService.generarPartidos(activo.id).subscribe({
+      next: () => {
+        setTimeout(() => {
+          clearInterval(interval);
+          this.ruletaGirando.set(false);
+          this.nombreAnimado1.set('¡Sorteo');
+          this.nombreAnimado2.set('Completado!');
+          setTimeout(() => {
+            this.ruletaActiva.set(false);
+            this.cargarTorneos();
+            this.switchTab('grupos');
+          }, 2000);
+        }, 4000);
+      },
+      error: (err) => {
+        console.error('Error generando partidos', err);
+        clearInterval(interval);
+        this.ruletaActiva.set(false);
+        alert('Hubo un error al generar los partidos. Verifica que haya suficientes jugadores.');
+      }
+    });
+  }
 
   ngOnInit() {
     this.cargarTorneos();
@@ -150,33 +144,31 @@ export class Torneos implements OnInit {
             this.registeredPlayers.set([]);
           }
 
-          // Grupos y bracket: usar mock por ahora si no hay partidos reales
-          if (!activo.partidos || activo.partidos.length === 0) {
-            this.groups.set(this.MOCK_GROUPS);
-            this.bracketRounds.set(this.MOCK_BRACKET);
+          // Grupos y bracket: Solo usar datos reales
+          if (activo.partidos && activo.partidos.length > 0) {
+            // TODO: mapear partidos reales a grupos/brackets aquí
           } else {
-            this.groups.set(this.MOCK_GROUPS); // TODO: mapear partidos reales a grupos
-            this.bracketRounds.set(this.MOCK_BRACKET);
+            this.groups.set([]);
+            this.bracketRounds.set([]);
           }
         } else {
-          // Sin torneo activo — usar demo
+          // Sin torneo activo
           this.torneoActivo.set(null);
-          this.jcueCoinsPool.set(15000);
-          this.registeredPlayers.set(this.MOCK_PLAYERS);
-          this.groups.set(this.MOCK_GROUPS);
-          this.bracketRounds.set(this.MOCK_BRACKET);
+          this.jcueCoinsPool.set(0);
+          this.registeredPlayers.set([]);
+          this.groups.set([]);
+          this.bracketRounds.set([]);
         }
 
         this.loading.set(false);
       },
       error: (err) => {
         console.error('Error cargando torneos:', err);
-        // En caso de error de red usar datos demo
         this.torneoActivo.set(null);
-        this.jcueCoinsPool.set(15000);
-        this.registeredPlayers.set(this.MOCK_PLAYERS);
-        this.groups.set(this.MOCK_GROUPS);
-        this.bracketRounds.set(this.MOCK_BRACKET);
+        this.jcueCoinsPool.set(0);
+        this.registeredPlayers.set([]);
+        this.groups.set([]);
+        this.bracketRounds.set([]);
         this.loading.set(false);
       }
     });

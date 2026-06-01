@@ -1,17 +1,8 @@
 import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
-import { MatButtonModule } from '@angular/material/button';
-import { MatIconModule } from '@angular/material/icon';
-import { MatTableModule } from '@angular/material/table';
-import { MatPaginatorModule } from '@angular/material/paginator';
-import { MatSelectModule } from '@angular/material/select';
-import { MatFormFieldModule } from '@angular/material/form-field';
-import { MatInputModule } from '@angular/material/input';
-import { MatTabsModule } from '@angular/material/tabs';
-import { MatChipsModule } from '@angular/material/chips';
+import { FormsModule } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { SnackbarService } from '../../../core/services/snackbar.service';
 
 import { ProductosService, Producto } from '../../../core/services/productos.service';
@@ -21,25 +12,12 @@ import { MesasService } from '../../../core/services/mesas.service';
 @Component({
   selector: 'app-productos-usuario-page',
   standalone: true,
-  imports: [
-    CommonModule,
-    FormsModule,
-    ReactiveFormsModule,
-    MatCardModule,
-    MatButtonModule,
-    MatIconModule,
-    MatTableModule,
-    MatPaginatorModule,
-    MatSelectModule,
-    MatFormFieldModule,
-    MatInputModule,
-    MatTabsModule,
-    MatChipsModule
-  ],
+  imports: [CommonModule, FormsModule],
   templateUrl: './productos-usuario.page.html',
   styleUrls: ['./productos-usuario.page.scss']
 })
 export class ProductosUsuarioPage implements OnInit {
+  private http = inject(HttpClient);
   private productosService = inject(ProductosService);
   private pedidosService = inject(PedidosService);
   private mesasService = inject(MesasService);
@@ -82,6 +60,20 @@ export class ProductosUsuarioPage implements OnInit {
     // Cargar mesas disponibles
     this.mesasService.obtenerMesasActivas().subscribe(mesas => {
       this.mesasDisponibles.set(mesas.filter(m => m.status === 'available' || m.status === 'occupied'));
+    });
+
+    // Cargar partida activa para auto-asignar mesa
+    this.http.get<any>(`http://localhost:3000/partidas/me/activa`).subscribe({
+      next: (partida) => {
+        if (partida) {
+          this.nuevoPedido.update(n => ({
+            ...n,
+            recursoId: partida.recursoId,
+            metodoPago: 'cuenta_mesa'
+          }));
+          this.snackBar.showSuccess(`Tu pedido se cargará automáticamente a tu ${partida.recursoCode}`);
+        }
+      }
     });
   }
 
@@ -242,13 +234,13 @@ export class ProductosUsuarioPage implements OnInit {
 
   getCategoriaIcon(productTypeId: number): string {
     const iconos: Record<number, string> = {
-      1: 'local_drink',
-      2: 'restaurant',
-      3: 'lunch_dining',
-      4: 'coffee',
-      5: 'cake'
+      1: '🥤',
+      2: '🍿',
+      3: '🍔',
+      4: '☕',
+      5: '🍰'
     };
-    return iconos[productTypeId] || 'category';
+    return iconos[productTypeId] || '📦';
   }
 
   getStockColor(stock: number): string {

@@ -9,11 +9,19 @@
       <div class="row">
         <div class="field-group">
           <label>Nombre</label>
-          <input type="text" formControlName="name" placeholder="Nombre" class="input-field" />
+          <input type="text" formControlName="name" placeholder="Nombre" class="input-field"
+            [class.invalid]="f['name'].invalid && f['name'].touched" />
+          @if (f['name'].invalid && f['name'].touched) {
+            <span class="field-error">Mínimo 2 caracteres</span>
+          }
         </div>
         <div class="field-group">
           <label>Apellido</label>
-          <input type="text" formControlName="lastName" placeholder="Apellido" class="input-field" />
+          <input type="text" formControlName="lastName" placeholder="Apellido" class="input-field"
+            [class.invalid]="f['lastName'].invalid && f['lastName'].touched" />
+          @if (f['lastName'].invalid && f['lastName'].touched) {
+            <span class="field-error">Mínimo 2 caracteres</span>
+          }
         </div>
       </div>
 
@@ -28,13 +36,21 @@
         </div>
         <div class="field-group">
           <label>Número documento</label>
-          <input type="text" formControlName="docNumber" placeholder="1234567890" class="input-field" />
+          <input type="text" formControlName="docNumber" placeholder="1234567890" class="input-field"
+            [class.invalid]="f['docNumber'].invalid && f['docNumber'].touched" />
+          @if (f['docNumber'].invalid && f['docNumber'].touched) {
+            <span class="field-error">Número de documento requerido</span>
+          }
         </div>
       </div>
 
       <div class="field-group">
         <label>Email</label>
-        <input type="email" formControlName="email" placeholder="correo@ejemplo.com" class="input-field" />
+        <input type="email" formControlName="email" placeholder="correo@ejemplo.com" class="input-field"
+          [class.invalid]="f['email'].invalid && f['email'].touched" />
+        @if (f['email'].invalid && f['email'].touched) {
+          <span class="field-error">Email inválido</span>
+        }
       </div>
 
       <div class="field-group">
@@ -45,19 +61,27 @@
             formControlName="password"
             placeholder="••••••••"
             class="input-field"
+            [class.invalid]="f['password'].invalid && f['password'].touched"
           />
           <button type="button" class="toggle-pass" (click)="hidePassword = !hidePassword">
             {{ hidePassword ? '👁️' : '🙈' }}
           </button>
         </div>
+        @if (f['password'].invalid && f['password'].touched) {
+          <span class="field-error">Mínimo 6 caracteres</span>
+        }
       </div>
 
       @if (errorMsg) {
-        <p class="error-msg">{{ errorMsg }}</p>
+        <p class="error-msg">⚠️ {{ errorMsg }}</p>
       }
 
-      <button type="submit" class="btn-primary">
-        Registrarse
+      @if (successMsg) {
+        <p class="success-msg">✅ {{ successMsg }}</p>
+      }
+
+      <button type="submit" class="btn-primary" [disabled]="isLoading()">
+        @if (isLoading()) { ⏳ Registrando... } @else { Registrarse }
       </button>
     </form>
 

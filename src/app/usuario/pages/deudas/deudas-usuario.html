@@ -1,66 +1,176 @@
-<div class="deudas-page">
-  <div class="page-header">
-    <h2>💸 Mis Cuentas</h2>
-    <p>Historial de deudas y pagos</p>
+<div class="deudas-container">
+  <!-- Cabecera de Página -->
+  <div class="page-header-premium">
+    <div class="header-titles">
+      <h2>💸 Estado de Cuentas</h2>
+      <p>Control de consumos y balances en tiempo real</p>
+    </div>
+    @if (totalPendiente > 0) {
+      <div class="global-debt-badge">
+        Total por Pagar: <span>${{ totalPendiente | number:'1.0-0' }}</span>
+      </div>
+    }
   </div>
 
-  @if (totalPendiente > 0) {
-    <div class="alerta-deuda">
-      <span class="alerta-icon">⚠️</span>
-      <div>
-        <span class="alerta-titulo">Tienes una cuenta pendiente</span>
-        <span class="alerta-monto">Total por pagar: ${{ totalPendiente | number }}</span>
+  <!-- SECCIÓN 1: CUENTA ACTIVA EN ESTABLECIMIENTO (CONSUMOS EN SALA) -->
+  <div class="active-account-section">
+    <h3 class="section-title">
+      <span class="pulse-dot"></span>
+      Consumos en Establecimiento (Cuenta en Sala)
+    </h3>
+
+    @if (cuentasActivas().length > 0) {
+      <div class="active-cards-grid">
+        @for (d of cuentasActivas(); track d.id) {
+          <div class="premium-active-card animate-fade-in" [class]="d.estado">
+            <div class="card-glow"></div>
+            
+            <div class="card-header">
+              <div class="card-title-group">
+                <span class="category-tag">🎮 Consumo Activo</span>
+                <h4 class="deuda-desc">{{ d.descripcion }}</h4>
+              </div>
+              <span class="status-badge" [class]="d.estado">
+                {{ d.estado === 'pendiente' ? '⏳ Pendiente' : (d.estado === 'en_juego' ? '🔥 Mesa en Curso' : '🟡 Pago Parcial') }}
+              </span>
+            </div>
+
+            <div class="card-body">
+              <div class="monto-stats">
+                <div class="stat-box">
+                  <span class="stat-label">Total Consumido</span>
+                  <span class="stat-value total">${{ d.monto | number:'1.0-0' }}</span>
+                </div>
+                
+                @if (d.montoPagado > 0) {
+                  <div class="stat-box">
+                    <span class="stat-label">Abonado</span>
+                    <span class="stat-value green">${{ d.montoPagado | number:'1.0-0' }}</span>
+                  </div>
+                }
+
+                <div class="stat-box highlighted">
+                  <span class="stat-label">Monto por Pagar</span>
+                  <span class="stat-value red">${{ getPendiente(d) | number:'1.0-0' }}</span>
+                </div>
+              </div>
+
+              <!-- BARRA DE PROGRESO DE PAGO -->
+              <div class="progress-container">
+                <div class="progress-info">
+                  <span>Progreso de Pago</span>
+                  <span>{{ (d.montoPagado / d.monto) * 100 | number:'1.0-0' }}%</span>
+                </div>
+                <div class="progress-bar-track">
+                  <div class="progress-bar-fill" [style.width.%]="(d.montoPagado / d.monto) * 100" [class]="d.estado"></div>
+                </div>
+              </div>
+
+              <div class="card-notes-action" style="margin-top: 15px; text-align: center;">
+                <button class="btn-recibo" (click)="abrirRecibo(d)" style="background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.2); color: #fff; padding: 6px 12px; border-radius: 6px; cursor: pointer; transition: 0.2s; font-size: 0.85rem; width: 100%;">
+                  🧾 Ver Detalle de Consumo
+                </button>
+              </div>
+            </div>
+
+            <div class="card-footer">
+              <span class="card-date">Registrado el {{ d.fechaCreacion | date:'dd/MM/yyyy, h:mm a' }}</span>
+              <span class="action-alert">⚠️ Paga esta cuenta al retirarte en caja</span>
+            </div>
+          </div>
+        }
       </div>
+    } @else {
+      <div class="glass-empty-banner">
+        <div class="banner-icon">✅</div>
+        <div class="banner-text">
+          <h4>¡Estás al día!</h4>
+          <p>No tienes consumos o mesas de juego pendientes por pagar en sala.</p>
+        </div>
+      </div>
+    }
+  </div>
+
+  <!-- SECCIÓN 2: HISTORIAL DE CUENTAS SATISFECHAS -->
+  <div class="history-section">
+    <h3 class="section-title history">📋 Historial de Cuentas Pagadas</h3>
+
+    <div class="history-list">
+      @for (d of cuentasPagadas(); track d.id) {
+        <div class="history-card-premium animate-fade-in">
+          <div class="history-left">
+            <span class="check-badge">✓</span>
+            <div class="history-info">
+              <span class="history-desc">{{ d.descripcion }}</span>
+              <span class="history-date">Pagado el {{ d.fechaPago | date:'dd/MM/yyyy, h:mm a' }}</span>
+            </div>
+          </div>
+          <div class="history-right" style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+            <span class="history-amount">${{ d.monto | number:'1.0-0' }}</span>
+            <span class="history-status-pill">Satisfecha</span>
+            <button class="btn-recibo-sm" (click)="abrirRecibo(d)" style="background: transparent; border: 1px solid #34d399; color: #34d399; padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; cursor: pointer;">
+              🧾 Ver Recibo
+            </button>
+          </div>
+        </div>
+      }
+
+      @if (cuentasPagadas().length === 0) {
+        <div class="empty-history">
+          <p>No hay cuentas archivadas en tu historial.</p>
+        </div>
+      }
     </div>
-  } @else if (deudas().length > 0) {
-    <div class="alerta-ok">
-      <span>✅</span>
-      <span>¡Estás al día con tus pagos!</span>
+  </div>
+
+  <!-- MODAL RECIBO DETALLADO -->
+  @if (showRecibo() && reciboActual()) {
+    <div class="modal-overlay" (click)="cerrarRecibo()" role="dialog" aria-modal="true" style="position: fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.7); display:flex; justify-content:center; align-items:center; z-index:999; backdrop-filter:blur(4px);">
+      <div class="modal-recibo" (click)="$event.stopPropagation()" style="background: #1e293b; border-radius: 12px; width: 90%; max-width: 400px; padding: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); border: 1px solid rgba(255,255,255,0.1);">
+        <div class="recibo-header" style="text-align: center; border-bottom: 1px dashed rgba(255,255,255,0.2); padding-bottom: 15px; margin-bottom: 15px;">
+          <h2 style="margin: 0; font-size: 1.2rem; color: #f8fafc;">🧾 Recibo de Consumo</h2>
+          <p style="margin: 5px 0 0; font-size: 0.85rem; color: #94a3b8;">{{ reciboActual()!.fechaCreacion | date:'dd/MM/yyyy, h:mm a' }}</p>
+        </div>
+
+        <div class="recibo-body" style="font-size: 0.95rem; color: #cbd5e1; margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+            <span style="color: #94a3b8;">Concepto:</span>
+            <strong style="color: #f8fafc;">{{ reciboActual()!.descripcion }}</strong>
+          </div>
+          
+          @if (reciboActual()!.notas) {
+            <div style="background: rgba(0,0,0,0.2); border-radius: 6px; padding: 10px; margin-top: 15px; border-left: 3px solid #818cf8;">
+              <span style="display: block; font-size: 0.8rem; color: #818cf8; margin-bottom: 4px;">Detalles adicionales</span>
+              <p style="margin: 0; font-size: 0.85rem;">{{ reciboActual()!.notas }}</p>
+            </div>
+          } @else {
+            <div style="text-align: center; margin: 20px 0; color: #64748b; font-size: 0.85rem;">
+              Sin detalles adicionales
+            </div>
+          }
+
+          <div style="border-top: 1px solid rgba(255,255,255,0.1); margin-top: 20px; padding-top: 15px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>Total Bruto:</span>
+              <span>${{ reciboActual()!.monto | number:'1.0-0' }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px; color: #34d399;">
+              <span>Abonado:</span>
+              <span>-${{ reciboActual()!.montoPagado | number:'1.0-0' }}</span>
+            </div>
+            <div style="display: flex; justify-content: space-between; font-weight: bold; font-size: 1.1rem; color: #f8fafc; margin-top: 10px; border-top: 1px dashed rgba(255,255,255,0.2); padding-top: 10px;">
+              <span>Total Pendiente:</span>
+              <span [style.color]="getPendiente(reciboActual()!) > 0 ? '#f87171' : '#34d399'">
+                ${{ getPendiente(reciboActual()!) | number:'1.0-0' }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <button (click)="cerrarRecibo()" style="width: 100%; padding: 10px; background: #3b82f6; border: none; border-radius: 6px; color: #fff; font-weight: bold; cursor: pointer;">
+          Cerrar Recibo
+        </button>
+      </div>
     </div>
   }
-
-  <div class="deudas-list">
-    @for (d of deudas(); track d.id) {
-      <div class="deuda-card" [class]="d.estado">
-        <div class="deuda-header">
-          <span class="deuda-desc">{{ d.descripcion }}</span>
-          <span class="estado-pill" [style.color]="getEstadoColor(d.estado)" [style.border-color]="getEstadoColor(d.estado)+'44'" [style.background]="getEstadoColor(d.estado)+'11'">
-            {{ d.estado }}
-          </span>
-        </div>
-        <div class="deuda-montos">
-          <div class="monto-row">
-            <span class="m-label">Total</span>
-            <span class="m-val">${{ d.monto | number }}</span>
-          </div>
-          @if (d.montoPagado > 0) {
-            <div class="monto-row">
-              <span class="m-label">Pagado</span>
-              <span class="m-val green">${{ d.montoPagado | number }}</span>
-            </div>
-          }
-          @if (d.estado !== 'pagada') {
-            <div class="monto-row">
-              <span class="m-label">Pendiente</span>
-              <span class="m-val red">${{ getPendiente(d) | number }}</span>
-            </div>
-          }
-        </div>
-        <div class="pago-track">
-          <div class="pago-fill" [style.width.%]="(d.montoPagado / d.monto) * 100" [style.background]="getEstadoColor(d.estado)"></div>
-        </div>
-        @if (d.notas) {
-          <p class="deuda-notas">📝 {{ d.notas }}</p>
-        }
-        <span class="deuda-fecha">{{ d.fechaCreacion | date:'dd/MM/yyyy' }}</span>
-      </div>
-    }
-
-    @if (deudas().length === 0) {
-      <div class="empty">
-        <span>✅</span>
-        <p>No tienes cuentas registradas</p>
-      </div>
-    }
-  </div>
 </div>

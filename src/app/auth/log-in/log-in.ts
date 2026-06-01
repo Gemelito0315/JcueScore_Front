@@ -19,6 +19,7 @@ export class LogIn {
 
   hidePassword = true;
   errorMsg = '';
+  isLoading = signal(false);
 
   loginForm = this.fb.group({
     email: ['', [Validators.required]],
@@ -28,6 +29,7 @@ export class LogIn {
   onSubmit() {
     if (this.loginForm.valid) {
       this.errorMsg = '';
+      this.isLoading.set(true);
       const rawForm = this.loginForm.value as LoginInterface;
 
       this.authService.login(rawForm).subscribe({
@@ -45,7 +47,10 @@ export class LogIn {
             });
           }
         },
-        error: () => this.errorMsg = 'Credenciales incorrectas'
+        error: (err) => {
+          this.isLoading.set(false);
+          this.errorMsg = err.error?.message || 'Credenciales incorrectas';
+        }
       });
     }
   }

@@ -28,25 +28,34 @@ export class Usuarios implements OnInit {
     email: ['', [Validators.required, Validators.email]],
     password: [''],
     isActive: [true],
-    roleIds: [[1]],
+    roleIds: [2],
   });
 
   docTypes = ['CC', 'TI', 'CE', 'PP'];
-  roles = [
-    { id: 1, name: 'Admin' },
-    { id: 2, name: 'Usuario' },
-    { id: 3, name: 'Garitero' },
-  ];
+  roles = signal<any[]>([]);
 
-  ngOnInit() { this.load(); }
+  ngOnInit() { 
+    this.load(); 
+    this.loadRoles();
+  }
 
   load() {
-    this.http.get<any[]>(`${API}/users`).subscribe(data => this.usuarios.set(data));
+    this.http.get<any[]>(`${API}/users`).subscribe({
+      next: data => this.usuarios.set(data || []),
+      error: err => console.error('Error loading users:', err)
+    });
+  }
+
+  loadRoles() {
+    this.http.get<any[]>(`${API}/roles`).subscribe({
+      next: data => this.roles.set(data || []),
+      error: err => console.error('Error loading roles:', err)
+    });
   }
 
   openCreate() {
     this.editingId.set(null);
-    this.form.reset({ docType: 'CC', isActive: true, roleIds: [2] });
+    this.form.reset({ docType: 'CC', isActive: true, roleIds: 2 });
     this.form.get('password')?.setValidators([Validators.required, Validators.minLength(6)]);
     this.form.get('password')?.updateValueAndValidity();
     this.showModal.set(true);
@@ -57,7 +66,7 @@ export class Usuarios implements OnInit {
     this.form.patchValue({
       name: u.name, lastName: u.lastName, docType: u.docType,
       docNumber: u.docNumber, email: u.email, isActive: u.isActive,
-      roleIds: u.roles?.map((r: any) => r.id) ?? [2],
+      roleIds: u.roles?.length ? u.roles[0].id : 2,
     });
     this.form.get('password')?.clearValidators();
     this.form.get('password')?.updateValueAndValidity();
@@ -74,7 +83,7 @@ export class Usuarios implements OnInit {
 
     const req = this.editingId()
       ? this.http.put(`${API}/users/${this.editingId()}`, payload)
-      : this.http.post(`${API}/users/register`, payload);
+      : this.http.post(`${API}/users`, payload);
 
     req.subscribe({
       next: () => { this.load(); this.showModal.set(false); this.loading.set(false); },
@@ -84,7 +93,10 @@ export class Usuarios implements OnInit {
 
   delete(id: number) {
     if (!confirm('¿Eliminar este usuario?')) return;
-    this.http.delete(`${API}/users/${id}`).subscribe(() => this.load());
+    this.http.delete(`${API}/users/${id}`).subscribe({
+      next: () => this.load(),
+      error: (err) => alert('No se puede eliminar: ' + (err.error?.message || 'Error desconocido'))
+    });
   }
 
   toggleActive(u: any) {

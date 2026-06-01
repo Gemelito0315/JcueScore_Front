@@ -1,5 +1,24 @@
 <div class="login-container">
-  <div class="login-card">
+
+  @if (isLoading()) {
+    <div class="loading-overlay">
+      <div class="loader-wrapper">
+        <div class="orbit-ring">
+          <div class="orbit-ball"></div>
+        </div>
+        <div class="orbit-ring ring2">
+          <div class="orbit-ball ball2"></div>
+        </div>
+        <div class="orbit-ring ring3">
+          <div class="orbit-ball ball3"></div>
+        </div>
+        <div class="loader-icon">🎱</div>
+      </div>
+      <p class="loading-text">Ingresando...</p>
+    </div>
+  }
+
+  <div class="login-card" [class.card-blurred]="isLoading()">
     <div class="brand">
       <h1 class="brand-title">JcueScore</h1>
       <p class="brand-subtitle">Sports Management Platform</p>
@@ -13,6 +32,8 @@
           formControlName="email"
           placeholder="admin@billar.com"
           class="input-field"
+          [disabled]="isLoading()"
+          autocomplete="off"
         />
       </div>
 
@@ -24,6 +45,8 @@
             formControlName="password"
             placeholder="••••••••"
             class="input-field"
+            [disabled]="isLoading()"
+            autocomplete="new-password"
           />
           <button type="button" class="toggle-pass" (click)="hidePassword = !hidePassword">
             {{ hidePassword ? '👁️' : '🙈' }}
@@ -32,11 +55,19 @@
       </div>
 
       @if (errorMsg) {
-        <p class="error-msg">{{ errorMsg }}</p>
+        <div class="error-banner">
+          <span class="error-icon">⚠️</span>
+          <span>{{ errorMsg }}</span>
+        </div>
       }
 
-      <button type="submit" class="btn-primary">
-        Ingresar
+      <button type="submit" class="btn-primary" [disabled]="isLoading()">
+        @if (isLoading()) {
+          <span class="btn-spinner"></span>
+          Ingresando...
+        } @else {
+          Ingresar
+        }
       </button>
     </form>
 

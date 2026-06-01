@@ -25,8 +25,14 @@
 }
 
 .layout.collapsed .sidebar {
-  width: 64px;
-  .brand-name, .nav-item span, .user-meta, .logout-btn span, .admin-badge span { display: none; }
+  width: 76px;
+  .brand-name, .brand-icon, .nav-item span, .user-meta, .logout-btn span, .admin-badge span { display: none; }
+  .toggle-btn { margin: 0 auto; width: 100%; display: flex; justify-content: center; }
+  .sidebar-brand { justify-content: center; padding: 0 0 24px; }
+  .nav-item { justify-content: center; padding: 10px; }
+  .nav-item svg { margin: 0; }
+  .user-info { justify-content: center; }
+  .logout-btn { justify-content: center; }
 }
 
 .sidebar-brand {
@@ -104,7 +110,7 @@
   transition: margin-left 0.3s;
 }
 
-.layout.collapsed .main-content { margin-left: 64px; }
+.layout.collapsed .main-content { margin-left: 76px; }
 
 /* ── TOPBAR ── */
 .topbar {
@@ -137,6 +143,12 @@
   svg { width: 14px; height: 14px; }
 }
 
-@media (max-width: 600px) {
-  .main-content { padding: 16px; }
+@media (max-width: 768px) {
+  .sidebar { width: 76px; }
+  .brand-name, .brand-icon, .nav-item span, .user-meta, .logout-btn span, .admin-badge span { display: none; }
+  .toggle-btn { margin: 0 auto; width: 100%; display: flex; justify-content: center; }
+  .sidebar-brand { justify-content: center; padding: 0 0 24px; }
+  .main-content { margin-left: 76px; padding: 16px; }
+  .topbar { flex-direction: column; align-items: stretch; }
+  .topbar-right { justify-content: space-between; }
 }

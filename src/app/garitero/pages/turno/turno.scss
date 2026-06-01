@@ -35,3 +35,64 @@
 .reporte-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:16px; padding:36px; width:100%; max-width:480px; text-align:center; .reporte-icon{font-size:3rem;margin-bottom:12px;display:block;} h2{font-size:1.5rem;font-weight:700;color:#f1f5f9;margin-bottom:6px;} p{color:#64748b;margin-bottom:24px;} }
 .reporte-resumen { display:flex; flex-direction:column; gap:8px; margin-bottom:24px; text-align:left; }
 .rep-row { display:flex; justify-content:space-between; font-size:0.85rem; color:#94a3b8; padding:6px 0; border-bottom:1px solid rgba(255,255,255,0.04); .green{color:#34d399;font-weight:700;} &.estado{font-weight:700;border:none;} }
+
+.resumen-cargando { text-align:center; color:#475569; font-size:0.85rem; padding:20px; border:1px dashed rgba(255,255,255,0.06); border-radius:12px; }
+
+/* ── FORMULARIO CIERRE INLINE ── */
+.form-cierre-inline {
+  display: flex; flex-direction: column; gap: 16px;
+  background: rgba(0,0,0,0.15); padding: 20px; border-radius: 12px;
+  border: 1px solid rgba(255,255,255,0.03);
+}
+
+.form-group-horizontal {
+  display: flex; gap: 20px; align-items: flex-start;
+  @media (max-width: 768px) { flex-direction: column; }
+}
+
+.input-efectivo {
+  flex: 1;
+}
+
+.input-grande {
+  font-size: 1.5rem !important; padding: 12px 16px !important;
+  font-weight: 700; color: #34d399 !important; font-variant-numeric: tabular-nums;
+  border-color: rgba(52,211,153,0.3) !important; background: rgba(52,211,153,0.05) !important;
+}
+
+.resultado-cuadre {
+  flex: 1; min-width: 250px; padding: 14px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.1); display: flex; flex-direction: column; gap: 4px;
+  background: rgba(30,41,59,0.5);
+
+  .res-title { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; font-weight: 600; }
+  .res-amount { font-size: 1.5rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+  .res-desc { font-size: 0.8rem; font-weight: 500; margin-top: 4px; }
+}
+
+.cuadre-perfecto {
+  border-color: rgba(52,211,153,0.4); background: rgba(52,211,153,0.05);
+  .res-amount { color: #34d399; }
+  .res-desc { color: #34d399; }
+}
+
+.cuadre-faltante {
+  border-color: rgba(248,113,113,0.4); background: rgba(248,113,113,0.05);
+  .res-amount { color: #f87171; }
+  .res-desc { color: #f87171; }
+}
+
+.cuadre-sobrante {
+  border-color: rgba(96,165,250,0.4); background: rgba(96,165,250,0.05);
+  .res-amount { color: #60a5fa; }
+  .res-desc { color: #60a5fa; }
+}
+
+.btn-cerrar-definitivo {
+  background: linear-gradient(135deg, #ef4444, #dc2626); color: white;
+  border: none; padding: 14px; border-radius: 10px; font-size: 1rem; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px;
+  box-shadow: 0 4px 15px rgba(239,68,68,0.25); transition: all 0.2s;
+  &:hover:not(:disabled) { opacity: 0.9; transform: translateY(-2px); }
+  &:disabled { opacity: 0.4; cursor: not-allowed; }
+}

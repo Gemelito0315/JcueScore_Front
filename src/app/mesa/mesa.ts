@@ -1,6 +1,7 @@
 import { Component, signal, OnInit, OnDestroy, ViewChild, ElementRef, inject, ViewEncapsulation } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { WebsocketsService } from '../core/services/websockets.service';
 
 export interface Jugada {
   id: number;
@@ -18,8 +19,6 @@ export interface Jugador {
   promedio: number;
   rachaActual: number;
   rachMax: number;
-  eloRating: number;
-  rank: string;
   handicap: number;
   jcueCoins: number;
 }
@@ -33,6 +32,11 @@ export interface Jugador {
 })
 export class Mesa implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
+  private ws = inject(WebsocketsService);
+  private location = inject(Location);
+
+  isViewer = signal(false);
+  private syncSub: any;
 
   @ViewChild('videoEl') videoEl!: ElementRef<HTMLVideoElement>;
   @ViewChild('replayEl') replayEl!: ElementRef<HTMLVideoElement>;
@@ -41,20 +45,23 @@ export class Mesa implements OnInit, OnDestroy {
   mesaId = signal('Mesa 1');
   modalidad = signal('Tres Bandas');
   modalidades = ['Libre', 'Tres Bandas', 'Cinco Pines', 'Carambola', 'Pool 8', 'Pool 9'];
+  puntosArray = [1, 2, 3, 4, 5];
   showConfig = signal(false);
   partidaIniciada = signal(false);
   turnoActual = signal(0);
 
   // Jugadores
   jugadores = signal<Jugador[]>([
-    { nombre: 'Jugador 1', puntos: 0, meta: 50, historial: [], promedio: 0, rachaActual: 0, rachMax: 0, eloRating: 2500, rank: 'Diamond', handicap: 0, jcueCoins: 5000 },
-    { nombre: 'Jugador 2', puntos: 0, meta: 50, historial: [], promedio: 0, rachaActual: 0, rachMax: 0, eloRating: 1100, rank: 'Silver', handicap: 15, jcueCoins: 200 },
+    { nombre: 'Jugador 1', puntos: 0, meta: 50, historial: [], promedio: 0, rachaActual: 0, rachMax: 0, handicap: 0, jcueCoins: 5000 },
+    { nombre: 'Jugador 2', puntos: 0, meta: 50, historial: [], promedio: 0, rachaActual: 0, rachMax: 0, handicap: 15, jcueCoins: 200 },
   ]);
 
   // Timer
   tiempoSegundos = signal(0);
   timerActivo = signal(false);
   private timerInterval: any;
+  private broadcastInterval: any;
+  liveFrame = signal<string | null>(null);
 
   // Historial de jugadas
   jugadas = signal<Jugada[]>([]);
@@ -68,6 +75,7 @@ export class Mesa implements OnInit, OnDestroy {
   private mediaRecorder: MediaRecorder | null = null;
   private chunks: Blob[] = [];
   grabaciones = signal<{ id: number; jugada: Jugada; blob: Blob; url: string }[]>([]);
+  isFullscreen = signal(false);
 
   // VAR Continuo
   private matchRecorder: MediaRecorder | null = null;
@@ -82,31 +90,174 @@ export class Mesa implements OnInit, OnDestroy {
 
   ngOnInit() {
     const id = this.route.snapshot.paramMap.get('id');
-    if (id) this.mesaId.set(decodeURIComponent(id));
+    if (id) {
+      const decoded = decodeURIComponent(id);
+      const match = decoded.match(/\d+/);
+      const numericId = match ? match[0] : decoded;
+      this.mesaId.set(numericId);
+    }
+
+    this.route.queryParams.subscribe(params => {
+      setTimeout(() => {
+        const modeParam = params['mode'] || this.route.snapshot.queryParamMap.get('mode');
+        this.isViewer.set(modeParam === 'viewer');
+        
+        // Siempre intentamos unirnos a la sala WebSocket para escuchar/sincronizar
+        // Si somos viewer, nos sincronizaremos siempre. Si somos tablet, recuperaremos el estado si se refrescó.
+        const joinMatch = () => {
+          if (this.ws.connectionStatus() === 'conectado') {
+            this.ws.send({ type: 'join_match', mesaId: this.mesaId() });
+          } else {
+            const interval = setInterval(() => {
+              if (this.ws.connectionStatus() === 'conectado') {
+                this.ws.send({ type: 'join_match', mesaId: this.mesaId() });
+                clearInterval(interval);
+              }
+            }, 500);
+            setTimeout(() => clearInterval(interval), 10000);
+          }
+        };
+
+        if (this.isViewer()) {
+          this.partidaIniciada.set(true);
+        }
+        
+        joinMatch();
+      });
+    });
+
+    this.syncSub = this.ws.onMatchUpdate().subscribe((data) => {
+      if (data.mesaId === this.mesaId()) {
+        this.syncState(data.state);
+      }
+    });
+  }
+
+  syncState(state: any) {
+    if (state) {
+      // Sincronizar si somos viewer, O si somos tablet y estamos recuperando estado (tras F5)
+      if (this.isViewer() || (!this.isViewer() && !this.partidaIniciada() && state.partidaIniciada)) {
+        if (state.jugadores && Array.isArray(state.jugadores)) {
+          const mapped = state.jugadores.map((j: any, idx: number) => {
+            const current = this.jugadores()[idx] || {};
+            return {
+              nombre: j.nombre || current.nombre || `Jugador ${idx + 1}`,
+              puntos: j.puntos !== undefined ? j.puntos : (current.puntos || 0),
+              meta: j.meta !== undefined ? j.meta : (current.meta || 50),
+              historial: j.historial || current.historial || [],
+              promedio: j.promedio !== undefined ? j.promedio : (current.promedio || 0),
+              rachaActual: j.rachaActual !== undefined ? j.rachaActual : (current.rachaActual || 0),
+              rachMax: j.rachMax !== undefined ? j.rachMax : (current.rachMax || 0),
+              handicap: j.handicap !== undefined ? j.handicap : (current.handicap || 0),
+              jcueCoins: j.jcueCoins !== undefined ? j.jcueCoins : (current.jcueCoins || 0)
+            };
+          });
+          this.jugadores.set(mapped);
+        } else {
+          this.jugadores.set(state.jugadores);
+        }
+
+        this.tiempoSegundos.set(state.tiempoSegundos || 0);
+        this.timerActivo.set(state.timerActivo || false);
+        this.turnoActual.set(state.turnoActual || 0);
+        this.jugadas.set(state.jugadas || []);
+        this.partidaIniciada.set(true);
+        this.showConfig.set(false);
+        
+        if (state.frame && this.isViewer()) {
+          this.liveFrame.set(state.frame);
+        }
+        
+        clearInterval(this.timerInterval);
+        if (state.timerActivo) {
+          this.timerInterval = setInterval(() => this.tiempoSegundos.update(t => t + 1), 1000);
+        }
+
+        // Si somos tablet recuperando estado, reiniciar cámara y broadcast
+        if (!this.isViewer()) {
+          this.iniciarCamara();
+          clearInterval(this.broadcastInterval);
+          this.broadcastInterval = setInterval(() => this.broadcastState(), 1500);
+        }
+      }
+    }
+  }
+
+  broadcastState() {
+    if (this.isViewer()) return;
+
+    let frame = null;
+    if (this.camaraActiva() && this.videoEl?.nativeElement) {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = 640;
+        canvas.height = 360;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(this.videoEl.nativeElement, 0, 0, canvas.width, canvas.height);
+          frame = canvas.toDataURL('image/jpeg', 0.4);
+        }
+      } catch (e) {
+        console.error('Error capturing frame', e);
+      }
+    }
+
+    this.ws.send({
+      type: 'match_update',
+      mesaId: this.mesaId(),
+      state: {
+        jugadores: this.jugadores(),
+        tiempoSegundos: this.tiempoSegundos(),
+        timerActivo: this.timerActivo(),
+        turnoActual: this.turnoActual(),
+        jugadas: this.jugadas(),
+        partidaIniciada: this.partidaIniciada(),
+        frame: frame
+      }
+    });
   }
 
   ngOnDestroy() {
     clearInterval(this.timerInterval);
+    clearInterval(this.broadcastInterval);
     clearTimeout(this.jugadaTimeout);
     this.detenerCamara();
+    if (this.syncSub) this.syncSub.unsubscribe();
   }
 
   // ── CÁMARA ──────────────────────────────────────────────────
   async iniciarCamara() {
     try {
-      this.stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
-        audio: false
-      });
+      try {
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          video: { facingMode: 'user', width: { ideal: 1280 }, height: { ideal: 720 } },
+          audio: false
+        });
+      } catch (err) {
+        console.warn('Failing to getUserMedia with ideal constraints, trying fallback video: true', err);
+        this.stream = await navigator.mediaDevices.getUserMedia({
+          video: true,
+          audio: false
+        });
+      }
+
       this.camaraActiva.set(true);
       this.camaraError.set(false);
-      setTimeout(() => {
+      
+      const checkInterval = setInterval(() => {
         if (this.videoEl?.nativeElement) {
-          this.videoEl.nativeElement.srcObject = this.stream;
+          const video = this.videoEl.nativeElement;
+          video.srcObject = this.stream;
+          video.play().catch(e => console.error('Error in video.play():', e));
+          this.iniciarVarContinuo();
+          clearInterval(checkInterval);
         }
-        this.iniciarVarContinuo();
-      }, 100);
-    } catch {
+      }, 50);
+      
+      // Stop checking after 2 seconds to avoid infinite loop if something fails
+      setTimeout(() => clearInterval(checkInterval), 2000);
+    } catch (e) {
+      console.error('Error starting camera even with fallback:', e);
       this.camaraError.set(true);
       this.camaraActiva.set(false);
     }
@@ -182,6 +333,10 @@ export class Mesa implements OnInit, OnDestroy {
     this.mediaRecorder.start();
   }
 
+  toggleFullscreenCamera() {
+    this.isFullscreen.update(v => !v);
+  }
+
   detenerGrabacion(jugada: Jugada) {
     if (!this.mediaRecorder) return;
     this.mediaRecorder.onstop = () => {
@@ -229,11 +384,16 @@ export class Mesa implements OnInit, OnDestroy {
     this.showConfig.set(false);
     this.iniciarTimer();
     this.iniciarCamara();
+    this.broadcastState();
   }
 
   iniciarTimer() {
     this.timerActivo.set(true);
     this.timerInterval = setInterval(() => this.tiempoSegundos.update(t => t + 1), 1000);
+    // Broadcast state every 1.5 seconds to ensure backend activeMatches is populated and send frames
+    if (!this.isViewer()) {
+      this.broadcastInterval = setInterval(() => this.broadcastState(), 1500);
+    }
   }
 
   pausarTimer() {
@@ -243,6 +403,7 @@ export class Mesa implements OnInit, OnDestroy {
     } else {
       clearInterval(this.timerInterval);
     }
+    this.broadcastState();
   }
 
   sumarPuntos(jugadorIdx: number, puntos: number) {
@@ -279,6 +440,7 @@ export class Mesa implements OnInit, OnDestroy {
     setTimeout(() => this.detenerGrabacion(jugada), 5000);
 
     this.turnoActual.set(jugadorIdx === 0 ? 1 : 0);
+    this.broadcastState();
   }
 
   restarPuntos(jugadorIdx: number) {
@@ -289,11 +451,13 @@ export class Mesa implements OnInit, OnDestroy {
       updated[jugadorIdx] = j;
       return updated;
     });
+    this.broadcastState();
   }
 
   resetPartida() {
     if (!confirm('¿Reiniciar la partida?')) return;
     clearInterval(this.timerInterval);
+    clearInterval(this.broadcastInterval);
     this.tiempoSegundos.set(0);
     this.timerActivo.set(false);
     this.partidaIniciada.set(false);
@@ -303,6 +467,7 @@ export class Mesa implements OnInit, OnDestroy {
     this.jugadores.update(js => js.map(j => ({
       ...j, puntos: j.handicap, historial: [], promedio: 0, rachaActual: 0, rachMax: 0
     })));
+    this.broadcastState();
   }
 
   get tiempoFormateado() {
@@ -337,5 +502,9 @@ export class Mesa implements OnInit, OnDestroy {
 
   tieneReplay(jugada: Jugada) {
     return this.grabaciones().some(g => g.id === jugada.id);
+  }
+
+  volverLobby() {
+    this.location.back();
   }
 }

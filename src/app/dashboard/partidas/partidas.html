@@ -53,7 +53,10 @@
           <span class="income-val">${{ ingresos()[mesa.id] || 0 | number:'1.0-0' }}</span>
         </div>
 
-        <button class="btn-open" (click)="abrirMesa(mesa)">📺 Ver pantalla</button>
+        <div style="display: flex; gap: 8px; margin-top: 10px;">
+          <button class="btn-open" style="flex: 1;" (click)="abrirMesa(mesa)">📺 VAR</button>
+          <button class="btn-open" style="flex: 1; background: rgba(248,113,113,0.1); border-color: rgba(248,113,113,0.3); color: #f87171;" (click)="abrirModalFinalizar(mesa)">⏹ Parar</button>
+        </div>
       }
 
       @if (mesa.status === 'available') {
@@ -62,7 +65,7 @@
           <p>Mesa disponible</p>
           <span class="price-tag">${{ mesa.pricePerHour | number }}/hora</span>
         </div>
-        <button class="btn-open available" (click)="abrirMesa(mesa)">▶ Iniciar partida</button>
+        <button class="btn-open available" (click)="abrirModalIniciar(mesa)">▶ Iniciar partida</button>
       }
 
       @if (mesa.status === 'maintenance') {
@@ -75,3 +78,63 @@
     </div>
   }
 </div>
+
+<!-- MODAL INICIAR PARTIDA -->
+@if (mostrarModalIniciar()) {
+  <div class="modal-overlay" (click)="mostrarModalIniciar.set(false)">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <h3>Iniciar Partida - {{ mesaSeleccionada()?.code }}</h3>
+      <p>Ingresa los nombres de los jugadores registrados para comenzar.</p>
+      
+      <div class="form-group">
+        <label>Jugador 1 (Obligatorio)</label>
+        <select [(ngModel)]="jugador1Id">
+          <option [ngValue]="null">-- Seleccionar Cliente --</option>
+          @for (u of usuarios(); track u.id) {
+            <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }} ({{ u.email }})</option>
+          }
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Jugador 2 (Opcional)</label>
+        <select [(ngModel)]="jugador2Id">
+          <option [ngValue]="null">-- Seleccionar Oponente --</option>
+          @for (u of usuarios(); track u.id) {
+            <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="mostrarModalIniciar.set(false)">Cancelar</button>
+        <button class="btn-confirm" (click)="confirmarIniciarPartida()" [disabled]="!jugador1Id">Comenzar</button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL FINALIZAR PARTIDA -->
+@if (mostrarModalFinalizar()) {
+  <div class="modal-overlay" (click)="mostrarModalFinalizar.set(false)">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+      <h3>Finalizar Partida - {{ mesaSeleccionada()?.code }}</h3>
+      <p>Registra el marcador final de la partida para calcular el costo y actualizar el ELO.</p>
+      
+      <div class="form-group">
+        <label>Puntos - {{ mesaSeleccionada()?.jugadores?.[0] || 'Jugador 1' }}</label>
+        <input type="number" [(ngModel)]="marcadorJ1" min="0" />
+      </div>
+
+      <div class="form-group">
+        <label>Puntos - {{ mesaSeleccionada()?.jugadores?.[1] || 'Jugador 2' }}</label>
+        <input type="number" [(ngModel)]="marcadorJ2" min="0" />
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-cancel" (click)="mostrarModalFinalizar.set(false)">Cancelar</button>
+        <button class="btn-confirm" style="background: linear-gradient(135deg, #f87171, #ef4444);" (click)="confirmarFinalizarPartida()">Terminar</button>
+      </div>
+    </div>
+  </div>
+}

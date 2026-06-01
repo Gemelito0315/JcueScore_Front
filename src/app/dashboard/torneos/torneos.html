@@ -56,6 +56,9 @@
             <span class="at-fmt">{{ getFormatoLabel(torneoActivo()!.formato) }} · hasta {{ torneoActivo()!.maxJugadores }} jugadores</span>
           </div>
         </div>
+        <div class="at-actions" style="margin: 0 1rem;">
+          <button class="btn-primary" (click)="iniciarSorteo()">🎰 Sortear Partidos</button>
+        </div>
         <div class="at-tags">
           <span class="tag green">{{ getEstadoLabel(torneoActivo()!.estado) }}</span>
           <span class="tag yellow">Inscripción: {{ torneoActivo()!.costoInscripcion | number }} JC</span>
@@ -63,7 +66,7 @@
       </div>
     } @else {
       <div class="empty-tourney-banner">
-        <span>⚠️ No hay torneos activos. Los datos mostrados son de demostración.</span>
+        <span>No hay torneos activos en este momento. Crea uno para comenzar.</span>
         <button class="btn-primary small" (click)="mostrarModalCrear.set(true)">Crear Primer Torneo</button>
       </div>
     }
@@ -252,6 +255,31 @@
         <button class="btn-sec" (click)="mostrarModalCrear.set(false)">Cancelar</button>
         <button class="btn-primary" (click)="crearTorneo()">Crear Torneo</button>
       </div>
+    </div>
+  </div>
+}
+
+<!-- MODAL: Ruleta Interactiva -->
+@if (ruletaActiva()) {
+  <div class="modal-overlay ruleta-overlay">
+    <div class="ruleta-container" [class.girando]="ruletaGirando()">
+      <h2>🎰 Sorteo Oficial 🎰</h2>
+      <div class="ruleta-slots">
+        <div class="slot p1">
+           <span class="slot-title">Jugador 1</span>
+           <div class="slot-name">{{ nombreAnimado1() }}</div>
+        </div>
+        <div class="slot-vs">VS</div>
+        <div class="slot p2">
+           <span class="slot-title">Jugador 2</span>
+           <div class="slot-name">{{ nombreAnimado2() }}</div>
+        </div>
+      </div>
+      @if (ruletaGirando()) {
+         <p class="ruleta-status">Eligiendo competidores al azar...</p>
+      } @else {
+         <p class="ruleta-status success">¡Partidos generados con éxito!</p>
+      }
     </div>
   </div>
 }

@@ -1,4 +1,4 @@
-<div class="player-card-container" [ngClass]="player.rank.toLowerCase()">
+<div class="player-card-container">
   <div class="profile-header">
     <div class="player-image-wrapper">
       @if (avatarUrl) {
@@ -15,22 +15,16 @@
     
     <div class="player-info">
       <h3 class="player-name">{{ player.name }} {{ player.lastName }}</h3>
-      <span class="club-name">{{ player.clubName || 'Sin Club' }}</span>
+      <span class="club-name">{{ player.clubName || 'JcueScore Club' }}</span>
     </div>
   </div>
 
   <div class="stats-grid">
-    <div class="stat-item elo">
-      <span class="stat-label">Rango / ELO</span>
-      <span class="stat-value">{{ player.rank }} · {{ player.eloRating }}</span>
-    </div>
-    <div class="stat-item">
-      <span class="stat-label">Win Rate</span>
-      <span class="stat-value">{{ player.winRate }}%</span>
-    </div>
-    <div class="stat-item coins">
-      <span class="stat-label">JcueCoins</span>
-      <span class="stat-value">{{ player.jcueCoins }}</span>
+    <div class="stat-item coins" style="grid-column: 1 / -1;">
+      <span class="stat-label">Tu Saldo Disponible</span>
+      <span class="stat-value" style="color: #fbbf24; font-size: 1.6rem; text-shadow: 0 0 10px rgba(251,191,36,0.3);">
+        🪙 {{ player.jcueCoins }} JcueCoins
+      </span>
     </div>
   </div>
 </div>

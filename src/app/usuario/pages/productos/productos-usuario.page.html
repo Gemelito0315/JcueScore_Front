@@ -1,166 +1,179 @@
 <div class="productos-container">
-  <div class="header">
-    <h1>Catálogo de Productos</h1>
+  <div class="page-header">
+    <div class="title-section">
+      <h2>Catálogo de Productos</h2>
+      <p>Agrega productos a tu carrito y crea un pedido</p>
+    </div>
     <div class="header-actions">
-      <button mat-icon-button (click)="irAPedidos()">
-        <mat-icon>receipt_long</mat-icon>
+      <button class="btn-icon" (click)="irAPedidos()" title="Mis pedidos">
+        📋
       </button>
-      <button mat-icon-button (click)="verCarrito()" [disabled]="getTotalItems() === 0">
-        <mat-icon>shopping_cart</mat-icon>
-        <span class="cart-badge" *ngIf="getTotalItems() > 0">{{ getTotalItems() }}</span>
+      <button class="btn-icon cart-btn" (click)="verCarrito()" [class.has-items]="getTotalItems() > 0" title="Ver carrito">
+        🛒
+        @if (getTotalItems() > 0) {
+          <span class="cart-badge">{{ getTotalItems() }}</span>
+        }
       </button>
     </div>
   </div>
 
-  <!-- Filtros -->
+  <!-- Filtros Móviles -->
   <div class="filters-section">
-    <mat-form-field appearance="outline" class="search-field">
-      <mat-label>Buscar productos</mat-label>
-      <mat-icon matPrefix>search</mat-icon>
-      <input matInput (input)="onBusquedaChange($event)" [value]="busqueda()">
-    </mat-form-field>
+    <div class="search-wrap">
+      <span class="search-icon">🔍</span>
+      <input
+        class="search-input"
+        type="text"
+        placeholder="¿Qué te gustaría pedir?"
+        [value]="busqueda()"
+        (input)="onBusquedaChange($event)" />
+    </div>
 
-    <mat-form-field appearance="outline" class="category-field">
-      <mat-label>Categoría</mat-label>
-      <mat-select (selectionChange)="onCategoriaChange($event.value)" [value]="categoriaSeleccionada()">
-        <mat-option [value]="0">Todas las categorías</mat-option>
-        <mat-option [value]="1">Bebidas</mat-option>
-        <mat-option [value]="2">Snacks</mat-option>
-        <mat-option [value]="3">Comida</mat-option>
-        <mat-option [value]="4">Café</mat-option>
-        <mat-option [value]="5">Postres</mat-option>
-      </mat-select>
-    </mat-form-field>
+    <!-- Scroll horizontal de categorías (Glassmorphism) -->
+    <div class="categories-scroll">
+      <div class="category-chip" [class.active]="categoriaSeleccionada() === 0" (click)="onCategoriaChange(0)">
+        <span>📦 Todas</span>
+      </div>
+      <div class="category-chip" [class.active]="categoriaSeleccionada() === 1" (click)="onCategoriaChange(1)">
+        <span>🥤 Bebidas</span>
+      </div>
+      <div class="category-chip" [class.active]="categoriaSeleccionada() === 2" (click)="onCategoriaChange(2)">
+        <span>🍿 Snacks</span>
+      </div>
+      <div class="category-chip" [class.active]="categoriaSeleccionada() === 3" (click)="onCategoriaChange(3)">
+        <span>🍔 Comida</span>
+      </div>
+      <div class="category-chip" [class.active]="categoriaSeleccionada() === 4" (click)="onCategoriaChange(4)">
+        <span>☕ Café</span>
+      </div>
+      <div class="category-chip" [class.active]="categoriaSeleccionada() === 5" (click)="onCategoriaChange(5)">
+        <span>🍰 Postres</span>
+      </div>
+    </div>
   </div>
 
   <!-- Grid de Productos -->
-  <div class="productos-grid">
-    <mat-card *ngFor="let producto of productosFiltrados()" class="producto-card">
-      <mat-card-header class="producto-header">
-        <div class="header-content">
-          <mat-icon class="category-icon">{{ getCategoriaIcon(producto.productTypeId) }}</mat-icon>
-          <div class="producto-info">
-            <mat-card-title class="producto-title">{{ producto.name }}</mat-card-title>
-            <mat-card-subtitle class="producto-subtitle">{{ producto.brand }}</mat-card-subtitle>
+  @if (productosFiltrados().length === 0) {
+    <div class="empty-state">
+      <span>🔍</span>
+      <h3>No se encontraron productos</h3>
+      <p>Intenta buscar otra cosa o selecciona otra categoría</p>
+    </div>
+  } @else {
+    <div class="productos-grid">
+      @for (producto of productosFiltrados(); track producto.id) {
+        <div class="producto-card glass-panel" [class.sin-stock]="(producto.stock || 0) <= 0">
+          <div class="card-img-container">
+            <img [src]="producto.imageUrl || 'assets/no-image.png'" alt="{{ producto.name }}" onerror="this.src='https://placehold.co/400x400/1e293b/3b82f6?text=Sin+Imagen'">
+            <div class="stock-badge" [style.background]="getStockColor(producto.stock || 0)">
+              📦 {{ producto.stock || 0 }}
+            </div>
+          </div>
+          
+          <div class="card-body">
+            <h4 class="producto-name">{{ producto.name }}</h4>
+            <p class="producto-brand">{{ producto.brand || producto.presentation || 'Genérico' }}</p>
+            
+            @if (producto.description) {
+              <p class="producto-desc">{{ producto.description }}</p>
+            }
+            
+            <div class="producto-details">
+              <span class="precio">{{ formatCurrency(producto.price) }}</span>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <button
+              class="btn-agregar"
+              (click)="agregarAlCarrito(producto)"
+              [disabled]="(producto.stock || 0) <= 0">
+              {{ (producto.stock || 0) <= 0 ? '❌ Agotado' : '➕ Agregar' }}
+            </button>
           </div>
         </div>
-        <div class="stock-indicator" [style.color]="getStockColor(producto.stock || 0)">
-          <mat-icon>inventory_2</mat-icon>
-          <span>{{ producto.stock || 0 }}</span>
-        </div>
-      </mat-card-header>
+      }
+    </div>
+  }
+</div>
 
-      <mat-card-content class="producto-content">
-        <p class="producto-description">{{ producto.description }}</p>
+<!-- Botón flotante para móvil si hay items -->
+@if (getTotalItems() > 0 && !mostrandoCarrito()) {
+  <button class="fab-cart" (click)="verCarrito()">
+    <span class="fab-icon">🛒</span>
+    <span class="fab-text">Ver Carrito ({{ getTotalItems() }})</span>
+    <span class="fab-total">{{ formatCurrency(calcularTotal()) }}</span>
+  </button>
+}
+
+<!-- Carrito Modal (Lateral o Bottom Sheet) -->
+@if (mostrandoCarrito()) {
+  <div class="carrito-overlay" (click)="ocultarCarrito()"></div>
+  <div class="carrito-flotante">
+    <div class="carrito-header">
+      <h3>🛒 Mi Carrito</h3>
+      <button class="close-btn" (click)="ocultarCarrito()">✕</button>
+    </div>
+
+    <div class="carrito-body">
+      @if (carrito().length === 0) {
+        <div class="carrito-vacio">
+          <span class="empty-icon">🛒</span>
+          <p>Tu carrito está vacío</p>
+          <button class="btn-primary" (click)="ocultarCarrito()">Seguir comprando</button>
+        </div>
+      } @else {
+        <div class="carrito-items">
+          @for (item of carrito(); track item.productId; let i = $index) {
+            <div class="carrito-item">
+              <div class="item-info">
+                <h4>{{ item.producto.name }}</h4>
+                <p class="precio-unitario">{{ formatCurrency(item.producto.price) }} x unidad</p>
+              </div>
+              <div class="item-controls">
+                <button class="btn-qty" (click)="actualizarCantidad(i, item.cantidad - 1)">-</button>
+                <span class="qty">{{ item.cantidad }}</span>
+                <button class="btn-qty" (click)="actualizarCantidad(i, item.cantidad + 1)" [disabled]="item.cantidad >= (item.producto.stock || 0)">+</button>
+              </div>
+              <div class="item-total">
+                {{ formatCurrency((item.producto.price || 0) * item.cantidad) }}
+              </div>
+              <button class="btn-delete" (click)="quitarDelCarrito(i)">🗑️</button>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    @if (carrito().length > 0) {
+      <div class="carrito-footer">
+        <div class="resumen-totales">
+          <div class="resumen-row">
+            <span>Subtotal</span>
+            <span>{{ formatCurrency(calcularSubtotal()) }}</span>
+          </div>
+          <div class="resumen-row total-row">
+            <span>Total a pagar</span>
+            <span>{{ formatCurrency(calcularTotal()) }}</span>
+          </div>
+        </div>
         
-        <div class="producto-details">
-          <div class="detail-item">
-            <mat-icon>local_offer</mat-icon>
-            <span>{{ formatCurrency(producto.price) }}</span>
-          </div>
-          <div class="detail-item">
-            <mat-icon>straighten</mat-icon>
-            <span>{{ producto.presentation }}</span>
-          </div>
+        <div class="metodo-pago-selector">
+          <label>Cargar pedido a:</label>
+          <select [(ngModel)]="nuevoPedido().metodoPago" class="pago-select">
+            <option value="cuenta_mesa">La cuenta de mi mesa</option>
+            <option value="efectivo">Pagar en efectivo al garitero</option>
+          </select>
+        </div>
+        
+        <div class="notas-field">
+          <input type="text" [(ngModel)]="nuevoPedido().notas" placeholder="Ej: Las papas sin salsa..." class="input-notas">
         </div>
 
-        <div class="stock-status" [style.color]="getStockColor(producto.stock || 0)">
-          <mat-icon>inventory</mat-icon>
-          <span>{{ getStockLabel(producto.stock || 0) }}</span>
-        </div>
-      </mat-card-content>
-
-      <mat-card-actions class="producto-actions">
-        <button 
-          mat-flat-button 
-          color="primary" 
-          (click)="agregarAlCarrito(producto)"
-          [disabled]="(producto.stock || 0) <= 0"
-          class="add-to-cart-btn">
-          <mat-icon>add_shopping_cart</mat-icon>
-          Agregar
+        <button class="btn-crear-pedido" (click)="crearPedidoDesdeCarrito()">
+          🚀 Confirmar Pedido
         </button>
-      </mat-card-actions>
-    </mat-card>
-  </div>
-
-  <!-- Mensaje si no hay productos -->
-  <div class="no-products" *ngIf="productosFiltrados().length === 0">
-    <mat-icon>search_off</mat-icon>
-    <h3>No se encontraron productos</h3>
-    <p>Intenta ajustar los filtros o la búsqueda</p>
-  </div>
-</div>
-
-<!-- Carrito Flotante -->
-<div class="carrito-flotante" *ngIf="mostrandoCarrito()" [@slideIn]>
-  <div class="carrito-header">
-    <h3>Mi Carrito</h3>
-    <button mat-icon-button (click)="ocultarCarrito()">
-      <mat-icon>close</mat-icon>
-    </button>
-  </div>
-
-  <div class="carrito-content">
-    <div class="carrito-items">
-      <div *ngFor="let item of carrito(); let i = index" class="carrito-item">
-        <div class="item-info">
-          <h4>{{ item.producto?.name }}</h4>
-          <p>{{ formatCurrency(item.producto?.price || 0) }} x {{ item.cantidad }}</p>
-        </div>
-        <div class="item-actions">
-          <button mat-icon-button (click)="actualizarCantidad(i, item.cantidad - 1)">
-            <mat-icon>remove</mat-icon>
-          </button>
-          <span class="cantidad">{{ item.cantidad }}</span>
-          <button mat-icon-button (click)="actualizarCantidad(i, item.cantidad + 1)">
-            <mat-icon>add</mat-icon>
-          </button>
-          <button mat-icon-button color="warn" (click)="quitarDelCarrito(i)">
-            <mat-icon>delete</mat-icon>
-          </button>
-        </div>
       </div>
-    </div>
-
-    <div class="carrito-total">
-      <div class="total-row">
-        <span>Subtotal:</span>
-        <span>{{ formatCurrency(calcularSubtotal()) }}</span>
-      </div>
-      <div class="total-row">
-        <span>IVA (19%):</span>
-        <span>{{ formatCurrency(calcularSubtotal() * 0.19) }}</span>
-      </div>
-      <div class="total-row total-final">
-        <span>Total:</span>
-        <span>{{ formatCurrency(calcularTotal()) }}</span>
-      </div>
-    </div>
-
-    <div class="carrito-actions">
-      <mat-form-field appearance="outline" class="mesa-field">
-        <mat-label>Mesa (opcional)</mat-label>
-        <mat-select [(ngModel)]="nuevoPedido().recursoId">
-          <mat-option [value]="undefined">Sin mesa asignada</mat-option>
-          <mat-option *ngFor="let mesa of mesasDisponibles()" [value]="mesa.id">
-            {{ mesa.code }} - {{ mesa.status === 'available' ? 'Disponible' : 'Ocupada' }}
-          </mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline" class="notas-field">
-        <mat-label>Notas del pedido</mat-label>
-        <textarea matInput [(ngModel)]="nuevoPedido().notas" placeholder="Notas especiales..."></textarea>
-      </mat-form-field>
-
-      <button mat-flat-button color="primary" (click)="crearPedidoDesdeCarrito()" class="pedido-btn">
-        <mat-icon>send</mat-icon>
-        Crear Pedido
-      </button>
-    </div>
+    }
   </div>
-</div>
-
-<!-- Overlay para el carrito -->
-<div class="carrito-overlay" *ngIf="mostrandoCarrito()" (click)="ocultarCarrito()"></div>
+}

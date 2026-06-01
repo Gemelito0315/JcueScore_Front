@@ -93,6 +93,16 @@ export class Auth {
     localStorage.removeItem('authUser');
   }
 
+  public updateCurrentUser(user: User): void {
+    const current = this._authStatus();
+    if (current) {
+      const updated = { ...current, user: { ...current.user, ...user } };
+      this._authStatus.set(updated);
+      localStorage.setItem('authUser', JSON.stringify(updated));
+    }
+  }
+
+
   // public login(user: LoginInterface){
   //   this.http.post<LoginInterface>(`http://localhost:3000/users`, user).subscribe(data => {
   //     // ... Aqui es donde pienso darle un valor al signal que vamos a configurar

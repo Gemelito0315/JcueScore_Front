@@ -1,6 +1,8 @@
 import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
-import { Router, RouterLink, RouterOutlet, RouterLinkActive } from '@angular/router';
+import { Router, RouterLink, RouterOutlet, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { Auth } from '../auth/services/auth';
+import { ADMIN_MENU } from '../core/constants/sidebar.constants';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-dashboard',
@@ -15,15 +17,11 @@ export class Dashboard implements OnInit, OnDestroy {
   currentUser = this.authService.currentUser;
   sidebarOpen = signal(true);
   currentTime = signal('00:00:00');
+  pageTitle = signal('Panel Administrativo');
+  pageSubtitle = signal('JcueScore · Sistema de gestión');
   private clockInterval: any;
 
-  navItems = [
-    { label: 'Inicio', icon: 'home', route: '/dashboard/inicio' },
-    { label: 'Usuarios', icon: 'users', route: '/dashboard/usuarios' },
-    { label: 'Productos', icon: 'box', route: '/dashboard/productos' },
-    { label: 'Mesas', icon: 'billar', route: '/dashboard/mesas' },
-    { label: 'Sistema', icon: 'settings', route: '/dashboard/sistema' },
-  ];
+  navItems = ADMIN_MENU;
 
   ngOnInit() {
     const update = () => {
@@ -34,9 +32,26 @@ export class Dashboard implements OnInit, OnDestroy {
     };
     update();
     this.clockInterval = setInterval(update, 1000);
+
+    // Título dinámico
+    this.updateTitle(this.router.url);
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
+      this.updateTitle(e.urlAfterRedirects || e.url);
+    });
   }
 
   ngOnDestroy() { clearInterval(this.clockInterval); }
+
+  updateTitle(url: string) {
+    const match = this.navItems.find(item => url.startsWith(item.route));
+    if (match) {
+      this.pageTitle.set(match.label);
+      this.pageSubtitle.set('Panel Administrativo · JcueScore');
+    } else {
+      this.pageTitle.set('Panel Administrativo');
+      this.pageSubtitle.set('JcueScore · Sistema de gestión');
+    }
+  }
 
   logout() {
     this.authService.logout();

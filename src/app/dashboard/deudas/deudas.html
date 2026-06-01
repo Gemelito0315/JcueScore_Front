@@ -1,141 +1,174 @@
-<div class="page-header">
-  <div>
-    <h2>💸 Cuentas Pendientes</h2>
-    <p>Gestión de deudas y pagos de clientes</p>
+<div class="page-header-premium">
+  <div class="header-titles">
+    <h2>💸 Cuentas y Balances Generales</h2>
+    <p>Administración global de deudas de juego, consumos de barra y estado de caja de clientes</p>
   </div>
-  <button class="btn-primary" (click)="openCreate()">+ Registrar deuda</button>
+  <button class="btn-primary-glow" (click)="openCreate()">+ Registrar Deuda Manual</button>
 </div>
 
-<!-- RESUMEN -->
-<div class="resumen-grid">
-  <div class="resumen-card red">
+<!-- PANEL DE RESUMEN (METRICS GRID) -->
+<div class="resumen-grid-premium">
+  <div class="resumen-card-premium red animate-fade-in">
+    <div class="card-glow"></div>
     <span class="r-icon">🔴</span>
-    <div>
-      <span class="r-val">{{ deudas().length > 0 ? (deudas() | json).split('"pendiente"').length - 1 : resumen().pendientes }}</span>
-      <span class="r-label">Pendientes</span>
+    <div class="r-info">
+      <span class="r-val">{{ pendientesCount() }}</span>
+      <span class="r-label">Pendientes en Sala</span>
     </div>
   </div>
-  <div class="resumen-card yellow">
+  
+  <div class="resumen-card-premium yellow animate-fade-in">
+    <div class="card-glow"></div>
     <span class="r-icon">🟡</span>
-    <div>
-      <span class="r-val">{{ resumen().parciales }}</span>
-      <span class="r-label">Pagos parciales</span>
+    <div class="r-info">
+      <span class="r-val">{{ parcialesCount() }}</span>
+      <span class="r-label">Abonos Parciales</span>
     </div>
   </div>
-  <div class="resumen-card green">
+
+  <div class="resumen-card-premium green animate-fade-in">
+    <div class="card-glow"></div>
     <span class="r-icon">🟢</span>
-    <div>
-      <span class="r-val">{{ resumen().pagadas }}</span>
-      <span class="r-label">Pagadas</span>
+    <div class="r-info">
+      <span class="r-val">{{ pagadasCount() }}</span>
+      <span class="r-label">Cuentas Pagadas</span>
     </div>
   </div>
-  <div class="resumen-card total">
+
+  <div class="resumen-card-premium total animate-fade-in">
+    <div class="card-glow animate-pulse"></div>
     <span class="r-icon">💰</span>
-    <div>
+    <div class="r-info">
       <span class="r-val">${{ totalPendiente | number:'1.0-0' }}</span>
-      <span class="r-label">Total por cobrar</span>
+      <span class="r-label">Total por Cobrar</span>
     </div>
   </div>
 </div>
 
-<!-- FILTROS -->
-<div class="filtros">
+<!-- FILTROS (TABS BAR) -->
+<div class="filtros-container">
   @for (f of ['todas','pendiente','parcial','pagada']; track f) {
-    <button [class.active]="filtro()===f" (click)="filtro.set(f)">
-      {{ f.charAt(0).toUpperCase() + f.slice(1) }}
+    <button class="filtro-btn" [class.active]="filtro()===f" (click)="filtro.set(f)">
+      {{ f === 'todas' ? '🌐 Todas las Cuentas' : 
+         f === 'pendiente' ? '⏳ Pendientes' : 
+         f === 'parcial' ? '🟡 Abonos Parciales' : '✅ Pagadas' }}
     </button>
   }
 </div>
 
-<!-- LISTA -->
-<div class="deudas-list">
+<!-- LISTADO DE CUENTAS -->
+<div class="deudas-list-premium">
   @for (d of deudasFiltradas; track d.id) {
-    <div class="deuda-card" [class]="d.estado">
-      <div class="deuda-left">
-        <div class="deuda-avatar" [style.background]="getEstadoColor(d.estado)+'22'" [style.color]="getEstadoColor(d.estado)">
-          {{ d.name?.charAt(0) }}{{ d.lastName?.charAt(0) }}
+    <div class="deuda-card-premium animate-fade-in" [class]="d.estado">
+      
+      <div class="deuda-left-section">
+        <div class="avatar-circle" [style.background]="getEstadoColor(d.estado)+'22'" [style.color]="getEstadoColor(d.estado)">
+          {{ getNombreCliente(d).charAt(0) }}
         </div>
         <div class="deuda-info">
-          <span class="deuda-nombre">{{ d.name }} {{ d.lastName }}</span>
-          <span class="deuda-desc">{{ d.descripcion }}</span>
-          @if (d.notas) { <span class="deuda-notas">📝 {{ d.notas }}</span> }
-          <span class="deuda-fecha">{{ d.fechaCreacion | date:'dd/MM/yyyy' }}</span>
-        </div>
-      </div>
-
-      <div class="deuda-montos">
-        <div class="monto-total">${{ d.monto | number }}</div>
-        @if (d.estado !== 'pendiente') {
-          <div class="monto-pagado">Pagado: ${{ d.montoPagado | number }}</div>
-        }
-        @if (d.estado !== 'pagada') {
-          <div class="monto-pendiente" [style.color]="getEstadoColor(d.estado)">
-            Debe: ${{ getPendiente(d) | number }}
+          <div class="deuda-nombre-row">
+            <span class="deuda-nombre">{{ getNombreCliente(d) }}</span>
+            @if (d.esExterno) {
+              <span class="visitante-tag">👤 Visitante</span>
+            } @else {
+              <span class="registrado-tag">Socio Registrado</span>
+            }
           </div>
-        }
-        <!-- BARRA DE PROGRESO -->
-        <div class="pago-track">
-          <div class="pago-fill" [style.width.%]="(d.montoPagado / d.monto) * 100" [style.background]="getEstadoColor(d.estado)"></div>
+          <span class="deuda-desc">{{ d.descripcion }}</span>
+          @if (d.notas) { 
+            <span class="deuda-notas">📝 {{ d.notas }}</span> 
+          }
+          <span class="deuda-fecha">Registrada el {{ d.fechaCreacion | date:'dd/MM/yyyy h:mm a' }}</span>
         </div>
       </div>
 
-      <div class="deuda-estado">
-        <span class="estado-pill" [style.color]="getEstadoColor(d.estado)" [style.border-color]="getEstadoColor(d.estado)+'44'" [style.background]="getEstadoColor(d.estado)+'11'">
-          {{ d.estado }}
+      <div class="deuda-mid-section">
+        <div class="deuda-montos">
+          <div class="monto-row-item">
+            <span class="m-lbl">Total Consumido:</span>
+            <span class="m-val font-large">${{ d.monto | number:'1.0-0' }}</span>
+          </div>
+          @if (d.estado !== 'pendiente') {
+            <div class="monto-row-item">
+              <span class="m-lbl font-green">Abonado:</span>
+              <span class="m-val green">${{ d.montoPagado | number:'1.0-0' }}</span>
+            </div>
+          }
+          @if (d.estado !== 'pagada') {
+            <div class="monto-row-item highlighted">
+              <span class="m-lbl">Resta por pagar:</span>
+              <span class="m-val red" [style.color]="getEstadoColor(d.estado)">${{ getPendiente(d) | number:'1.0-0' }}</span>
+            </div>
+          }
+        </div>
+        <!-- BARRA DE PROGRESO -->
+        <div class="progress-bar-track">
+          <div class="progress-bar-fill" [style.width.%]="(d.montoPagado / d.monto) * 100" [style.background]="getEstadoColor(d.estado)"></div>
+        </div>
+      </div>
+
+      <div class="deuda-status-section">
+        <span class="estado-pill-premium" [style.color]="getEstadoColor(d.estado)" [style.border-color]="getEstadoColor(d.estado)+'44'" [style.background]="getEstadoColor(d.estado)+'11'">
+          {{ d.estado === 'pendiente' ? 'Pendiente' : d.estado === 'parcial' ? 'Abono Parcial' : 'Pagada' }}
         </span>
       </div>
 
-      <div class="deuda-actions">
+      <div class="deuda-actions-section">
         @if (d.estado !== 'pagada') {
-          <button class="btn-pago" (click)="openPago(d)">💵 Registrar pago</button>
+          <button class="btn-cobrar-premium" (click)="openPago(d)">💵 Recibir Pago</button>
         }
-        <button class="btn-del" (click)="delete(d.id)">🗑️</button>
+        <button class="btn-delete-premium" (click)="delete(d.id)" title="Eliminar Registro">🗑️</button>
       </div>
     </div>
   }
 
   @if (deudasFiltradas.length === 0) {
-    <div class="empty">
-      <span>✅</span>
-      <p>No hay deudas con este filtro</p>
+    <div class="empty-banner-glass">
+      <span class="empty-icon">✅</span>
+      <h4>No hay registros</h4>
+      <p>No se encontraron cuentas que coincidan con el filtro seleccionado.</p>
     </div>
   }
 </div>
 
-<!-- MODAL NUEVA DEUDA -->
+<!-- MODAL REGISTRAR DEUDA MANUAL -->
 @if (showModal()) {
-  <div class="modal-overlay" (click)="showModal.set(false)">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>💸 Registrar Deuda</h3>
-        <button (click)="showModal.set(false)">✕</button>
+  <div class="modal-overlay-glass" (click)="showModal.set(false)">
+    <div class="modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-header-premium">
+        <h3>💸 Registrar Cuenta Manual</h3>
+        <button class="btn-close-modal" (click)="showModal.set(false)">✕</button>
       </div>
-      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
-        <div class="field">
-          <label>Cliente *</label>
+      
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form-premium">
+        <div class="field-premium">
+          <label>Cliente Registrado *</label>
           <select formControlName="userId">
-            <option [value]="null">Seleccionar cliente...</option>
+            <option [ngValue]="null">Seleccionar cliente...</option>
             @for (u of usuarios(); track u.id) {
-              <option [value]="u.id">{{ u.name }} {{ u.lastName }} — {{ u.email }}</option>
+              <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }} ({{ u.email }})</option>
             }
           </select>
         </div>
-        <div class="field">
-          <label>Descripción *</label>
-          <input formControlName="descripcion" placeholder="Ej: Partida del 10 de abril + bebidas" />
+        <div class="field-premium">
+          <label>Descripción del Consumo *</label>
+          <input formControlName="descripcion" placeholder="Ej: Mesa de juego + consumos de barra" />
         </div>
-        <div class="field">
-          <label>Monto total *</label>
-          <input formControlName="monto" type="number" placeholder="25000" />
+        <div class="field-premium">
+          <label>Monto Total *</label>
+          <div class="input-prefix-premium">
+            <span>$</span>
+            <input formControlName="monto" type="number" placeholder="Ej: 25000" />
+          </div>
         </div>
-        <div class="field">
-          <label>Notas (opcional)</label>
-          <textarea formControlName="notas" rows="2" placeholder="Prometió pagar el viernes..."></textarea>
+        <div class="field-premium">
+          <label>Notas Adicionales (Opcional)</label>
+          <textarea formControlName="notas" rows="2" placeholder="Observaciones de pago..."></textarea>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
-            {{ loading() ? 'Guardando...' : 'Registrar deuda' }}
+        <div class="modal-actions-premium">
+          <button type="button" class="btn-secondary-premium" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary-premium" [disabled]="form.invalid || loading()">
+            {{ loading() ? 'Guardando...' : 'Registrar Cuenta' }}
           </button>
         </div>
       </form>
@@ -143,32 +176,37 @@
   </div>
 }
 
-<!-- MODAL PAGO -->
+<!-- MODAL REGISTRAR PAGO -->
 @if (showPagoModal()) {
-  <div class="modal-overlay" (click)="showPagoModal.set(false)">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header">
-        <h3>💵 Registrar Pago</h3>
-        <button (click)="showPagoModal.set(false)">✕</button>
+  <div class="modal-overlay-glass" (click)="showPagoModal.set(false)">
+    <div class="modal-premium payment" (click)="$event.stopPropagation()">
+      <div class="modal-header-premium">
+        <h3>💵 Registrar Pago / Abono</h3>
+        <button class="btn-close-modal" (click)="showPagoModal.set(false)">✕</button>
       </div>
-      <div class="pago-info">
-        <span class="pago-cliente">{{ deudaSeleccionada()?.name }} {{ deudaSeleccionada()?.lastName }}</span>
-        <span class="pago-desc">{{ deudaSeleccionada()?.descripcion }}</span>
-        <div class="pago-resumen">
-          <span>Total: ${{ deudaSeleccionada()?.monto | number }}</span>
-          <span>Pagado: ${{ deudaSeleccionada()?.montoPagado | number }}</span>
-          <span class="pago-pendiente">Pendiente: ${{ getPendiente(deudaSeleccionada()) | number }}</span>
+      
+      <div class="payment-info-box">
+        <span class="payment-client-label">Cliente / Responsable</span>
+        <span class="payment-client-name">{{ getNombreCliente(deudaSeleccionada()) }}</span>
+        <span class="payment-desc-sub">{{ deudaSeleccionada()?.descripcion }}</span>
+        <div class="payment-debt-summary">
+          <span>Resta por cobrar:</span>
+          <strong class="payment-pending-amount">${{ getPendiente(deudaSeleccionada()) | number:'1.0-0' }}</strong>
         </div>
       </div>
-      <form [formGroup]="pagoForm" (ngSubmit)="registrarPago()" class="modal-form">
-        <div class="field">
-          <label>Monto a pagar *</label>
-          <input formControlName="montoPago" type="number" />
+
+      <form [formGroup]="pagoForm" (ngSubmit)="registrarPago()" class="modal-form-premium">
+        <div class="field-premium">
+          <label>Monto Recibido *</label>
+          <div class="input-prefix-premium">
+            <span>$</span>
+            <input formControlName="montoPago" type="number" />
+          </div>
         </div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" (click)="showPagoModal.set(false)">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="pagoForm.invalid || loading()">
-            {{ loading() ? 'Procesando...' : '✅ Confirmar pago' }}
+        <div class="modal-actions-premium">
+          <button type="button" class="btn-secondary-premium" (click)="showPagoModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary-premium" [disabled]="pagoForm.invalid || loading()">
+            {{ loading() ? 'Procesando...' : '✅ Confirmar Abono' }}
           </button>
         </div>
       </form>

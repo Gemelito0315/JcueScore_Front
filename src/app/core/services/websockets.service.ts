@@ -1,8 +1,9 @@
 import { Injectable, signal } from '@angular/core';
 import { Subject } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 export interface WebSocketMessage {
-  type: 'partida_actualizada' | 'nueva_reserva' | 'torneo_actualizado' | 'mining_actualizado' | 'sistema_mantenimiento';
+  type: 'partida_actualizada' | 'nueva_reserva' | 'torneo_actualizado' | 'mining_actualizado' | 'sistema_mantenimiento' | 'match_update' | 'active_matches';
   data: any;
   timestamp: Date;
 }
@@ -14,6 +15,8 @@ export interface PartidaActualizada {
   marcador?: { j1: number; j2: number };
   tiempoTranscurrido?: string;
   costoActual?: number;
+  tiempoInicio?: Date | string;
+  partidaId?: number;
 }
 
 export interface NuevaReserva {
@@ -58,6 +61,8 @@ export class WebsocketsService {
   private reservasSubject = new Subject<NuevaReserva>();
   private torneosSubject = new Subject<TorneoActualizado>();
   private miningSubject = new Subject<MiningActualizado>();
+  private matchUpdateSubject = new Subject<any>();
+  private activeMatchesSubject = new Subject<any[]>();
 
   constructor() {
     this.connect();
@@ -65,7 +70,7 @@ export class WebsocketsService {
 
   private connect() {
     try {
-      this.socket = new WebSocket('ws://localhost:3000/ws');
+      this.socket = new WebSocket(environment.wsUrl);
       this.setupEventListeners();
     } catch (error) {
       console.error('Error conectando WebSocket:', error);
@@ -81,11 +86,14 @@ export class WebsocketsService {
       this.connectionStatus.set('conectado');
       this.reconnectAttempts = 0;
       
-      // Enviar mensaje de autenticación
-      this.send({
-        type: 'auth',
-        token: localStorage.getItem('token')
-      });
+      // Enviar mensaje de autenticación solo si hay token
+      const token = localStorage.getItem('token');
+      if (token) {
+        this.send({
+          type: 'auth',
+          token: token
+        });
+      }
     };
 
     this.socket.onmessage = (event) => {
@@ -125,6 +133,12 @@ export class WebsocketsService {
         break;
       case 'sistema_mantenimiento':
         this.handleSistemaMantenimiento(message.data);
+        break;
+      case 'match_update':
+        this.matchUpdateSubject.next(message.data);
+        break;
+      case 'active_matches':
+        this.activeMatchesSubject.next(message.data);
         break;
     }
   }
@@ -242,6 +256,14 @@ export class WebsocketsService {
 
   onMiningActualizado() {
     return this.miningSubject.asObservable();
+  }
+
+  onMatchUpdate() {
+    return this.matchUpdateSubject.asObservable();
+  }
+
+  onActiveMatches() {
+    return this.activeMatchesSubject.asObservable();
   }
 
   // Método para desconectar manualmente

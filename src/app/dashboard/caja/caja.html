@@ -1,0 +1,229 @@
+<!-- KPI CARDS -->
+<div class="kpi-row">
+  <!-- Turno activo -->
+  @if (kpis().turnoAbierto) {
+    <div class="kpi-card live">
+      <div class="kpi-pulse"></div>
+      <div class="kpi-icon green">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/>
+        </svg>
+      </div>
+      <div>
+        <span class="kpi-num">{{ kpis().turnoAbierto!.garitero }}</span>
+        <span class="kpi-label">Turno activo desde {{ kpis().turnoAbierto!.horaApertura }}</span>
+      </div>
+    </div>
+  }
+
+  <div class="kpi-card">
+    <div class="kpi-icon cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+      </svg>
+    </div>
+    <div>
+      <span class="kpi-num">{{ formatCurrency(kpis().totalVentas) }}</span>
+      <span class="kpi-label">Total ventas (período)</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon yellow">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <rect x="2" y="7" width="20" height="14" rx="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+      </svg>
+    </div>
+    <div>
+      <span class="kpi-num">{{ formatCurrency(kpis().totalEfectivo) }}</span>
+      <span class="kpi-label">Efectivo recaudado</span>
+    </div>
+  </div>
+
+  <div class="kpi-card">
+    <div class="kpi-icon purple">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/>
+        <polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/>
+      </svg>
+    </div>
+    <div>
+      <span class="kpi-num">{{ formatCurrency(kpis().totalTransf) }}</span>
+      <span class="kpi-label">Transferencias</span>
+    </div>
+  </div>
+
+  <div class="kpi-card" [class.danger]="kpis().turnosConDif > 0">
+    <div class="kpi-icon" [class.red]="kpis().turnosConDif > 0" [class.green]="kpis().turnosConDif === 0">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+        <line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>
+      </svg>
+    </div>
+    <div>
+      <span class="kpi-num" [class.red-text]="kpis().turnosConDif > 0">{{ kpis().turnosConDif }}</span>
+      <span class="kpi-label">Turnos con diferencia</span>
+    </div>
+  </div>
+</div>
+
+<!-- FILTROS -->
+<div class="page-header">
+  <div>
+    <h2>Arqueos de Caja</h2>
+    <p>Historial de turnos y cuadres por garitero</p>
+  </div>
+  <div class="filters">
+    <select class="filter-select" [value]="filtroGaritero()"
+            (change)="filtroGaritero.set($any($event.target).value)"
+            aria-label="Filtrar por garitero">
+      <option value="all">Todos los gariteros</option>
+      @for (g of gariteros(); track g) {
+        <option [value]="g">{{ g }}</option>
+      }
+    </select>
+    <select class="filter-select" [value]="filtroEstado()"
+            (change)="filtroEstado.set($any($event.target).value)"
+            aria-label="Filtrar por estado">
+      <option value="all">Todos los estados</option>
+      <option value="abierto">Abierto</option>
+      <option value="cuadrado">Cuadrado</option>
+      <option value="cerrado">Con diferencia</option>
+    </select>
+    <button class="btn-primary" (click)="exportarExcel()" style="display: flex; align-items: center; gap: 8px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+        <line x1="12" y1="18" x2="12" y2="12"></line>
+        <line x1="9" y1="15" x2="15" y2="15"></line>
+      </svg>
+      Exportar Excel
+    </button>
+  </div>
+</div>
+
+<!-- TABLA DE ARQUEOS -->
+<div class="table-container">
+  <table>
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Garitero</th>
+        <th>Fecha</th>
+        <th>Horario</th>
+        <th>Ventas totales</th>
+        <th>Efectivo</th>
+        <th>Transferencia</th>
+        <th>Diferencia</th>
+        <th>Estado</th>
+        <th>Detalle</th>
+      </tr>
+    </thead>
+    <tbody>
+      @for (t of turnos(); track t.id) {
+        <tr [class.row-abierto]="t.estado === 'abierto'"
+            [class.row-problema]="t.estado === 'cerrado'">
+          <td class="id-cell">{{ t.id }}</td>
+          <td>
+            <div class="garitero-cell">
+              <span class="avatar">{{ t.garitero.charAt(0) }}</span>
+              <span>{{ t.garitero }}</span>
+            </div>
+          </td>
+          <td>{{ t.fechaApertura }}</td>
+          <td class="time-cell">
+            {{ t.horaApertura }} — {{ t.horaCierre ?? '...' }}
+          </td>
+          <td class="amount">{{ formatCurrency(t.totalVentas) }}</td>
+          <td class="amount">{{ formatCurrency(t.totalEfectivo) }}</td>
+          <td class="amount">{{ formatCurrency(t.totalTransferencia) }}</td>
+          <td>
+            @if (t.estado === 'abierto') {
+              <span class="diff-pending">—</span>
+            } @else if (t.diferencia === 0) {
+              <span class="diff-ok">$0</span>
+            } @else {
+              <span class="diff-bad">{{ formatCurrency(t.diferencia) }}</span>
+            }
+          </td>
+          <td>
+            <span class="estado-badge" [ngClass]="getEstadoClass(t.estado)">
+              {{ getEstadoLabel(t.estado) }}
+            </span>
+          </td>
+          <td>
+            <button class="btn-icon" (click)="openDetail(t)" aria-label="Ver detalle del turno">
+              👁️
+            </button>
+          </td>
+        </tr>
+      }
+      @empty {
+        <tr>
+          <td colspan="10" class="empty-row">No hay turnos con ese filtro.</td>
+        </tr>
+      }
+    </tbody>
+  </table>
+</div>
+
+<!-- MODAL DETALLE TURNO -->
+@if (showDetail() && selectedTurno()) {
+  <div class="modal-overlay" (click)="closeDetail()" role="dialog" aria-modal="true" aria-label="Detalle de turno">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <div>
+          <h3>Detalle de Turno #{{ selectedTurno()!.id }}</h3>
+          <p>{{ selectedTurno()!.garitero }} · {{ selectedTurno()!.fechaApertura }}</p>
+        </div>
+        <button (click)="closeDetail()" aria-label="Cerrar">✕</button>
+      </div>
+
+      <div class="detail-grid">
+        <div class="detail-section">
+          <h4>⏱ Horario</h4>
+          <div class="info-row"><span>Apertura</span><span>{{ selectedTurno()!.horaApertura }}</span></div>
+          <div class="info-row"><span>Cierre</span><span>{{ selectedTurno()!.horaCierre ?? 'En curso' }}</span></div>
+        </div>
+
+        <div class="detail-section">
+          <h4>💵 Ingresos</h4>
+          <div class="info-row"><span>Saldo inicial</span><span>{{ formatCurrency(selectedTurno()!.saldoInicial) }}</span></div>
+          <div class="info-row"><span>Ventas totales</span><span class="highlight">{{ formatCurrency(selectedTurno()!.totalVentas) }}</span></div>
+          <div class="info-row"><span>Efectivo</span><span>{{ formatCurrency(selectedTurno()!.totalEfectivo) }}</span></div>
+          <div class="info-row"><span>Transferencias</span><span>{{ formatCurrency(selectedTurno()!.totalTransferencia) }}</span></div>
+          <div class="info-row"><span>Deudas fiadas</span><span class="warn">{{ formatCurrency(selectedTurno()!.totalDeudas) }}</span></div>
+        </div>
+
+        <div class="detail-section">
+          <h4>📤 Egresos y Cierre</h4>
+          <div class="info-row"><span>Gastos operativos</span><span class="warn">{{ formatCurrency(selectedTurno()!.gastos) }}</span></div>
+          @if (selectedTurno()!.estado !== 'abierto') {
+            <div class="info-row"><span>Saldo final entregado</span><span class="highlight">{{ formatCurrency(selectedTurno()!.saldoFinal) }}</span></div>
+            <div class="info-row">
+              <span>Diferencia</span>
+              <span [class.diff-ok]="selectedTurno()!.diferencia === 0"
+                    [class.diff-bad]="selectedTurno()!.diferencia !== 0">
+                {{ formatCurrency(selectedTurno()!.diferencia) }}
+              </span>
+            </div>
+          }
+        </div>
+      </div>
+
+      @if (selectedTurno()!.observaciones) {
+        <div class="obs-box">
+          <strong>📝 Observaciones:</strong>
+          <p>{{ selectedTurno()!.observaciones }}</p>
+        </div>
+      }
+
+      <div class="modal-footer">
+        <span class="estado-badge" [ngClass]="getEstadoClass(selectedTurno()!.estado)">
+          {{ getEstadoLabel(selectedTurno()!.estado) }}
+        </span>
+        <button class="btn-secondary" (click)="closeDetail()">Cerrar</button>
+      </div>
+    </div>
+  </div>
+}

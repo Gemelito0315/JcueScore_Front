@@ -1,0 +1,47 @@
+<div class="spectator-kiosk">
+  <header class="spectator-header">
+    <button class="btn-back" (click)="volver()">
+      <span>⬅️</span> Volver al Lobby
+    </button>
+    <div class="live-badge">🔴 EN VIVO</div>
+  </header>
+
+  <main class="spectator-body" *ngIf="matchState(); else loading">
+    <div class="match-info">
+      <h1>{{ mesaId() }}</h1>
+      <div class="timer">
+        <span>{{ tiempoFormateado }}</span>
+      </div>
+    </div>
+
+    <div class="players-board">
+      <div class="player-card" 
+           *ngFor="let j of matchState().jugadores; let idx = index"
+           [class.active-turn]="matchState().turnoActual === idx">
+        
+        <div class="player-header">
+          <h2>{{ j.nombre }}</h2>
+          <div class="meta">Meta: {{ j.meta }}</div>
+        </div>
+
+        <div class="score-display">
+          <div class="points-huge">{{ j.puntos }}</div>
+        </div>
+
+        <div class="player-footer">
+          <div class="progress-bar">
+            <div class="fill" [style.width.%]="(j.puntos / j.meta) * 100"></div>
+          </div>
+          <div class="progress-text">Faltan {{ (j.meta - j.puntos > 0) ? (j.meta - j.puntos) : 0 }}</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <ng-template #loading>
+    <div class="loading-state">
+      <div class="spinner"></div>
+      <h2>Conectando con la mesa...</h2>
+    </div>
+  </ng-template>
+</div>

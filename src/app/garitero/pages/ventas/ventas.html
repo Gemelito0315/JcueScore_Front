@@ -1,67 +1,828 @@
-<div class="pos-layout">
-  <!-- PRODUCTOS -->
-  <div class="productos-panel">
-    <h3>📦 Productos</h3>
-    <div class="productos-grid">
-      @for (p of productos(); track p.id) {
-        <button class="producto-btn" (click)="agregarAlCarrito(p)">
-          <span class="p-nombre">{{ p.name }}</span>
-          <span class="p-precio">${{ p.price | number }}</span>
-        </button>
-      }
-      @if (productos().length === 0) {
-        <p class="no-productos">No hay productos disponibles</p>
-      }
-    </div>
-  </div>
-
-  <!-- CARRITO -->
-  <div class="carrito-panel">
-    <h3>🛒 Venta actual</h3>
-    <div class="carrito-items">
-      @for (item of carrito(); track item.id) {
-        <div class="carrito-item">
-          <span class="item-nombre">{{ item.nombre }}</span>
-          <div class="item-controls">
-            <button (click)="quitarDelCarrito(item.id)">−</button>
-            <span>{{ item.cantidad }}</span>
-            <button (click)="agregarAlCarrito({id:item.id,name:item.nombre,price:item.precio,isActive:true})">+</button>
-          </div>
-          <span class="item-total">${{ item.precio * item.cantidad | number }}</span>
+<!-- NOTIFICACIONES Y ALERTAS EN TIEMPO REAL -->
+@if (notificaciones().length > 0) {
+  <div class="alertas-contenedor">
+    @for (n of notificaciones(); track $index) {
+      <div class="alerta-toast" [class.ayuda]="n.includes('🔔')" [class.pedido]="n.includes('🍔')">
+        <div class="alerta-body">
+          <span class="alerta-pulse"></span>
+          <p>{{ n }}</p>
         </div>
-      }
-      @if (carrito().length === 0) {
-        <p class="carrito-vacio">Selecciona productos</p>
-      }
-    </div>
-
-    <div class="carrito-footer">
-      <div class="total-row">
-        <span>Total</span>
-        <span class="total-val">${{ total | number }}</span>
-      </div>
-      <div class="metodo-tabs">
-        <button [class.active]="metodoPago()==='efectivo'" (click)="metodoPago.set('efectivo')">💵 Efectivo</button>
-        <button [class.active]="metodoPago()==='transferencia'" (click)="metodoPago.set('transferencia')">📱 Transferencia</button>
-      </div>
-      <button class="btn-cobrar" (click)="cobrar()" [disabled]="carrito().length === 0">
-        ✅ Cobrar ${{ total | number }}
-      </button>
-    </div>
-  </div>
-</div>
-
-<!-- HISTORIAL DEL DÍA -->
-@if (ventas().length > 0) {
-  <div class="historial">
-    <h3>📋 Ventas del día ({{ ventas().length }})</h3>
-    @for (v of ventas(); track v.id) {
-      <div class="venta-row">
-        <span class="v-hora">{{ v.hora }}</span>
-        <span class="v-items">{{ v.items.length }} producto(s)</span>
-        <span class="v-metodo">{{ v.metodo === 'efectivo' ? '💵' : '📱' }}</span>
-        <span class="v-total">${{ v.total | number }}</span>
+        <button class="btn-cerrar-alerta" (click)="quitarNotificacion($index)">×</button>
       </div>
     }
+  </div>
+}
+
+<!-- SELECCIÓN DE PANELES (TABS) -->
+<div class="tab-selector">
+  <button [class.active]="activeTab() === 'cuentas'" (click)="activeTab.set('cuentas')">
+    👥 Cuentas Activas (Mesas y Clientes)
+    @if (llamadosActivos().length > 0) {
+      <span class="badge-alerta pulse-red">{{ llamadosActivos().length }}</span>
+    }
+  </button>
+  <button [class.active]="activeTab() === 'barra'" (click)="activeTab.set('barra')">
+    🛒 Venta Rápida (Barra)
+  </button>
+  <button [class.active]="activeTab() === 'cuentas_cobrar'" (click)="activeTab.set('cuentas_cobrar')">
+    📝 Cuentas Pendientes
+    @if (deudasActivas().length > 0) {
+      <span class="badge-alerta">{{ deudasActivas().length }}</span>
+    }
+  </button>
+</div>
+
+<!-- ================= TAB 1: CUENTAS ACTIVAS ================= -->
+@if (activeTab() === 'cuentas') {
+  <div class="cuentas-view">
+    <div class="control-header">
+      <div class="search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg>
+        <input 
+          type="text" 
+          placeholder="Buscar mesa, cliente o jugador activo..." 
+          [value]="filtroBusqueda()"
+          (input)="filtroBusqueda.set($any($event.target).value)"
+        />
+      </div>
+      <p class="stats-resumen">
+        Total Mesas: <strong>{{ cuentasActivas().length }}</strong> | 
+        En Juego: <strong class="text-warning">{{ cuentasActivas().filter(c => c.partidaId).length }}</strong> | 
+        Libres: <strong class="text-success">{{ cuentasActivas().filter(c => !c.partidaId).length }}</strong> | 
+        Solicitudes: <strong class="text-danger">{{ llamadosActivos().length }}</strong>
+      </p>
+    </div>
+
+    <!-- SECCIÓN DE SOLICITUDES Y PETICIONES DE MESA EN TIEMPO REAL -->
+    @if (llamadosActivos().length > 0) {
+      <div class="solicitudes-pendientes-seccion">
+        <h4>🔔 Solicitudes del Local y Mesas en Espera ({{ llamadosActivos().length }})</h4>
+        <div class="solicitudes-grid-layout">
+          @for (ll of llamadosActivos(); track ll.id) {
+            <div class="solicitud-item-card" [class.peticion-mesa]="ll.mensaje?.startsWith('[PETICION_MESA]')">
+              <div class="sol-left">
+                <span class="sol-icon">{{ ll.mensaje?.startsWith('[PETICION_MESA]') ? '🎱' : '🔔' }}</span>
+                <div class="sol-info">
+                  <h5>
+                    {{ ll.mensaje?.startsWith('[PETICION_MESA]') ? 'Petición de Mesa' : 'Llamado de Ayuda' }} 
+                    · {{ ll.recursoCode }}
+                  </h5>
+                  <p class="sol-cliente">Cliente: <strong>{{ ll.usuarioName }} {{ ll.usuarioLastName || '' }}</strong></p>
+                  <p class="sol-mensaje">
+                    {{ ll.mensaje?.startsWith('[PETICION_MESA]') ? ll.mensaje.replace('[PETICION_MESA]', '') : ll.mensaje }}
+                  </p>
+                </div>
+              </div>
+              <div class="sol-actions">
+                @if (ll.mensaje?.startsWith('[PETICION_MESA]')) {
+                  <button class="btn-aprobar-mesa" (click)="aprobarPeticionMesa(ll)">
+                    ⚡ Habilitar Mesa
+                  </button>
+                }
+                <button class="btn-rechazar-atender" (click)="resolverLlamadoDirecto(ll.id)">
+                  ✔️ Marcar Atendido
+                </button>
+              </div>
+            </div>
+          }
+        </div>
+      </div>
+    }
+
+    <!-- REJILLA DE TARJETAS DE CUENTAS -->
+    <div class="cuentas-grid">
+      @for (c of cuentasActivas(); track c.id) {
+        <div 
+          class="cuenta-card" 
+          [class.card-ayuda]="c.llamadoAyuda"
+          [class.card-pedido-nuevo]="c.nuevoPedidoPendiente"
+          [class.card-disponible]="c.tipo === 'mesa' && !c.partidaId && c.status === 'available'"
+          [class.card-mantenimiento]="c.tipo === 'mesa' && c.status === 'maintenance'"
+          [class.card-reservada]="c.tipo === 'mesa' && c.status === 'reserved'"
+          [class.selected]="selectedCuenta()?.id === c.id"
+          (click)="seleccionarCuenta(c)"
+        >
+          <!-- Indicadores de Alerta -->
+          @if (c.llamadoAyuda) {
+            <span class="alerta-badge neon-blink">🚨 ASISTENCIA REQUERIDA</span>
+          } @else if (c.nuevoPedidoPendiente) {
+            <span class="alerta-badge pedido-blink">🍔 NUEVO PEDIDO</span>
+          }
+
+          <div class="card-header">
+            <span class="card-icon">{{ c.tipo === 'mesa' ? '🎱' : '👤' }}</span>
+            <div class="card-titles">
+              <h4>{{ c.nombre }}</h4>
+              @if (c.tipo === 'mesa') {
+                @if (c.partidaId) {
+                  <span class="cronometro live">{{ liveTiempos()[c.id] || '00:00:00' }}</span>
+                } @else if (c.status === 'maintenance') {
+                  <span class="cronometro mantenimiento">🔧 MANTENIMIENTO</span>
+                } @else if (c.status === 'reserved') {
+                  <span class="cronometro reservada">📅 RESERVADA</span>
+                } @else {
+                  <span class="cronometro disponible">🎱 LIBRE</span>
+                }
+              } @else {
+                <span class="tag-cliente">Cliente Barra</span>
+              }
+            </div>
+          </div>
+
+          <div class="card-body">
+            @if (c.tipo === 'mesa') {
+              @if (c.partidaId) {
+                @if (c.jugadores && c.jugadores.length > 0) {
+                  <p class="card-players">👥 {{ c.jugadores.join(' vs ') }}</p>
+                }
+              } @else if (c.status === 'maintenance') {
+                <p class="card-players text-danger">Fuera de servicio</p>
+              } @else if (c.status === 'reserved') {
+                <p class="card-players text-warning">Mesa reservada</p>
+              } @else {
+                <p class="card-players text-success">Disponible para juego</p>
+              }
+            }
+            @if (c.pedidos.length > 0) {
+              <p class="card-consumos">🛍️ {{ c.pedidos.length }} pedido(s) en curso</p>
+            } @else {
+              <p class="card-consumos text-muted">Sin consumos cargados</p>
+            }
+          </div>
+
+          <div class="card-footer">
+            <div class="precio-breakdown">
+              @if (c.tipo === 'mesa') {
+                @if (c.partidaId) {
+                  <span class="val-mesa">Mesa: {{ formatCurrency(c.totalMesa) }}</span>
+                } @else {
+                  <span class="val-mesa text-success">{{ formatCurrency(c.precioHora || 15000) }}/Hr</span>
+                }
+              }
+              <span class="val-consumo">Consumo: {{ formatCurrency(c.totalConsumo) }}</span>
+            </div>
+            <div class="cuenta-total">
+              {{ formatCurrency(c.totalGeneral) }}
+            </div>
+          </div>
+        </div>
+      }
+      @if (cuentasActivas().length === 0) {
+        <div class="no-cuentas">
+          <span>🎱</span>
+          <p>No hay mesas registradas. Agrega mesas en el panel de Administración.</p>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ================= TAB 2: VENTA RÁPIDA (BARRA) ================= -->
+@if (activeTab() === 'barra') {
+  <div class="pos-layout">
+    <!-- PRODUCTOS -->
+    <div class="productos-panel">
+      <h3>📦 Productos disponibles</h3>
+      <div class="productos-grid">
+        @for (p of productos(); track p.id) {
+          <button class="producto-btn" (click)="agregarAlCarritoBarra(p)">
+            <span class="p-nombre">{{ p.name }}</span>
+            <span class="p-precio">{{ formatCurrency(p.price) }}</span>
+          </button>
+        }
+        @if (productos().length === 0) {
+          <p class="no-productos">No hay productos disponibles</p>
+        }
+      </div>
+    </div>
+
+    <!-- CARRITO BARRA -->
+    <div class="carrito-panel">
+      <h3>🛒 Venta directa actual</h3>
+      <div class="carrito-items">
+        @for (item of carritoBarra(); track item.id) {
+          <div class="carrito-item">
+            <span class="item-nombre">{{ item.nombre }}</span>
+            <div class="item-controls">
+              <button (click)="quitarDelCarritoBarra(item.id)">−</button>
+              <span>{{ item.cantidad }}</span>
+              <button (click)="agregarAlCarritoBarra({id:item.id,name:item.nombre,price:item.precio,isActive:true})">+</button>
+            </div>
+            <span class="item-total">{{ formatCurrency(item.precio * item.cantidad) }}</span>
+          </div>
+        }
+        @if (carritoBarra().length === 0) {
+          <p class="carrito-vacio">Selecciona productos de la barra</p>
+        }
+      </div>
+
+      <div class="carrito-footer">
+        <div class="total-row">
+          <span>Total</span>
+          <span class="total-val">{{ formatCurrency(totalBarra) }}</span>
+        </div>
+        <div class="metodo-tabs">
+          <button [class.active]="metodoPagoBarra() === 'efectivo'" (click)="metodoPagoBarra.set('efectivo')">💵 Efectivo</button>
+          <button [class.active]="metodoPagoBarra() === 'transferencia'" (click)="metodoPagoBarra.set('transferencia')">📱 Transferencia</button>
+        </div>
+        <button class="btn-cobrar" (click)="cobrarBarra()" [disabled]="carritoBarra().length === 0">
+          ✅ Registrar Venta Rápida
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTORIAL RÁPIDO -->
+  @if (ventasDelDia().length > 0) {
+    <div class="historial">
+      <h3>📋 Historial de ventas rápidas de hoy ({{ ventasDelDia().length }})</h3>
+      @for (v of ventasDelDia(); track v.id) {
+        <div class="venta-row">
+          <span class="v-hora">{{ v.createdAt | date:'HH:mm:ss' }}</span>
+          <span class="v-items">Pedido #{{ v.id }} · {{ v.items?.length || 1 }} producto(s)</span>
+          <span class="v-metodo">{{ v.metodoPago === 'efectivo' ? '💵' : '📱' }}</span>
+          <span class="v-total">{{ formatCurrency(v.total) }}</span>
+        </div>
+      }
+    </div>
+  }
+}
+
+<!-- ================= TAB 3: CUENTAS PENDIENTES (DEUDAS) ================= -->
+@if (activeTab() === 'cuentas_cobrar') {
+  <div class="cuentas-pendientes-layout">
+    <h3>📝 Cuentas Pendientes (Por Cobrar)</h3>
+    <p class="subtitle">Mesas finalizadas que se registraron como "Deuda" y aún no se han pagado en su totalidad.</p>
+    
+    <div class="deudas-grid">
+      @for (d of deudasActivas(); track d.id) {
+        <div class="deuda-card">
+          <div class="deuda-header">
+            <h4>Deuda #{{ d.id }}</h4>
+            <span class="deuda-fecha">{{ d.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</span>
+          </div>
+          <div class="deuda-body">
+            <p><strong>Cliente:</strong> {{ d.name ? (d.name + ' ' + (d.lastName || '')) : (d.nombreCliente || 'Cliente General') }}</p>
+            <p><strong>Descripción:</strong> {{ d.descripcion }}</p>
+            <p><strong>Notas:</strong> {{ d.notas || 'Sin notas' }}</p>
+            <div class="deuda-montos">
+              <span class="monto-total">Total: {{ formatCurrency(d.monto) }}</span>
+              <span class="monto-pagado">Abonado: {{ formatCurrency(d.montoPagado || 0) }}</span>
+              <span class="monto-restante"><strong>Resta: {{ formatCurrency(d.monto - (d.montoPagado || 0)) }}</strong></span>
+            </div>
+          </div>
+          <div class="deuda-footer">
+            <button class="btn-cobrar-deuda" (click)="abrirCobroDeuda(d)">
+              💵 Cobrar Saldo
+            </button>
+          </div>
+        </div>
+      }
+      
+      @if (deudasActivas().length === 0) {
+        <div class="no-deudas">
+          <span>🎉</span>
+          <p>No hay cuentas pendientes por cobrar. ¡Todo está al día!</p>
+        </div>
+      }
+    </div>
+  </div>
+}
+
+<!-- ================= DETALLE EN TIEMPO REAL DE CUENTA SELECCIONADA ================= -->
+@if (selectedCuenta()) {
+  <div class="modal-overlay" (click)="cerrarDetalle()">
+    <div class="detalle-cuenta-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header" [class.ayuda-activa]="selectedCuentaDetail()?.llamadoAyuda">
+        <div class="header-titles">
+          <h3>Detalle de Cuenta: {{ selectedCuentaDetail()?.nombre }}</h3>
+          @if (selectedCuentaDetail()?.llamadoAyuda) {
+            <span class="modal-alerta-tag pulse-red">🚨 LLAMADO ACTIVO</span>
+          }
+        </div>
+        <button class="btn-cerrar-modal" (click)="cerrarDetalle()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- ⏱️ MESA DISPONIBLE (BOTÓN DE INICIAR MANUAL) -->
+        @if (selectedCuentaDetail()?.tipo === 'mesa' && !selectedCuentaDetail()?.partidaId) {
+          @if (selectedCuentaDetail()?.status === 'maintenance') {
+            <div class="detalle-cronometro-card mantenimiento">
+              <span class="label">ESTADO DE MESA</span>
+              <span class="cronometro-gigante mantenimiento">🔧 MANTENIMIENTO</span>
+              <p class="desc-mesa-libre">Esta mesa está en mantenimiento. No se puede usar para juego.</p>
+              <div class="stats-tiempo" style="justify-content: center; margin-top: 15px;">
+                <span>Tarifa/Hora: <strong>{{ formatCurrency(selectedCuentaDetail()!.precioHora || 15000) }}</strong></span>
+              </div>
+              <button class="btn-iniciar-tiempo-directo" style="background: #ef4444; opacity: 0.5; cursor: not-allowed;" disabled>
+                ❌ Fuera de Servicio
+              </button>
+            </div>
+          } @else if (selectedCuentaDetail()?.status === 'reserved') {
+            <div class="detalle-cronometro-card reservada">
+              <span class="label">ESTADO DE MESA</span>
+              <span class="cronometro-gigante reservada">📅 RESERVADA</span>
+              <p class="desc-mesa-libre">Esta mesa está reservada. Libérala desde Reservas para habilitarla.</p>
+              <div class="stats-tiempo" style="justify-content: center; margin-top: 15px;">
+                <span>Tarifa/Hora: <strong>{{ formatCurrency(selectedCuentaDetail()!.precioHora || 15000) }}</strong></span>
+              </div>
+              <button class="btn-iniciar-tiempo-directo" style="background: #f59e0b; opacity: 0.5; cursor: not-allowed;" disabled>
+                ❌ Reservada
+              </button>
+            </div>
+          } @else {
+            <div class="detalle-cronometro-card libre">
+              <span class="label">ESTADO DE MESA</span>
+              <span class="cronometro-gigante disponible">🎱 MESA LIBRE</span>
+              <p class="desc-mesa-libre">Esta mesa no tiene partida activa ni tiempo corriendo.</p>
+              <div class="stats-tiempo" style="justify-content: center; margin-top: 15px;">
+                <span>Tarifa/Hora: <strong>{{ formatCurrency(selectedCuentaDetail()!.precioHora || 15000) }}</strong></span>
+              </div>
+              <button class="btn-iniciar-tiempo-directo" (click)="abrirIniciarMesaManual(selectedCuentaDetail()!)">
+                ⚡ Iniciar Tiempo de Juego
+              </button>
+            </div>
+          }
+        }
+
+        <!-- ⏱️ MESA OCUPADA (CRONÓMETRO ACTIVO) -->
+        @if (selectedCuentaDetail()?.tipo === 'mesa' && selectedCuentaDetail()?.partidaId) {
+          <div class="detalle-cronometro-card">
+            <span class="label">TIEMPO TRANSCURRIDO</span>
+            <span class="cronometro-gigante">{{ liveTiempos()[selectedCuentaDetail()!.id] || '00:00:00' }}</span>
+            <div class="stats-tiempo">
+              <span>Inicio: <strong>{{ selectedCuentaDetail()?.tiempoInicio | date:'HH:mm:ss' }}</strong></span>
+              <span>Tarifa/Hora: <strong>{{ formatCurrency(selectedCuentaDetail()!.precioHora || 0) }}</strong></span>
+            </div>
+            @if (selectedCuentaDetail()?.jugadores && selectedCuentaDetail()!.jugadores!.length > 0) {
+              <div class="jugadores-list">
+                <span>Jugadores en contienda:</span>
+                <p>🎱 {{ selectedCuentaDetail()?.jugadores?.join(' vs ') }}</p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- 🍔 SECCIÓN CONSUMO / PEDIDOS (DISPONIBLE PARA AMBOS O CUENTAS INDIV.) -->
+        @if (selectedCuentaDetail()?.partidaId || selectedCuentaDetail()?.tipo === 'cliente') {
+          <div class="detalle-consumo-section">
+            <div class="section-title-row">
+              <h4>🍔 Consumos en Barra / Alimentos</h4>
+              <button class="btn-agregar-rapido" (click)="abrirAgregarProductos(selectedCuentaDetail()!)">
+                ➕ Agregar Consumo
+              </button>
+            </div>
+
+            <!-- Listado de Pedidos vinculados -->
+            @if (selectedCuentaDetail()?.pedidos && selectedCuentaDetail()!.pedidos.length > 0) {
+              <div class="pedidos-list">
+                @for (p of selectedCuentaDetail()?.pedidos; track p.id) {
+                  <div class="pedido-grupo" [class.pedido-pendiente]="p.estado === 'pendiente'">
+                    <div class="pedido-header">
+                      <div class="pedido-header-left">
+                        <span>Pedido #{{ p.id }}</span>
+                        <span class="badge-estado" [class]="p.estado">{{ p.estado.replace('_', ' ') | uppercase }}</span>
+                      </div>
+                      <button class="btn-cancelar-pedido" title="Cancelar Pedido" (click)="cancelarPedido(p.id)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-trash">
+                          <polyline points="3 6 5 6 21 6"></polyline>
+                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                        </svg>
+                        <span>Cancelar</span>
+                      </button>
+                    </div>
+                    
+                    <div class="pedido-items-list">
+                      @for (item of p.items; track item.id) {
+                        <div class="p-item">
+                          <span>{{ item.cantidad }}x {{ item.producto?.name || 'Producto' }}</span>
+                          <span>{{ formatCurrency(item.precioUnitario * item.cantidad) }}</span>
+                        </div>
+                      }
+                    </div>
+                    
+                    @if (p.estado === 'pendiente') {
+                      <div class="pedido-pendiente-acciones">
+                        <p class="aviso-pendiente">🚨 Pedido pendiente de confirmación</p>
+                      </div>
+                    }
+                  </div>
+                }
+              </div>
+            } @else {
+              <div class="no-consumos-cargados">
+                <p>No se han registrado consumos de alimentos ni bebidas.</p>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- 📊 DESGLOSE GENERAL DE CUENTA -->
+        @if (selectedCuentaDetail()?.partidaId || selectedCuentaDetail()?.tipo === 'cliente') {
+          <div class="desglose-total-cuenta">
+            <h4>📊 Desglose de Cuenta</h4>
+            @if (selectedCuentaDetail()?.tipo === 'mesa') {
+              <div class="desglose-row">
+                <span>Tiempo de Mesa ({{ liveTiempos()[selectedCuentaDetail()!.id] || '00:00:00' }})</span>
+                <span>{{ formatCurrency(selectedCuentaDetail()!.totalMesa) }}</span>
+              </div>
+            }
+            <div class="desglose-row">
+              <span>Total Alimentos & Consumos</span>
+              <span>{{ formatCurrency(selectedCuentaDetail()!.totalConsumo) }}</span>
+            </div>
+            <div class="desglose-row total-general">
+              <span>Gran Total a Pagar</span>
+              <span>{{ formatCurrency(selectedCuentaDetail()!.totalGeneral) }}</span>
+            </div>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        @if (selectedCuentaDetail()?.llamadoAyuda) {
+          <button class="btn-atender-ayuda" (click)="atenderLlamado(selectedCuentaDetail()!)">
+            ✔️ Marcar Ayuda como Atendida
+          </button>
+        }
+
+        @if (selectedCuentaDetail()?.nuevoPedidoPendiente) {
+          <button class="btn-aprobar-pedidos" (click)="aprobarPedidosDeCuenta(selectedCuentaDetail()!)">
+            🔥 Confirmar Pedidos Pendientes
+          </button>
+        }
+
+        <!-- ACCIONES PRINCIPALES SEGÚN ROL -->
+        @if (selectedCuentaDetail()?.tipo === 'mesa' && selectedCuentaDetail()?.partidaId) {
+          <!-- MESA ACTIVA: FINALIZAR JUEGO -->
+          <div class="cobrar-acciones-row" style="width: 100%;">
+            <button class="btn-finalizar-tiempo-principal" (click)="abrirFinalizarMesa(selectedCuentaDetail()!)">
+              🛑 Finalizar Tiempo / Asignar Cuenta
+            </button>
+          </div>
+        }
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= DIÁLOGO MODAL: INICIAR JUEGO MANUALMENTE ================= -->
+@if (mostrandoIniciarMesaManual()) {
+  <div class="modal-overlay" style="z-index: 1200;" (click)="cerrarIniciarMesaManual()">
+    <div class="wizard-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Arrancar Mesa: {{ mesaParaIniciar()?.nombre }}</h3>
+        <button class="btn-cerrar-modal" (click)="cerrarIniciarMesaManual()">×</button>
+      </div>
+      
+      <div class="modal-body wizard-scroll">
+        <p class="wizard-subtitle">Configura los jugadores y responsable de la mesa física.</p>
+        
+        <!-- JUGADOR 1 (RESPONSABLE PRINCIPAL) -->
+        <div class="form-group-wizard">
+          <label>👤 Jugador 1 (Responsable de la Cuenta):</label>
+          <div class="selector-dual-row" style="grid-template-columns: 1fr;">
+            
+            <div class="quien-paga-radio-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 10px;">
+              <button 
+                type="button" 
+                [class.active]="manualJugador1Tipo() === 'registrado'"
+                (click)="manualJugador1Tipo.set('registrado')"
+              >
+                👤 Registrado
+              </button>
+              <button 
+                type="button" 
+                [class.active]="manualJugador1Tipo() === 'ocasional'"
+                (click)="manualJugador1Tipo.set('ocasional')"
+              >
+                🆕 Ocasional
+              </button>
+            </div>
+
+            @if (manualJugador1Tipo() === 'registrado') {
+              <div class="select-col">
+                <select [ngModel]="manualJugador1Registrado()" (ngModelChange)="manualJugador1Registrado.set($event)">
+                  <option [ngValue]="null">-- Buscar Cliente Registrado --</option>
+                  @for (u of usuarios(); track u.id) {
+                    <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }} ({{ u.email }})</option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <div class="select-col">
+                <input type="text" [ngModel]="manualJugador1NombreOcasional()" (ngModelChange)="manualJugador1NombreOcasional.set($event)" placeholder="Ej. Juan Pérez (Ocasional)" />
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- JUGADOR 2 (ACOMPAÑANTE - OPCIONAL) -->
+        <div class="form-group-wizard" style="margin-top: 20px;">
+          <label>👥 Jugador 2 (Oponente / Acompañante - Opcional):</label>
+          <div class="selector-dual-row" style="grid-template-columns: 1fr;">
+            
+            <div class="quien-paga-radio-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 10px;">
+              <button 
+                type="button" 
+                [class.active]="manualJugador2Tipo() === 'registrado'"
+                (click)="manualJugador2Tipo.set('registrado')"
+              >
+                👤 Registrado
+              </button>
+              <button 
+                type="button" 
+                [class.active]="manualJugador2Tipo() === 'ocasional'"
+                (click)="manualJugador2Tipo.set('ocasional')"
+              >
+                🆕 Ocasional
+              </button>
+            </div>
+
+            @if (manualJugador2Tipo() === 'registrado') {
+              <div class="select-col">
+                <select [ngModel]="manualJugador2Registrado()" (ngModelChange)="manualJugador2Registrado.set($event)">
+                  <option [ngValue]="null">-- Buscar Oponente Registrado --</option>
+                  @for (u of usuarios(); track u.id) {
+                    <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }}</option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <div class="select-col">
+                <input type="text" [ngModel]="manualJugador2NombreOcasional()" (ngModelChange)="manualJugador2NombreOcasional.set($event)" placeholder="Ej. Amigo Ocasional" />
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarIniciarMesaManual()">Cancelar</button>
+        <button class="btn-arrancar-juego" (click)="guardarIniciarMesaManual()">
+          ⚡ Arrancar Tiempo de Mesa
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= DIÁLOGO MODAL: FINALIZAR JUEGO Y ASIGNACIÓN DE CUENTA (EL PERDEDOR PAGA) ================= -->
+@if (mostrandoFinalizarMesaCobro()) {
+  <div class="modal-overlay" style="z-index: 1200;" (click)="cerrarFinalizarMesa()">
+    <div class="wizard-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Finalizar Partida: {{ mesaParaFinalizar()?.nombre }}</h3>
+        <button class="btn-cerrar-modal" (click)="cerrarFinalizarMesa()">×</button>
+      </div>
+
+      <div class="modal-body wizard-scroll">
+        <!-- Resumen de Costos -->
+        <div class="wizard-resumen-costos">
+          <div class="costo-item">
+            <span>Mesa (Tarifa):</span>
+            <strong>{{ formatCurrency(mesaParaFinalizar()?.totalMesa || 0) }}</strong>
+          </div>
+          <div class="costo-item">
+            <span>Alimentos & Bebidas:</span>
+            <strong>{{ formatCurrency(mesaParaFinalizar()?.totalConsumo || 0) }}</strong>
+          </div>
+          <div class="costo-total-destacado">
+            <span>Gran Total:</span>
+            <h3>{{ formatCurrency(mesaParaFinalizar()?.totalGeneral || 0) }}</h3>
+          </div>
+        </div>
+
+        <div class="form-group-wizard">
+          <label class="debtor-label">🤔 ¿Quién asume/paga la cuenta de juego? (El Perdedor):</label>
+          <div class="quien-paga-radio-grid">
+            <button 
+              type="button" 
+              [class.active]="checkoutQuienPaga() === 'j1'"
+              (click)="checkoutQuienPaga.set('j1')"
+            >
+              🏅 J1: {{ mesaParaFinalizar()?.jugadores?.[0] || 'Jugador 1' }}
+            </button>
+            
+            @if (mesaParaFinalizar()?.jugadores?.[1]) {
+              <button 
+                type="button" 
+                [class.active]="checkoutQuienPaga() === 'j2'"
+                (click)="checkoutQuienPaga.set('j2')"
+              >
+                🥈 J2: {{ mesaParaFinalizar()?.jugadores?.[1] }}
+              </button>
+            }
+
+            <button 
+              type="button" 
+              [class.active]="checkoutQuienPaga() === 'otro_registrado'"
+              (click)="checkoutQuienPaga.set('otro_registrado')"
+            >
+              🔍 Buscar Otro Registrado
+            </button>
+
+            <button 
+              type="button" 
+              [class.active]="checkoutQuienPaga() === 'cliente_nuevo'"
+              (click)="checkoutQuienPaga.set('cliente_nuevo')"
+            >
+              🆕 Cliente Nuevo / Ocasional
+            </button>
+          </div>
+
+          @if (checkoutQuienPaga() === 'otro_registrado') {
+            <div class="sub-form-group animate-slide">
+              <span>Buscar Cliente en la Base de Datos:</span>
+              <select [ngModel]="checkoutOtroUsuarioId()" (ngModelChange)="checkoutOtroUsuarioId.set($event)">
+                <option [ngValue]="null">-- Seleccionar Cliente --</option>
+                @for (u of usuarios(); track u.id) {
+                  <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }} ({{ u.email }})</option>
+                }
+              </select>
+            </div>
+          } @else if (checkoutQuienPaga() === 'cliente_nuevo') {
+            <div class="sub-form-group animate-slide">
+              <span>Nombre del Cliente (No registrado):</span>
+              <input type="text" [ngModel]="checkoutNombreClienteOcasional()" (ngModelChange)="checkoutNombreClienteOcasional.set($event)" placeholder="Ej. Juan Pérez (Ocasional)" />
+            </div>
+          }
+        </div>
+
+        <!-- Forma de Pago / Destino de Cobro -->
+        <div class="form-group-wizard" style="margin-top: 25px;">
+          <label>💵 Destino de la Cuenta / Método de Pago:</label>
+          <div class="metodos-pago-grid">
+            <button 
+              type="button" 
+              class="metodo-btn-wizard efectivo"
+              [class.active]="checkoutMetodoPago() === 'efectivo'"
+              (click)="checkoutMetodoPago.set('efectivo')"
+            >
+              💵 Pago en Efectivo (Caja)
+            </button>
+            
+            <button 
+              type="button" 
+              class="metodo-btn-wizard transferencia"
+              [class.active]="checkoutMetodoPago() === 'transferencia'"
+              (click)="checkoutMetodoPago.set('transferencia')"
+            >
+              📱 Transferencia Recibida
+            </button>
+
+            <button 
+              type="button" 
+              class="metodo-btn-wizard deuda"
+              [class.active]="checkoutMetodoPago() === 'deuda'"
+              (click)="checkoutMetodoPago.set('deuda')"
+            >
+              📝 Dejar en Cuenta Pendiente
+            </button>
+          </div>
+        </div>
+
+        @if (checkoutMetodoPago() === 'efectivo') {
+          <div class="calculo-vueltas-box">
+            <div class="form-group-wizard">
+              <label>💰 Efectivo Recibido (Cliente entrega):</label>
+              <input 
+                type="number" 
+                class="input-grande-efectivo"
+                placeholder="Ej. 50000"
+                [ngModel]="checkoutEfectivoRecibido()"
+                (ngModelChange)="checkoutEfectivoRecibido.set($event)"
+              />
+            </div>
+            
+            @if (checkoutVueltas() !== null && checkoutVueltas()! >= 0) {
+              <div class="vueltas-resultado">
+                <span>Dar Vueltas / Cambio:</span>
+                <strong>{{ formatCurrency(checkoutVueltas()!) }}</strong>
+              </div>
+            } @else if (checkoutVueltas() !== null && checkoutVueltas()! < 0) {
+              <div class="vueltas-resultado faltante">
+                <span>Faltan por pagar:</span>
+                <strong>{{ formatCurrency(checkoutVueltas()! * -1) }}</strong>
+              </div>
+            }
+          </div>
+        }
+
+        <div class="form-group-wizard" style="margin-top: 20px;">
+          <label>✍️ Notas / Detalles de Cobro (Opcional):</label>
+          <textarea 
+            placeholder="Añadir observaciones relevantes..." 
+            [value]="checkoutNotas()"
+            (input)="checkoutNotas.set($any($event.target).value)"
+            rows="2"
+          ></textarea>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarFinalizarMesa()">Cancelar</button>
+        <button class="btn-finalizar-guardar" (click)="guardarFinalizarMesaCobro()">
+          💾 Confirmar Cierre de Mesa
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= POPUP MODAL: AGREGAR PRODUCTOS A LA CUENTA ================= -->
+@if (mostrandoAgregarProductos()) {
+  <div class="modal-overlay" style="z-index: 1100;" (click)="cerrarAgregarProductos()">
+    <div class="agregar-productos-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Agregar Consumo a: {{ cuentaParaAgregar()?.nombre }}</h3>
+        <button class="btn-cerrar-modal" (click)="cerrarAgregarProductos()">×</button>
+      </div>
+
+      <div class="modal-body split-body">
+        <!-- Rejilla de selección de productos -->
+        <div class="productos-subgrid">
+          @for (p of productos(); track p.id) {
+            <button class="producto-btn" (click)="agregarAlCarritoAgregar(p)">
+              <span class="p-nombre">{{ p.name }}</span>
+              <span class="p-precio">{{ formatCurrency(p.price) }}</span>
+            </button>
+          }
+        </div>
+
+        <!-- Carrito a agregar -->
+        <div class="carrito-agregar-resumen">
+          <h4>Consumo a Añadir</h4>
+          <div class="items-agregar-list">
+            @for (item of carritoAgregar(); track item.id) {
+              <div class="item-agregar-row">
+                <span>{{ item.nombre }} (x{{ item.cantidad }})</span>
+                <div class="control-cantidad-agregar">
+                  <button (click)="quitarDelCarritoAgregar(item.id)">−</button>
+                  <button (click)="agregarAlCarritoAgregar({id:item.id,name:item.nombre,price:item.precio})">+</button>
+                </div>
+                <span>{{ formatCurrency(item.precio * item.cantidad) }}</span>
+              </div>
+            }
+            @if (carritoAgregar().length === 0) {
+              <p class="carrito-vacio-text">Elige productos del menú</p>
+            }
+          </div>
+
+          <div class="total-agregar-row">
+            <span>Subtotal Consumo</span>
+            <span class="total-val">{{ formatCurrency(totalAgregar) }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarAgregarProductos()">Cancelar</button>
+        <button class="btn-guardar-consumo" (click)="guardarConsumoAgregado()" [disabled]="carritoAgregar().length === 0">
+          💾 Registrar y Cargar a Cuenta
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= POPUP MODAL: COBRAR DEUDA ================= -->
+@if (mostrandoCobroDeuda()) {
+  <div class="modal-overlay" style="z-index: 1300;" (click)="cerrarCobroDeuda()">
+    <div class="wizard-modal" (click)="$event.stopPropagation()" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3>Cobrar Cuenta Pendiente</h3>
+        <button class="btn-cerrar-modal" (click)="cerrarCobroDeuda()">×</button>
+      </div>
+
+      <div class="modal-body wizard-scroll">
+        <div class="deuda-resumen-box">
+          <p><strong>Cliente:</strong> {{ deudaParaCobrar()?.name || 'Cliente' }}</p>
+          <p><strong>Deuda Original:</strong> {{ formatCurrency(deudaParaCobrar()?.monto) }}</p>
+          <p><strong>Restante a Pagar:</strong> <span class="text-danger">{{ formatCurrency(deudaParaCobrar()?.monto - (deudaParaCobrar()?.montoPagado || 0)) }}</span></p>
+        </div>
+
+        <div class="form-group-wizard">
+          <label>Monto a Abonar o Pagar (COP):</label>
+          <input 
+            type="number" 
+            [value]="checkoutMontoPagoDeuda()"
+            (input)="checkoutMontoPagoDeuda.set(+$any($event.target).value)"
+            class="input-monto-grande"
+            min="1"
+            [max]="deudaParaCobrar()?.monto - (deudaParaCobrar()?.montoPagado || 0)"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarCobroDeuda()">Cancelar</button>
+        <button class="btn-finalizar-guardar" (click)="guardarCobroDeuda()" [disabled]="checkoutMontoPagoDeuda() <= 0">
+          💵 Registrar Pago
+        </button>
+      </div>
+    </div>
   </div>
 }

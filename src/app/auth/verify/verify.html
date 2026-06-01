@@ -1,0 +1,27 @@
+<div class="auth-container">
+  <div class="auth-card">
+    <div class="brand">
+      <h1>JcueScore</h1>
+      <p>Verificación de Cuenta</p>
+    </div>
+
+    <div class="verify-content">
+      @if (status() === 'loading') {
+        <div class="spinner"></div>
+        <p class="status-msg loading">{{ message() }}</p>
+      }
+
+      @if (status() === 'success') {
+        <div class="icon-success">✓</div>
+        <p class="status-msg success">{{ message() }}</p>
+        <a routerLink="/auth/login" class="btn-primary">Ir a Iniciar Sesión</a>
+      }
+
+      @if (status() === 'error') {
+        <div class="icon-error">✕</div>
+        <p class="status-msg error">{{ message() }}</p>
+        <a routerLink="/auth/sign-in" class="btn-secondary">Volver al Registro</a>
+      }
+    </div>
+  </div>
+</div>

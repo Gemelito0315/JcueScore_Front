@@ -5,8 +5,9 @@
 }
 
 .toast {
-  background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2);
-  color: #34d399; padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem;
+  padding: 12px 20px; border-radius: 10px; margin-bottom: 20px; font-size: 0.9rem;
+  &.success { background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.2); color: #34d399; }
+  &.error   { background: rgba(248,113,113,0.1); border: 1px solid rgba(248,113,113,0.2); color: #f87171; }
 }
 
 .profile-layout {

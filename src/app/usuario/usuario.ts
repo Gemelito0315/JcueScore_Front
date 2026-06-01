@@ -1,7 +1,9 @@
-import { Component, inject, OnInit, OnDestroy, signal } from '@angular/core';
-import { Router, RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { Component, inject, OnInit, OnDestroy, signal, computed } from '@angular/core';
+import { Router, RouterOutlet, RouterLink, RouterLinkActive, NavigationEnd } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { Auth } from '../auth/services/auth';
+import { USUARIO_MENU } from '../core/constants/sidebar.constants';
+import { filter } from 'rxjs/operators';
 
 @Component({
   selector: 'app-usuario',
@@ -19,6 +21,10 @@ export class Usuario implements OnInit, OnDestroy {
   maintenanceMsg = signal('');
   currentTime = signal('00:00:00');
   avatarUrl = signal<string | null>(localStorage.getItem('avatarUrl'));
+  navItems = USUARIO_MENU;
+  pageTitle = signal('Panel de Usuario');
+  pageSubtitle = signal('Bienvenido de vuelta');
+  isMenuOpen = signal(false);
 
   private clockInterval: any;
   private maintenanceInterval: any;
@@ -32,6 +38,12 @@ export class Usuario implements OnInit, OnDestroy {
     this.maintenanceInterval = setInterval(() => this.checkMaintenance(), 30000);
     window.addEventListener('storage', this.storageListener);
     window.addEventListener('avatarUpdated', this.storageListener);
+
+    // Título dinámico según ruta activa
+    this.updateTitle(this.router.url);
+    this.router.events.pipe(filter(e => e instanceof NavigationEnd)).subscribe((e: any) => {
+      this.updateTitle(e.urlAfterRedirects || e.url);
+    });
   }
 
   ngOnDestroy() {
@@ -59,8 +71,23 @@ export class Usuario implements OnInit, OnDestroy {
     });
   }
 
+  updateTitle(url: string) {
+    const match = this.navItems.find(item => url.startsWith(item.route));
+    if (match) {
+      this.pageTitle.set(match.label);
+      this.pageSubtitle.set(`Bienvenido, ${this.currentUser()?.name || ''}`);
+    } else {
+      this.pageTitle.set('Panel de Usuario');
+      this.pageSubtitle.set(`Bienvenido de vuelta, ${this.currentUser()?.name || ''}`);
+    }
+  }
+
   logout() {
     this.auth.logout();
     this.router.navigate(['/auth/login']);
+  }
+
+  toggleMenu() {
+    this.isMenuOpen.set(!this.isMenuOpen());
   }
 }

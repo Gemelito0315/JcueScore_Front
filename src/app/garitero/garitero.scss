@@ -2,6 +2,7 @@
 .garitero-layout {
   display: flex; min-height: 100vh; background: #0f172a;
   color: #e2e8f0; font-family: 'Segoe UI', system-ui, sans-serif; position: relative;
+  overflow: hidden;
 }
 .accent-glow {
   position: fixed; top: -200px; left: -200px; width: 600px; height: 600px;
@@ -35,6 +36,21 @@
     &::before { content: ''; position: absolute; left: 0; top: 6px; bottom: 6px; width: 3px; background: #34d399; border-radius: 0 3px 3px 0; }
   }
   &:not(.active):hover { background: rgba(255,255,255,0.04); color: #e2e8f0; }
+
+  .nav-badge {
+    background: #ef4444; color: white;
+    font-size: 0.7rem; font-weight: 700;
+    padding: 2px 6px; border-radius: 12px;
+    margin-left: auto; /* Push to the right */
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.4);
+    animation: pulse-badge 2s infinite;
+  }
+}
+
+@keyframes pulse-badge {
+  0% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.4); }
+  70% { transform: scale(1.05); box-shadow: 0 0 0 4px rgba(239, 68, 68, 0); }
+  100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
 }
 .sidebar-footer { border-top: 1px solid rgba(255,255,255,0.06); padding-top: 16px; margin-top: 12px; display: flex; flex-direction: column; gap: 10px; }
 .user-info { display: flex; align-items: center; gap: 10px; }
@@ -48,3 +64,203 @@
 .page-title { font-size: 1.4rem; font-weight: 700; color: #f1f5f9; }
 .page-subtitle { font-size: 0.82rem; color: #475569; margin-top: 3px; }
 .clock-widget { display: flex; align-items: center; gap: 8px; background: rgba(30,41,59,0.7); border: 1px solid rgba(255,255,255,0.07); padding: 7px 14px; border-radius: 10px; color: #34d399; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: 1px; svg { width: 14px; height: 14px; } }
+
+/* Mobile Header (Hidden by default) */
+.mobile-header {
+  display: none;
+  background: rgba(15,23,42,0.95);
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 12px 20px;
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 20;
+  justify-content: space-between;
+  align-items: center;
+
+  .brand-mobile {
+    display: flex; align-items: center; gap: 8px;
+    .brand-icon { font-size: 1.4rem; }
+    .brand-name { font-size: 1.1rem; font-weight: 700; color: #34d399; }
+  }
+
+  .menu-toggle-btn {
+    background: transparent; border: none; color: #e2e8f0; cursor: pointer;
+    svg { width: 24px; height: 24px; }
+  }
+}
+
+.sidebar-overlay {
+  display: none;
+  position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.5); z-index: 15;
+}
+
+/* Responsiveness */
+@media (max-width: 768px) {
+  .mobile-header { display: flex; }
+  .sidebar-overlay { display: block; }
+  
+  .sidebar {
+    transform: translateX(-100%);
+    transition: transform 0.3s ease;
+    z-index: 21;
+    
+    &.open {
+      transform: translateX(0);
+    }
+  }
+
+  .main-content {
+    margin-left: 0;
+    padding: 80px 16px 20px 16px; /* Offset para el mobile-header */
+  }
+
+  .topbar {
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 20px;
+    .topbar-left { .page-title { font-size: 1.2rem; } }
+  }
+}
+
+/* ================= MODAL TRILLA ================= */
+.topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.btn-trilla {
+  background: linear-gradient(135deg, #3b82f6, #2563eb);
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 8px 16px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(59, 130, 246, 0.4);
+    background: linear-gradient(135deg, #60a5fa, #3b82f6);
+  }
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0, 0, 0, 0.65);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.trilla-modal {
+  background: #1e293b;
+  border-radius: 16px;
+  width: 90%;
+  max-width: 500px;
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+  overflow: hidden;
+  animation: slideUpTrilla 0.3s ease-out;
+
+  .modal-header {
+    background: rgba(15,23,42,0.6);
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+
+    h3 {
+      font-size: 1.2rem;
+      color: #fff;
+      font-weight: 600;
+    }
+
+    .btn-cerrar-modal {
+      background: none; border: none;
+      color: #94a3b8; font-size: 1.5rem;
+      cursor: pointer; transition: color 0.2s;
+      &:hover { color: #f87171; }
+    }
+  }
+
+  .modal-body {
+    padding: 20px;
+  }
+
+  .modal-footer {
+    padding: 16px 20px;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    background: rgba(15,23,42,0.3);
+    display: flex;
+    justify-content: flex-end;
+
+    .btn-cerrar {
+      background: #334155;
+      color: #f8fafc;
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 8px 24px;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      &:hover { background: #475569; }
+    }
+  }
+}
+
+.trilla-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+}
+
+.trilla-item {
+  display: flex;
+  align-items: center;
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.05);
+  padding: 14px 16px;
+  border-radius: 10px;
+  gap: 12px;
+
+  .t-icon {
+    font-size: 1.4rem;
+  }
+  .t-label {
+    flex: 1;
+    color: #cbd5e1;
+    font-size: 0.95rem;
+    font-weight: 500;
+  }
+  .t-val {
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+  }
+
+  &.green { border-left: 4px solid #34d399; }
+  &.cyan { border-left: 4px solid #22d3ee; }
+  &.orange { border-left: 4px solid #fb923c; }
+  &.yellow { border-left: 4px solid #facc15; }
+  &.blue { border-left: 4px solid #60a5fa; }
+}
+
+@keyframes slideUpTrilla {
+  from { opacity: 0; transform: translateY(20px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}

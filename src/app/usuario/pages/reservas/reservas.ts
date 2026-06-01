@@ -1,6 +1,10 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, inject, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+import { Auth } from '../../../auth/services/auth';
+
+const API = 'http://localhost:3000';
 
 @Component({
   selector: 'app-usuario-reservas',
@@ -8,41 +12,112 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
   templateUrl: './reservas.html',
   styleUrl: './reservas.scss'
 })
-export class UsuarioReservas {
-  private fb = new FormBuilder();
+export class UsuarioReservas implements OnInit {
+  private http   = inject(HttpClient);
+  private auth   = inject(Auth);
+  private fb     = inject(FormBuilder);
 
-  showForm = signal(false);
-  reservas = signal([
-    { id: 1, tipo: 'Billar', mesa: 'Mesa 3', fecha: '2026-04-10', hora: '15:00 - 17:00', estado: 'confirmada' },
-    { id: 2, tipo: 'Bolirama', mesa: 'Máquina 1', fecha: '2026-04-05', hora: '18:00 - 19:00', estado: 'completada' },
-  ]);
+  showForm   = signal(false);
+  loading    = signal(false);
+  saving     = signal(false);
+  reservas   = signal<any[]>([]);
+  recursos   = signal<any[]>([]);
 
   form = this.fb.group({
-    tipo: ['billar', Validators.required],
-    fecha: ['', Validators.required],
-    horaInicio: ['', Validators.required],
-    horaFin: ['', Validators.required],
-    notas: [''],
+    recursoId:   [null as number | null, Validators.required],
+    fecha:       ['', Validators.required],
+    horaInicio:  ['', Validators.required],
+    horaFin:     ['', Validators.required],
+    notas:       [''],
   });
 
-  tiposJuego = ['Billar', 'Tejo', 'Bolirama'];
+  ngOnInit() {
+    this.cargarReservas();
+    this.cargarRecursos();
+  }
+
+  cargarReservas() {
+    this.loading.set(true);
+    const userId = this.auth.currentUser()?.id;
+    const url = userId ? `${API}/reservas?userId=${userId}` : `${API}/reservas`;
+    this.http.get<any[]>(url).subscribe({
+      next: (data) => {
+        this.reservas.set(data.map(r => ({
+          id: r.id,
+          tipo: r.recurso?.gameType?.name ?? r.recurso?.code ?? 'Billar',
+          mesa: r.recurso?.code ?? 'Mesa',
+          fecha: r.fecha?.split('T')[0] ?? r.fecha,
+          hora: `${r.horaInicio ?? ''} - ${r.horaFin ?? ''}`,
+          estado: r.estado ?? 'confirmada',
+          notas: r.notas ?? ''
+        })));
+        this.loading.set(false);
+      },
+      error: () => {
+        this.reservas.set([]);
+        this.loading.set(false);
+      }
+    });
+  }
+
+  cargarRecursos() {
+    this.http.get<any[]>(`${API}/recursos`).subscribe({
+      next: (data) => this.recursos.set(data.filter(r => r.status === 'available' || r.isActive)),
+      error: () => this.recursos.set([])
+    });
+  }
 
   getEstadoClass(estado: string) {
-    return { confirmada: 'badge-cyan', completada: 'badge-green', cancelada: 'badge-red' }[estado] ?? 'badge-gray';
+    return ({ confirmada: 'badge-cyan', completada: 'badge-green', cancelada: 'badge-red', pendiente: 'badge-orange' } as any)[estado] ?? 'badge-gray';
   }
 
   cancelar(id: number) {
-    this.reservas.update(r => r.filter(x => x.id !== id));
+    if (!confirm('¿Cancelar esta reserva?')) return;
+    this.http.put(`${API}/reservas/${id}`, { estado: 'cancelada' }).subscribe({
+      next: () => this.cargarReservas(),
+      error: () => this.reservas.update(rs => rs.map(r => r.id === id ? { ...r, estado: 'cancelada' } : r))
+    });
   }
 
   guardar() {
     if (this.form.invalid) return;
+    this.saving.set(true);
     const v = this.form.value;
-    this.reservas.update(r => [...r, {
-      id: Date.now(), tipo: v.tipo ?? 'Billar', mesa: 'Por asignar',
-      fecha: v.fecha ?? '', hora: `${v.horaInicio} - ${v.horaFin}`, estado: 'confirmada'
-    }]);
-    this.showForm.set(false);
-    this.form.reset({ tipo: 'billar' });
+    const userId = this.auth.currentUser()?.id;
+    const payload = {
+      userId,
+      recursoId: Number(v.recursoId),
+      fecha: v.fecha,
+      horaInicio: v.horaInicio,
+      horaFin: v.horaFin,
+      notas: v.notas,
+      estado: 'confirmada'
+    };
+    this.http.post(`${API}/reservas`, payload).subscribe({
+      next: () => {
+        this.showForm.set(false);
+        this.form.reset();
+        this.saving.set(false);
+        this.cargarReservas();
+      },
+      error: () => {
+        // fallback local si el backend falla
+        const recurso = this.recursos().find(r => r.id === Number(v.recursoId));
+        this.reservas.update(rs => [...rs, {
+          id: Date.now(),
+          tipo: recurso?.gameType?.name ?? 'Billar',
+          mesa: recurso?.code ?? 'Mesa asignada',
+          fecha: v.fecha ?? '',
+          hora: `${v.horaInicio} - ${v.horaFin}`,
+          estado: 'confirmada',
+          notas: v.notas ?? ''
+        }]);
+        this.showForm.set(false);
+        this.form.reset();
+        this.saving.set(false);
+      }
+    });
   }
+
+  get hoy() { return new Date().toISOString().split('T')[0]; }
 }

@@ -6,6 +6,9 @@
   @if (saved()) {
     <span class="saved-badge">✅ Guardado correctamente</span>
   }
+  @if (errorMsg()) {
+    <span class="error-badge">⚠️ {{ errorMsg() }}</span>
+  }
 </div>
 
 <form [formGroup]="form" (ngSubmit)="save()" class="config-layout">
@@ -122,8 +125,8 @@
     </div>
   </div>
 
-  <button type="submit" class="btn-save" [disabled]="form.invalid">
-    💾 Guardar configuración
+  <button type="submit" class="btn-save" [disabled]="form.invalid || loading()">
+    {{ loading() ? 'Guardando...' : '💾 Guardar configuración' }}
   </button>
 
 </form>

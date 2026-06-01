@@ -1,49 +1,92 @@
 <div class="welcome-banner">
   <div class="welcome-text">
-    <h2>Inicio y Lealtad</h2>
-    <p>Bienvenido de vuelta. Tu vista registra los puntos generados durante tu sesión en el local.</p>
+    <h2>Inicio</h2>
+    <p>Bienvenido de vuelta, <strong>{{ currentUserData?.name }}</strong>. ¿Listo para una partida?</p>
   </div>
   <div class="welcome-illustration">🎱</div>
 </div>
 
-<div class="loyalty-container">
-  <!-- Tarjeta de jugador (Perfil) -->
-  <div class="player-profile-section">
-    <app-player-card [avatarUrl]="avatarUrl()"></app-player-card>
-  </div>
-
-  <!-- Panel limpio de Lealtad (GPS) -->
-  <div class="loyalty-status-card">
-    <div class="status-header">
-      <div class="icon-circle">📍</div>
-      <div class="status-titles">
-        <h3>Motor de Geo-Lealtad</h3>
-        @if (statusGPS() === 'Buscando') {
-          <p class="status text-muted">Comprobando red local...</p>
-        } @else if (statusGPS() === 'Conectado') {
-          <p class="status text-success">
-            <span class="dot"></span> Conectado al local
+<!-- ================= CASE 1: PARTIDA ACTIVA (MESA EN CURSO EN VIVO) ================= -->
+@if (partidaActiva()) {
+  <div class="active-match-banner">
+    <div class="banner-glow"></div>
+    <div class="banner-content">
+      <div class="banner-left">
+        <div class="pulse-indicator">
+          <span class="pulse-dot"></span>
+        </div>
+        <div class="banner-text">
+          <h3>Partida Activa · {{ partidaActiva().recursoCode }}</h3>
+          <p class="players-text">
+            👤 {{ partidaActiva().jugador1Name }} 
+            @if (partidaActiva().jugador2Name) {
+              vs {{ partidaActiva().jugador2Name }}
+            }
           </p>
-        }
+        </div>
+      </div>
+      
+      <div class="banner-center">
+        <span class="live-timer">{{ cronometroActivo() }}</span>
+        <span class="live-cost">Costo: {{ formatCurrency(costoAcumulado()) }}</span>
+      </div>
+      
+      <div class="banner-right">
+        <button class="btn-llamar-waiter" (click)="llamarAlGaritero()" [disabled]="llamadoPendiente()">
+          🔔 Llamar Garitero
+        </button>
+        <a routerLink="/usuario/productos" class="btn-ordenar-comida">
+          🍔 Pedir Menú
+        </a>
+        <a routerLink="/usuario/mi-partida" class="btn-ver-mesa">
+          📺 Ver Partida en Vivo
+        </a>
       </div>
     </div>
-    
-    <div class="loyalty-metrics">
-       <div class="metric">
-         <span class="label">JcueCoins Acumulados</span>
-         <span class="value gold">{{ jcueCoins() }}</span>
-       </div>
-       <div class="metric">
-         <span class="label">Puntos Globales ELO</span>
-         <span class="value">{{ puntos() }}</span>
-       </div>
-    </div>
-
-    @if (statusGPS() === 'Conectado') {
-      <p class="hint">Recibiendo JcueCoins automáticamente por el tiempo activo en el establecimiento.</p>
-    }
   </div>
-</div>
+}
+
+<!-- ================= CASE 2: PETICION DE MESA EN TIEMPO REAL EN ESPERA ================= -->
+@if (!partidaActiva() && solicitudPendiente()) {
+  <div class="pending-request-banner">
+    <div class="pending-glow"></div>
+    <div class="banner-content">
+      <div class="banner-left">
+        <div class="pending-indicator">
+          <span class="pulse-dot-orange"></span>
+        </div>
+        <div class="banner-text">
+          <h3>Solicitud de Mesa en Espera...</h3>
+          <p class="players-text">
+            Enviada para mesa seleccionada. El garitero la habilitará en breves momentos.
+          </p>
+        </div>
+      </div>
+      
+      <div class="banner-right">
+        <button class="btn-cancelar-solicitud" (click)="cancelarSolicitudPendiente()">
+          ❌ Cancelar Solicitud
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
+<!-- ================= CASE 3: NO ACTIVE GAME & NO PENDING REQUEST (SO CAN REQUEST MESA) ================= -->
+@if (!partidaActiva() && !solicitudPendiente()) {
+  <div class="request-table-card" (click)="abrirPeticionMesa()">
+    <div class="card-glow"></div>
+    <div class="card-content">
+      <span class="icon">🎱</span>
+      <div class="text">
+        <h3>¿Estás en el establecimiento?</h3>
+        <p>Toca aquí para <strong>Solicitar Mesa en Tiempo Real</strong> y comenzar a jugar al instante.</p>
+      </div>
+      <button class="btn-solicitar-mesa">¡Solicitar Mesa ya!</button>
+    </div>
+  </div>
+}
+
 
 <div class="section-title">ACCESOS RÁPIDOS</div>
 <div class="quick-grid">
@@ -57,9 +100,79 @@
     <h4>Disponibilidad</h4>
     <p>Mesas en tiempo real</p>
   </a>
-  <a routerLink="/usuario/perfil" class="quick-card green">
-    <span>👤</span>
-    <h4>Mi Perfil</h4>
-    <p>Actualizar datos</p>
+  <a routerLink="/usuario/productos" class="quick-card green">
+    <span>🛍️</span>
+    <h4>Productos</h4>
+    <p>Ver menú y pedir</p>
+  </a>
+  <a routerLink="/usuario/pedidos" class="quick-card orange">
+    <span>📦</span>
+    <h4>Mis Pedidos</h4>
+    <p>Estado de tus pedidos</p>
   </a>
 </div>
+
+<!-- ================= MODAL: SOLICITAR MESA EN TIEMPO REAL ================= -->
+@if (mostrandoModalPeticion()) {
+  <div class="modal-overlay" (click)="cerrarPeticionMesa()">
+    <div class="modal-peticion-mesa" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>🎱 Solicitar Mesa en Tiempo Real</h3>
+        <button class="btn-cerrar-modal" (click)="cerrarPeticionMesa()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <p class="instruccion-text">
+          Selecciona una de las mesas libres en el establecimiento para enviar la solicitud al garitero:
+        </p>
+
+        <!-- Selección de Mesas Libres -->
+        <div class="mesas-seleccion-grid">
+          @for (m of mesasDisponibles(); track m.id) {
+            <button 
+              class="mesa-btn" 
+              [class.selected]="mesaSeleccionadaId() === m.id"
+              (click)="mesaSeleccionadaId.set(m.id)"
+            >
+              <span class="num">{{ m.code }}</span>
+              <span class="tipo">{{ m.gameType | uppercase }}</span>
+              <span class="precio">{{ formatCurrency(m.pricePerHour) }}/h</span>
+            </button>
+          }
+          @if (mesasDisponibles().length === 0) {
+            <div class="no-mesas-libres">
+              <span>😢</span>
+              <p>Lo sentimos, todas las mesas están ocupadas en este momento.</p>
+            </div>
+          }
+        </div>
+
+        @if (mesasDisponibles().length > 0) {
+          <!-- Campo Oponente -->
+          <div class="oponente-input-group">
+            <label for="oponente">Nombre del Oponente / Acompañante (Opcional):</label>
+            <input 
+              type="text" 
+              id="oponente"
+              placeholder="Ej: Andrés Martínez" 
+              [ngModel]="oponenteName()"
+              (ngModelChange)="oponenteName.set($event)"
+            />
+            <span class="ayuda">Si juegas solo, puedes dejar este campo vacío.</span>
+          </div>
+        }
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-cancelar" (click)="cerrarPeticionMesa()">Cancelar</button>
+        <button 
+          class="btn-solicitar-confirmar" 
+          [disabled]="!mesaSeleccionadaId()" 
+          (click)="enviarPeticionMesa()"
+        >
+          🚀 Solicitar Mesa al Garitero
+        </button>
+      </div>
+    </div>
+  </div>
+}

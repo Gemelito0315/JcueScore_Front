@@ -1,0 +1,42 @@
+<div class="page-container">
+  <div class="page-header">
+    <h2>En Vivo</h2>
+    <p>Disfruta de las partidas en tiempo real a través del sistema VAR</p>
+  </div>
+
+  @if (mesas().length === 0) {
+    <div class="empty-state">
+      <span class="icon">😴</span>
+      <h3>No hay mesas activas</h3>
+      <p>Todas las mesas están libres en este momento.</p>
+    </div>
+  } @else {
+    <div class="mesas-grid">
+      @for (mesa of mesas(); track mesa.id) {
+        <div class="mesa-card">
+          <div class="card-header">
+            <h3>{{ mesa.code }}</h3>
+            <span class="badge">{{ mesa.gameType || 'Billar' }}</span>
+          </div>
+          <div class="card-body">
+            <div class="players-info">
+              <div class="player">
+                <span class="name">{{ mesa.jugadores?.[0] || 'Jugador 1' }}</span>
+                <span class="score">{{ mesa.marcador?.j1 || 0 }}</span>
+              </div>
+              <span class="vs">VS</span>
+              <div class="player">
+                <span class="name">{{ mesa.jugadores?.[1] || 'Jugador 2' }}</span>
+                <span class="score">{{ mesa.marcador?.j2 || 0 }}</span>
+              </div>
+            </div>
+            
+            <button class="btn-var" (click)="abrirVar(mesa)">
+              📺 Ver Partida en Vivo
+            </button>
+          </div>
+        </div>
+      }
+    </div>
+  }
+</div>

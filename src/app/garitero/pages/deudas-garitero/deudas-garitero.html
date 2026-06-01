@@ -1,69 +1,274 @@
-<div class="page-header">
-  <div><h2>💸 Deudas del Día</h2><p>Gestiona las cuentas pendientes de clientes</p></div>
-  <div class="header-right">
-    <div class="total-badge">Por cobrar: ${{ totalPendiente | number }}</div>
-    <button class="btn-primary" (click)="showModal.set(true)">+ Nueva deuda</button>
+<div class="page-header-premium">
+  <div class="header-titles">
+    <h2>👥 Cuentas y Consumos en Establecimiento</h2>
+    <p>Control de comandas activas, cuentas de juego transferidas y saldos pendientes</p>
+  </div>
+  <div class="header-actions">
+    <div class="total-badge">
+      Por cobrar en sala: <span>${{ totalPendiente | number:'1.0-0' }}</span>
+    </div>
+    <button class="btn-primary-glow" (click)="openModal()">+ Registrar Deuda Manual</button>
   </div>
 </div>
 
-<div class="deudas-list">
-  @for (d of deudas(); track d.id) {
-    <div class="deuda-card" [class]="d.estado">
-      <div class="deuda-info">
-        <span class="deuda-nombre">{{ d.name }} {{ d.lastName }}</span>
-        <span class="deuda-desc">{{ d.descripcion }}</span>
-        @if (d.notas) { <span class="deuda-notas">📝 {{ d.notas }}</span> }
-      </div>
-      <div class="deuda-montos">
-        <span class="monto-total">${{ d.monto | number }}</span>
-        @if (d.estado === 'parcial') { <span class="monto-pagado">Pagado: ${{ d.montoPagado | number }}</span> }
-        <span class="monto-pendiente" [style.color]="getEstadoColor(d.estado)">Debe: ${{ getPendiente(d) | number }}</span>
-      </div>
-      <span class="estado-pill" [style.color]="getEstadoColor(d.estado)" [style.background]="getEstadoColor(d.estado)+'11'" [style.border-color]="getEstadoColor(d.estado)+'44'">{{ d.estado }}</span>
-      <button class="btn-pago" (click)="openPago(d)">💵 Cobrar</button>
-    </div>
-  }
-  @if (deudas().length === 0) {
-    <div class="empty"><span>✅</span><p>No hay deudas pendientes</p></div>
-  }
+<!-- SELECTOR DE PESTAÑAS (TABS SELECTOR) -->
+<div class="tabs-selector-container">
+  <button class="tab-btn" [class.active]="tabActiva() === 'activas'" (click)="tabActiva.set('activas')">
+    👥 Clientes en Establecimiento (Cuentas Activas)
+    <span class="count-badge active">{{ cuentasActivas().length }}</span>
+  </button>
+  <button class="tab-btn" [class.active]="tabActiva() === 'pagadas'" (click)="tabActiva.set('pagadas')">
+    ✅ Historial de Pagos Recibidos
+    <span class="count-badge paid">{{ cuentasPagadas().length }}</span>
+  </button>
 </div>
 
-@if (showModal()) {
-  <div class="modal-overlay" (click)="showModal.set(false)">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header"><h3>💸 Registrar Deuda</h3><button (click)="showModal.set(false)">✕</button></div>
-      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
-        <div class="field"><label>Cliente *</label>
-          <select formControlName="userId">
-            <option [value]="null">Seleccionar...</option>
-            @for (u of usuarios(); track u.id) { <option [value]="u.id">{{ u.name }} {{ u.lastName }}</option> }
-          </select>
+<!-- LISTADO DE CUENTAS -->
+<div class="deudas-list-premium">
+  
+  <!-- MODO 1: CUENTAS ACTIVAS / CLIENTES EN ESTABLECIMIENTO -->
+  @if (tabActiva() === 'activas') {
+    @for (d of cuentasActivas(); track d.id) {
+      <div class="deuda-card-premium animate-fade-in" [class]="d.estado">
+        <div class="card-left-section">
+          <div class="avatar-circle" [class.external]="d.esExterno">
+            {{ d.esExterno ? '👤' : '👥' }}
+          </div>
+          <div class="deuda-info">
+            <div class="deuda-nombre-row">
+              <span class="deuda-nombre">{{ getNombreCliente(d) }}</span>
+              @if (d.esExterno) {
+                <span class="visitante-tag">Visitante Externo</span>
+              } @else {
+                <span class="registrado-tag">Cliente Registrado</span>
+              }
+            </div>
+            <span class="deuda-desc">{{ d.descripcion }}</span>
+            @if (d.telefonoCliente) { 
+              <span class="deuda-tel">📞 {{ d.telefonoCliente }}</span> 
+            }
+            @if (d.notas) { 
+              <span class="deuda-notas">📝 {{ d.notas }}</span> 
+            }
+            <span class="deuda-fecha" style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; display: block;">📅 Registrada: {{ d.fechaCreacion | date:'dd/MM/yyyy h:mm a' }}</span>
+          </div>
         </div>
-        <div class="field"><label>Descripción *</label><input formControlName="descripcion" placeholder="Partida + bebidas..." /></div>
-        <div class="field"><label>Monto *</label><input formControlName="monto" type="number" /></div>
-        <div class="field"><label>Notas</label><textarea formControlName="notas" rows="2"></textarea></div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid||loading()">Registrar</button>
+
+        <div class="deuda-right-section">
+          <div class="deuda-montos">
+            <div class="monto-row-item">
+              <span class="m-lbl">Total:</span>
+              <span class="m-val">${{ d.monto | number:'1.0-0' }}</span>
+            </div>
+            @if (d.estado === 'parcial') { 
+              <div class="monto-row-item">
+                <span class="m-lbl">Abonado:</span>
+                <span class="m-val green">${{ d.montoPagado | number:'1.0-0' }}</span>
+              </div> 
+            }
+            <div class="monto-row-item highlighted">
+              <span class="m-lbl">Debe:</span>
+              <span class="m-val red" [style.color]="getEstadoColor(d.estado)">${{ getPendiente(d) | number:'1.0-0' }}</span>
+            </div>
+          </div>
+          
+          <span class="estado-pill-premium"
+                [style.color]="getEstadoColor(d.estado)"
+                [style.background]="getEstadoColor(d.estado)+'11'"
+                [style.border-color]="getEstadoColor(d.estado)+'33'">
+            {{ d.estado === 'pendiente' ? 'Pendiente' : (d.estado === 'en_juego' ? 'Mesa en Curso' : 'Abono Parcial') }}
+          </span>
+
+          @if (!d.isLive) {
+            <button class="btn-cobrar-premium" (click)="openPago(d)">💵 Cobrar Cuenta</button>
+          } @else {
+            <div style="margin-top: 10px; font-size: 0.85rem; color: #aaa; text-align: right;">
+              ⚠️ Cierra esta mesa desde el Punto de Venta
+            </div>
+          }
+        </div>
+      </div>
+    }
+    @if (cuentasActivas().length === 0) {
+      <div class="empty-banner-glass">
+        <span class="empty-icon">✅</span>
+        <h4>¡Excelente! Todo al día</h4>
+        <p>No hay cuentas activas o consumos de clientes pendientes de pago en el establecimiento.</p>
+      </div>
+    }
+  }
+
+  <!-- MODO 2: HISTORIAL DE PAGOS RECIBIDOS -->
+  @if (tabActiva() === 'pagadas') {
+    @for (d of cuentasPagadas(); track d.id) {
+      <div class="deuda-card-premium paid animate-fade-in">
+        <div class="card-left-section">
+          <div class="avatar-circle paid">✓</div>
+          <div class="deuda-info">
+            <div class="deuda-nombre-row">
+              <span class="deuda-nombre">{{ getNombreCliente(d) }}</span>
+              @if (d.esExterno) {
+                <span class="visitante-tag">Visitante</span>
+              }
+            </div>
+            <span class="deuda-desc">{{ d.descripcion }}</span>
+            <span class="deuda-fecha-pago">Pagado el {{ d.fechaPago | date:'dd/MM/yyyy, h:mm a' }}</span>
+          </div>
+        </div>
+
+        <div class="deuda-right-section">
+          <div class="deuda-montos">
+            <div class="monto-row-item">
+              <span class="m-lbl">Monto Pagado:</span>
+              <span class="m-val green font-large">${{ d.monto | number:'1.0-0' }}</span>
+            </div>
+          </div>
+          <span class="estado-pill-premium pagada">Cobrado</span>
+        </div>
+      </div>
+    }
+    @if (cuentasPagadas().length === 0) {
+      <div class="empty-banner-glass">
+        <span class="empty-icon">📋</span>
+        <h4>Historial vacío</h4>
+        <p>Aún no se han cobrado cuentas durante esta sesión.</p>
+      </div>
+    }
+  }
+
+</div>
+
+<!-- MODAL REGISTRAR DEUDA MANUAL -->
+@if (showModal()) {
+  <div class="modal-overlay-glass" (click)="showModal.set(false)">
+    <div class="modal-premium" (click)="$event.stopPropagation()">
+      <div class="modal-header-premium">
+        <h3>💸 Registrar Deuda Manual</h3>
+        <button class="btn-close-modal" (click)="showModal.set(false)">✕</button>
+      </div>
+
+      <!-- Conmutador de Tipo de Cliente -->
+      <div class="modo-toggle-premium">
+        <button class="modo-btn-premium" [class.active]="modoCliente() === 'registrado'"
+                (click)="setModo('registrado')">
+          👥 Cliente Registrado
+        </button>
+        <button class="modo-btn-premium" [class.active]="modoCliente() === 'externo'"
+                (click)="setModo('externo')">
+          🚶 Visitante / Externo
+        </button>
+      </div>
+
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form-premium">
+
+        <!-- Campo Seleccionar Usuario Registrado -->
+        @if (modoCliente() === 'registrado') {
+          <div class="field-premium">
+            <label>Seleccionar Cliente *</label>
+            <select formControlName="userId">
+              <option [ngValue]="null">Buscar cliente...</option>
+              @for (u of usuarios(); track u.id) {
+                <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }}</option>
+              }
+            </select>
+          </div>
+        }
+
+        <!-- Campos para Cliente Externo -->
+        @if (modoCliente() === 'externo') {
+          <div class="field-premium">
+            <label>Nombre del Visitante / Grupo *</label>
+            <input formControlName="nombreCliente" placeholder="Ej: Mesa 5 (Pedro Ortiz)..." />
+          </div>
+          <div class="field-premium">
+            <label>Teléfono de Contacto <span class="opcional">(opcional)</span></label>
+            <input formControlName="telefonoCliente" placeholder="Ej: 312 456 7890" type="tel" />
+          </div>
+          <div class="info-alert-externo">
+            <span class="info-icon">👤</span>
+            <p>Los visitantes temporales no tienen cuenta en el sistema. Los datos de su cuenta solo se guardarán en este registro de caja.</p>
+          </div>
+        }
+
+        <!-- Campos Comunes -->
+        <div class="field-premium">
+          <label>Descripción del Consumo *</label>
+          <input formControlName="descripcion" placeholder="Ej: Consumo mesa 3 + 2 cervezas + 1 pizza" />
+        </div>
+        <div class="field-premium">
+          <label>Monto total de la cuenta *</label>
+          <div class="input-prefix-premium">
+            <span>$</span>
+            <input formControlName="monto" type="number" min="1" placeholder="Monto total..." />
+          </div>
+        </div>
+        <div class="field-premium">
+          <label>Notas de la Deuda <span class="opcional">(opcional)</span></label>
+          <textarea formControlName="notas" rows="2" placeholder="Observaciones de pago..."></textarea>
+        </div>
+
+        @if (errorMsg()) {
+          <p class="error-msg-premium">⚠️ {{ errorMsg() }}</p>
+        }
+
+        <div class="modal-actions-premium">
+          <button type="button" class="btn-secondary-premium" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary-premium" [disabled]="loading()">
+            @if (loading()) { ⏳ Guardando... } @else { Registrar Consumo }
+          </button>
         </div>
       </form>
     </div>
   </div>
 }
 
+<!-- MODAL COBRAR / REGISTRAR PAGO -->
 @if (showPagoModal()) {
-  <div class="modal-overlay" (click)="showPagoModal.set(false)">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header"><h3>💵 Registrar Pago</h3><button (click)="showPagoModal.set(false)">✕</button></div>
-      <div class="pago-info">
-        <span>{{ deudaSeleccionada()?.name }} {{ deudaSeleccionada()?.lastName }}</span>
-        <span class="pago-pendiente">Pendiente: ${{ getPendiente(deudaSeleccionada()) | number }}</span>
+  <div class="modal-overlay-glass" (click)="showPagoModal.set(false)">
+    <div class="modal-premium payment" (click)="$event.stopPropagation()">
+      <div class="modal-header-premium">
+        <h3>💵 Registrar Pago / Cobrar</h3>
+        <button class="btn-close-modal" (click)="showPagoModal.set(false)">✕</button>
       </div>
-      <form [formGroup]="pagoForm" (ngSubmit)="registrarPago()" class="modal-form">
-        <div class="field"><label>Monto a cobrar *</label><input formControlName="montoPago" type="number" /></div>
-        <div class="modal-actions">
-          <button type="button" class="btn-secondary" (click)="showPagoModal.set(false)">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="pagoForm.invalid||loading()">✅ Confirmar cobro</button>
+      
+      <div class="payment-info-box">
+        <span class="payment-client-label">Cliente / Responsable</span>
+        <span class="payment-client-name">{{ getNombreCliente(deudaSeleccionada()) }}</span>
+        <div class="payment-debt-summary">
+          <span>Deuda Pendiente:</span>
+          <strong class="payment-pending-amount">${{ getPendiente(deudaSeleccionada()) | number:'1.0-0' }}</strong>
+        </div>
+      </div>
+
+      <form [formGroup]="pagoForm" (ngSubmit)="registrarPago()" class="modal-form-premium">
+        <div class="field-premium">
+          <label>Monto Recibido *</label>
+          <div class="input-prefix-premium">
+            <span>$</span>
+            <input formControlName="montoPago" type="number" />
+          </div>
+        </div>
+
+        @if (cambioACambiar > 0) {
+          <div class="cambio-box" style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid #10b981; padding: 10px; margin-bottom: 15px; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="color: var(--text-secondary); font-size: 0.9rem;">Cambio a devolver:</span>
+            <strong style="color: #10b981; font-size: 1.1rem;">${{ cambioACambiar | number:'1.0-0' }}</strong>
+          </div>
+        }
+
+        <div class="field-premium">
+          <label>Método de Pago *</label>
+          <select formControlName="metodoPago">
+            <option value="efectivo">Efectivo</option>
+            <option value="transferencia">Transferencia (Nequi/Bancolombia)</option>
+          </select>
+        </div>
+        
+        <div class="modal-actions-premium">
+          <button type="button" class="btn-secondary-premium" (click)="showPagoModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary-premium" [disabled]="pagoForm.invalid||loading()">
+            ✅ Confirmar y Cerrar
+          </button>
         </div>
       </form>
     </div>

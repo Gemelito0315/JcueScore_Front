@@ -168,9 +168,9 @@
         <div class="field">
           <label>Tipo de producto *</label>
           <select formControlName="productTypeId">
-            <option [value]="null">Seleccionar...</option>
+            <option [ngValue]="null">Seleccionar...</option>
             @for (c of categorias(); track c.id) {
-              <option [value]="c.id">{{ c.name }}</option>
+              <option [ngValue]="c.id">{{ c.name }}</option>
             }
           </select>
         </div>

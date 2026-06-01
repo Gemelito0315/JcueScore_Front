@@ -49,7 +49,7 @@
       <div class="turno-salario">
         <span class="salario-label">Salario acumulado</span>
         <span class="salario-value">${{ salarioCalculado | number }}</span>
-        <span class="salario-rate">${{ formApertura.value.valorHora | number }}/hora · {{ (horasTrabajadas) | number:'1.1-1' }}h trabajadas</span>
+        <span class="salario-rate">${{ formApertura.value.valorHora | number }}/hora · {{ horasTrabajadas | number:'1.1-1' }}h trabajadas</span>
       </div>
       <div class="turno-base">
         <span class="base-label">Base de caja</span>
@@ -57,135 +57,262 @@
       </div>
     </div>
 
-    <!-- RESUMEN EN TIEMPO REAL -->
-    <div class="resumen-grid">
-      <div class="resumen-card green">
-        <span class="r-icon">💵</span>
-        <div>
-          <span class="r-val">${{ resumenDia().ventasEfectivo | number }}</span>
-          <span class="r-label">Ventas efectivo</span>
+    <!-- RESUMEN EN TIEMPO REAL (datos reales del backend) -->
+    @if (loadingResumen()) {
+      <div class="resumen-cargando">⏳ Cargando datos del turno...</div>
+    } @else {
+      <div class="resumen-grid">
+        <div class="resumen-card green">
+          <span class="r-icon">💵</span>
+          <div>
+            <span class="r-val">${{ resumenDia().ventasEfectivo | number }}</span>
+            <span class="r-label">Ventas efectivo</span>
+          </div>
+        </div>
+        <div class="resumen-card cyan">
+          <span class="r-icon">📱</span>
+          <div>
+            <span class="r-val">${{ resumenDia().ventasTransferencia | number }}</span>
+            <span class="r-label">Transferencias</span>
+          </div>
+        </div>
+        <div class="resumen-card yellow">
+          <span class="r-icon">💰</span>
+          <div>
+            <span class="r-val">${{ resumenDia().deudasCobradas | number }}</span>
+            <span class="r-label">Deudas cobradas</span>
+          </div>
+        </div>
+        <div class="resumen-card orange">
+          <span class="r-icon">🍺</span>
+          <div>
+            <span class="r-val">${{ resumenDia().gastosInternos | number }}</span>
+            <span class="r-label">Consumo propietario</span>
+          </div>
+        </div>
+        <div class="resumen-card total">
+          <span class="r-icon">🏦</span>
+          <div>
+            <span class="r-val">${{ totalEsperadoEnCaja | number }}</span>
+            <span class="r-label">Efectivo esperado</span>
+          </div>
+        </div>
+        <div class="resumen-card" style="border-left:3px solid #818cf8">
+          <span class="r-icon">📊</span>
+          <div>
+            <span class="r-val">${{ totalIngresos | number }}</span>
+            <span class="r-label">Total ingresos</span>
+          </div>
         </div>
       </div>
-      <div class="resumen-card cyan">
-        <span class="r-icon">📱</span>
-        <div>
-          <span class="r-val">${{ resumenDia().ventasTransferencia | number }}</span>
-          <span class="r-label">Transferencias</span>
-        </div>
-      </div>
-      <div class="resumen-card yellow">
-        <span class="r-icon">💰</span>
-        <div>
-          <span class="r-val">${{ resumenDia().deudasCobradas | number }}</span>
-          <span class="r-label">Deudas cobradas</span>
-        </div>
-      </div>
-      <div class="resumen-card red">
-        <span class="r-icon">⚠️</span>
-        <div>
-          <span class="r-val">${{ resumenDia().deudasPendientes | number }}</span>
-          <span class="r-label">Deudas pendientes</span>
-        </div>
-      </div>
-      <div class="resumen-card orange">
-        <span class="r-icon">🍺</span>
-        <div>
-          <span class="r-val">${{ resumenDia().gastosInternos | number }}</span>
-          <span class="r-label">Consumo propietario</span>
-        </div>
-      </div>
-      <div class="resumen-card total">
-        <span class="r-icon">📊</span>
-        <div>
-          <span class="r-val">${{ totalIngresos | number }}</span>
-          <span class="r-label">Total ingresos</span>
-        </div>
-      </div>
-    </div>
+    }
 
-    <!-- BOTÓN CERRAR TURNO -->
+    <!-- CIERRE DE TURNO INLINE -->
     <div class="cierre-section">
-      <h3>🔒 Cerrar Turno</h3>
-      <p>Cuenta el efectivo físico en caja y registra el total</p>
-      <form [formGroup]="formCierre" class="cierre-form">
-        <div class="field">
-          <label>Efectivo contado en caja (COP)</label>
-          <div class="input-prefix">
-            <span>$</span>
-            <input formControlName="efectivoContado" type="number" placeholder="0" />
-          </div>
-          <small>Cuenta físicamente el dinero en caja y escribe el total</small>
+      <h3>🔒 Cerrar Turno Oficialmente</h3>
+      <p>Verifica el efectivo esperado y declara el dinero físico para hacer el cuadre.</p>
+
+      <div class="cuadre-preview" style="margin-bottom:20px">
+        <h4 style="color:#e2e8f0; margin-bottom:12px; font-size:0.95rem;">💵 Cálculo de Efectivo Físico</h4>
+        <div class="cuadre-row">
+          <span>Base inicial (Apertura)</span>
+          <span>${{ formApertura.value.baseCaja | number }}</span>
+        </div>
+        <div class="cuadre-row">
+          <span>+ Pagos en Efectivo (Ventas)</span>
+          <span class="green">${{ resumenDia().ventasEfectivo | number }}</span>
+        </div>
+        <div class="cuadre-row">
+          <span>+ Deudas Cobradas (Efectivo)</span>
+          <span class="green">${{ resumenDia().deudasCobradas | number }}</span>
+        </div>
+        <div class="cuadre-row">
+          <span>- Gastos Internos y Salidas (Pagados de caja)</span>
+          <span class="red">-${{ resumenDia().gastosInternos | number }}</span>
+        </div>
+        <div class="cuadre-row total-row" style="margin-top:8px; padding-top:8px; border-top:1px solid rgba(255,255,255,0.1);">
+          <span>= Efectivo esperado en caja</span>
+          <span style="color:#34d399">${{ totalEsperadoEnCaja | number }}</span>
         </div>
 
-        @if ((formCierre.value.efectivoContado ?? 0) > 0) {
-          <div class="cuadre-preview">
-            <div class="cuadre-row">
-              <span>Base inicial</span>
-              <span>${{ formApertura.value.baseCaja | number }}</span>
-            </div>
-            <div class="cuadre-row">
-              <span>+ Ventas efectivo</span>
-              <span class="green">${{ resumenDia().ventasEfectivo | number }}</span>
-            </div>
-            <div class="cuadre-row">
-              <span>+ Deudas cobradas</span>
-              <span class="green">${{ resumenDia().deudasCobradas | number }}</span>
-            </div>
-            <div class="cuadre-row">
-              <span>- Consumo propietario</span>
-              <span class="red">-${{ resumenDia().gastosInternos | number }}</span>
-            </div>
-            <div class="cuadre-row">
-              <span>- Tu salario</span>
-              <span class="red">-${{ salarioCalculado | number }}</span>
-            </div>
-            <div class="cuadre-row total-row">
-              <span>= Esperado en caja</span>
-              <span>${{ totalEsperadoEnCaja | number }}</span>
-            </div>
-            <div class="cuadre-row total-row">
-              <span>Contado físicamente</span>
-              <span>${{ formCierre.value.efectivoContado | number }}</span>
-            </div>
-            <div class="estado-cuadre" [style.color]="estadoCuadre.color" [style.border-color]="estadoCuadre.color+'44'" [style.background]="estadoCuadre.color+'11'">
-              {{ estadoCuadre.texto }}
-            </div>
-          </div>
+        <div style="border-top: 1px dashed rgba(255,255,255,0.2); margin: 20px 0;"></div>
+        
+        <h4 style="color:#e2e8f0; margin-bottom:12px; font-size:0.95rem;">📱 Dinero Digital (No está en caja)</h4>
+        <div class="cuadre-row" style="color: #cbd5e1; font-size: 0.9em;">
+          <span>+ Ventas por Transferencia</span>
+          <span class="cyan">${{ resumenDia().ventasTransferencia | number }}</span>
+        </div>
+        
+        <div style="border-top: 1px dashed rgba(255,255,255,0.2); margin: 20px 0;"></div>
+
+        <div class="cuadre-row total-row" style="font-size: 1.1rem; color: #fff;">
+          <span>💰 TOTAL INGRESOS DEL TURNO</span>
+          <span style="color: #818cf8">${{ totalIngresos | number }}</span>
+        </div>
+
+        @if (reporteDetallado()) {
+          <div style="border-top: 1px dashed rgba(255,255,255,0.2); margin: 20px 0;"></div>
+          <button type="button" (click)="toggleTrilla()" class="btn-trilla" style="width: 100%; padding: 12px; background: #3b82f6; border: none; border-radius: 8px; color: white; font-weight: bold; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 1rem; transition: 0.2s;">
+            🧾 Ver Trilla (Reporte Detallado)
+          </button>
         }
+      </div>
 
-        <div class="field">
-          <label>Notas de cierre (opcional)</label>
-          <textarea formControlName="notasCierre" rows="2" placeholder="Ej: Quedó pendiente deuda de Carlos, nevera con 5 cervezas..."></textarea>
+      <form [formGroup]="formCierre" (ngSubmit)="cerrarTurno()" class="form-cierre-inline">
+        <div class="form-group-horizontal">
+          <div class="field input-efectivo">
+            <label>Efectivo Físico Contado ($)</label>
+            <input type="number" formControlName="efectivoContado" placeholder="0" class="input-grande" />
+          </div>
+
+          <div class="resultado-cuadre" 
+               [class.cuadre-perfecto]="diferenciaCaja === 0"
+               [class.cuadre-faltante]="diferenciaCaja < 0"
+               [class.cuadre-sobrante]="diferenciaCaja > 0">
+            <div class="res-title">Diferencia de Caja:</div>
+            <div class="res-amount">
+              {{ diferenciaCaja > 0 ? '+' : '' }}${{ diferenciaCaja | number }}
+            </div>
+            <div class="res-desc">
+              @if (diferenciaCaja === 0) { ✅ Cuadre Perfecto }
+              @else if (diferenciaCaja < 0) { ⚠️ Faltante }
+              @else { ℹ️ Sobrante }
+            </div>
+          </div>
         </div>
 
-        <button type="button" class="btn-cerrar" (click)="cerrarTurno()" [disabled]="formCierre.invalid">
-          🔒 Cerrar Turno y Generar Reporte
-        </button>
+        <div class="field">
+          <label>Notas de Cierre (Opcional)</label>
+          <textarea formControlName="notasCierre" rows="2" placeholder="Explica descuadres, o si retiraste tu sueldo..."></textarea>
+        </div>
+        
+        <div style="display: flex; gap: 15px; margin-top: 20px;">
+          <button type="button" class="btn-excel" (click)="exportarReporte()" style="background-color: #10b981; color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; flex: 1; display: flex; justify-content: center; align-items: center; gap: 8px; transition: background-color 0.2s;">
+            <span>📊</span> Descargar Reporte Excel
+          </button>
+          
+          <button type="submit" class="btn-cerrar-definitivo" [disabled]="formCierre.invalid" style="flex: 2;">
+            🔒 Confirmar Cierre de Turno
+          </button>
+        </div>
       </form>
     </div>
   </div>
-}
 
-<!-- REPORTE DE CIERRE -->
-@if (horaFin()) {
-  <div class="reporte-cierre">
-    <div class="reporte-card">
-      <div class="reporte-icon">📋</div>
-      <h2>Turno Cerrado</h2>
-      <p>{{ horaInicio() | date:'hh:mm a' }} — {{ horaFin() | date:'hh:mm a' }}</p>
+  <!-- MODAL DE TRILLA -->
+  @if (mostrarTrilla() && reporteDetallado()) {
+    <div class="modal-overlay" (click)="toggleTrilla()" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.6); display: flex; justify-content: center; align-items: center; z-index: 1000;">
+      <div class="modal-content" (click)="$event.stopPropagation()" style="background: #1e293b; border-radius: 12px; width: 90%; max-width: 500px; padding: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.5); color: #fff;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px;">
+          <h3 style="margin: 0; font-size: 1.2rem; color: #f8fafc;">🧾 Trilla (Reporte Detallado)</h3>
+          <button class="btn-close" (click)="toggleTrilla()" style="background: none; border: none; color: #94a3b8; font-size: 1.5rem; cursor: pointer;">×</button>
+        </div>
+        
+        <div class="modal-body" style="max-height: 60vh; overflow-y: auto; padding-right: 5px;">
+          <!-- 1. PRODUCTOS -->
+          <h4 style="color:#60a5fa; margin-bottom:12px; font-size:1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">📦 Productos Vendidos</h4>
+          @if (reporteDetallado()!.productosVendidos.length === 0) {
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">No se registraron ventas de productos en este turno.</p>
+          } @else {
+            <table class="reporte-tabla" style="width: 100%; text-align: left; margin-bottom: 25px; font-size: 0.9rem; color: #cbd5e1;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
+                  <th style="padding: 6px 0;">Producto</th>
+                  <th style="padding: 6px 0; text-align: center;">Cantidad</th>
+                  <th style="padding: 6px 0; text-align: right;">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of reporteDetallado()!.productosVendidos; track p.name) {
+                  <tr>
+                    <td style="padding: 6px 0;">{{ p.name }}</td>
+                    <td style="padding: 6px 0; text-align: center;">{{ p.cantidad }}</td>
+                    <td style="padding: 6px 0; text-align: right; color: #fff;">${{ p.subtotal | number }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
 
-      <div class="reporte-resumen">
-        <div class="rep-row"><span>Duración</span><span>{{ duracionFormateada }}</span></div>
-        <div class="rep-row"><span>Horas trabajadas</span><span>{{ horasTrabajadas | number:'1.1-1' }}h</span></div>
-        <div class="rep-row"><span>Salario del turno</span><span class="green">${{ salarioCalculado | number }}</span></div>
-        <div class="rep-row"><span>Total ingresos</span><span class="green">${{ totalIngresos | number }}</span></div>
-        <div class="rep-row"><span>Efectivo para propietario</span><span>${{ (formCierre.value.efectivoContado ?? 0) - salarioCalculado | number }}</span></div>
-        <div class="rep-row estado" [style.color]="estadoCuadre.color">
-          <span>Estado de caja</span><span>{{ estadoCuadre.texto }}</span>
+          <!-- 2. TIEMPO DE MESAS -->
+          <h4 style="color:#a78bfa; margin-bottom:12px; font-size:1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🎱 Tiempo de Mesas Jugado</h4>
+          @if (reporteDetallado()!.tiempoMesas.length === 0) {
+            <p style="color: #94a3b8; font-size: 0.9rem; margin-bottom: 15px;">No se cobró tiempo de mesas en este turno.</p>
+          } @else {
+            <table class="reporte-tabla" style="width: 100%; text-align: left; margin-bottom: 25px; font-size: 0.9rem; color: #cbd5e1;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
+                  <th style="padding: 6px 0;">Mesa</th>
+                  <th style="padding: 6px 0; text-align: right;">Total Recaudado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of reporteDetallado()!.tiempoMesas; track m.mesa) {
+                  <tr>
+                    <td style="padding: 6px 0;">{{ m.mesa }}</td>
+                    <td style="padding: 6px 0; text-align: right; color: #fff;">${{ m.total | number }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+
+          <!-- 3. CONSUMIBLES DIRECTOS EN MESA (PEDIDOS ASOCIADOS A RECURSO) -->
+          <h4 style="color:#f472b6; margin-bottom:12px; font-size:1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">🍔 Bebidas/Comidas a las Mesas</h4>
+          @if (reporteDetallado()!.mesasCobradas.length === 0) {
+            <p style="color: #94a3b8; font-size: 0.9rem;">No se cobraron pedidos a mesas en este turno.</p>
+          } @else {
+            <table class="reporte-tabla" style="width: 100%; text-align: left; font-size: 0.9rem; color: #cbd5e1;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
+                  <th style="padding: 6px 0;">Mesa</th>
+                  <th style="padding: 6px 0; text-align: right;">Total Consumido</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (m of reporteDetallado()!.mesasCobradas; track m.mesa) {
+                  <tr>
+                    <td style="padding: 6px 0;">{{ m.mesa }}</td>
+                    <td style="padding: 6px 0; text-align: right; color: #fff;">${{ m.total | number }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+
+          <!-- 4. DEUDAS COBRADAS -->
+          <h4 style="color:#fbbf24; margin-top:15px; margin-bottom:12px; font-size:1rem; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 8px;">💰 Deudas Cobradas</h4>
+          @if (reporteDetallado()!.deudasCobradasList.length === 0) {
+            <p style="color: #94a3b8; font-size: 0.9rem;">No se cobraron deudas en este turno.</p>
+          } @else {
+            <table class="reporte-tabla" style="width: 100%; text-align: left; font-size: 0.9rem; color: #cbd5e1;">
+              <thead>
+                <tr style="border-bottom: 1px solid rgba(255,255,255,0.1); color: #94a3b8;">
+                  <th style="padding: 6px 0;">Cliente/Descripción</th>
+                  <th style="padding: 6px 0; text-align: center;">Método</th>
+                  <th style="padding: 6px 0; text-align: right;">Total Cobrado</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (d of reporteDetallado()!.deudasCobradasList; track d.descripcion) {
+                  <tr>
+                    <td style="padding: 6px 0;">
+                      <span style="font-weight:bold; color: #fff;">{{ d.nombreCliente || d.usuarioName || 'Cliente' }}</span>
+                      <br><span style="font-size:0.8rem; color:#94a3b8;">{{ d.descripcion }}</span>
+                    </td>
+                    <td style="padding: 6px 0; text-align: center; text-transform: capitalize;">{{ d.metodoPago }}</td>
+                    <td style="padding: 6px 0; text-align: right; color: #10b981;">+${{ d.monto | number }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          }
+        </div>
+        
+        <div class="modal-footer" style="margin-top: 20px; text-align: center;">
+          <button (click)="toggleTrilla()" style="width: 100%; padding: 12px; background: #334155; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s;">Cerrar Trilla</button>
         </div>
       </div>
-
-      <button class="btn-iniciar" (click)="resetTurno()">Iniciar Nuevo Turno</button>
     </div>
-  </div>
+  }
 }

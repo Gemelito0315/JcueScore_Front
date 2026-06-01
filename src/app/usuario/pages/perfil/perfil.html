@@ -4,7 +4,13 @@
 </div>
 
 @if (saved()) {
-  <div class="toast">✅ Cambios guardados correctamente</div>
+  <div class="toast success">✅ Perfil guardado correctamente</div>
+}
+@if (savedPass()) {
+  <div class="toast success">✅ Contraseña actualizada correctamente</div>
+}
+@if (errorMsg()) {
+  <div class="toast error">⚠️ {{ errorMsg() }}</div>
 }
 
 <div class="profile-layout">
@@ -28,9 +34,14 @@
     <p>{{ currentUser()?.email }}</p>
     <span class="role-badge">Usuario</span>
     <div class="stats-mini">
-      <div class="stat-mini"><span class="num">5</span><span class="lbl">Juegos</span></div>
-      <div class="stat-mini"><span class="num gold">150</span><span class="lbl">Puntos</span></div>
-      <div class="stat-mini"><span class="num">Bronce</span><span class="lbl">Nivel</span></div>
+      <div class="stat-mini">
+        <span class="num">{{ currentUser()?.docType ?? '—' }}</span>
+        <span class="lbl">Doc. tipo</span>
+      </div>
+      <div class="stat-mini">
+        <span class="num">{{ currentUser()?.docNumber ?? '—' }}</span>
+        <span class="lbl">Número</span>
+      </div>
     </div>
   </div>
 
@@ -62,7 +73,12 @@
         <div class="row">
           <div class="field">
             <label>Tipo doc.</label>
-            <input formControlName="docType" [readonly]="!editMode()" />
+            <select formControlName="docType" [attr.disabled]="!editMode() ? '' : null">
+              <option value="CC">CC</option>
+              <option value="TI">TI</option>
+              <option value="CE">CE</option>
+              <option value="PP">PP</option>
+            </select>
           </div>
           <div class="field">
             <label>Número doc.</label>
@@ -70,7 +86,9 @@
           </div>
         </div>
         @if (editMode()) {
-          <button type="submit" class="btn-primary">Guardar cambios</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">
+            {{ saving() ? 'Guardando...' : '💾 Guardar cambios' }}
+          </button>
         }
       </form>
     </div>
@@ -78,7 +96,7 @@
     <!-- Cambiar contraseña -->
     <div class="form-card">
       <div class="form-card-header">
-        <h4>Cambiar contraseña</h4>
+        <h4>🔐 Cambiar contraseña</h4>
       </div>
       <form [formGroup]="passForm" (ngSubmit)="changePassword()">
         <div class="field">
@@ -89,7 +107,10 @@
           <label>Nueva contraseña</label>
           <input formControlName="newPassword" type="password" placeholder="Mínimo 6 caracteres" />
         </div>
-        <button type="submit" class="btn-primary" [disabled]="passForm.invalid">Actualizar contraseña</button>
+        <button type="submit" class="btn-primary"
+          [disabled]="passForm.invalid || savingPass()">
+          {{ savingPass() ? 'Actualizando...' : '🔑 Actualizar contraseña' }}
+        </button>
       </form>
     </div>
   </div>

@@ -58,6 +58,30 @@ h2 {
   border-radius: 2px;
 }
 
+.btn-return {
+  display: inline-block;
+  background: transparent;
+  color: #00bcd4;
+  border: 1px solid #00bcd4;
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-size: 0.95rem;
+  font-weight: 600;
+  text-decoration: none;
+  margin-bottom: 24px;
+  transition: all 0.2s ease;
+
+  &:hover {
+    background: rgba(0, 188, 212, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 188, 212, 0.2);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
 .footer {
   color: #6b7a8d;
   font-size: 0.85rem;

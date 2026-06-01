@@ -100,8 +100,8 @@
         <div class="field">
           <label>Rol</label>
           <select formControlName="roleIds">
-            @for (r of roles; track r.id) {
-              <option [value]="[r.id]">{{ r.name }}</option>
+            @for (r of roles(); track r.id) {
+              <option [value]="r.id">{{ r.name }}</option>
             }
           </select>
         </div>

@@ -1,47 +1,94 @@
-<div class="page-header">
-  <div><h2>💼 Cuadre de Caja</h2><p>Registra gastos internos y consumos del día</p></div>
-  <div class="header-right">
-    <div class="total-badge red">Total gastos: ${{ totalGastos | number }}</div>
-    <button class="btn-primary" (click)="showModal.set(true)">+ Registrar gasto</button>
+<div class="caja-container">
+  <div class="header">
+    <h2>Cuadre de Caja (Arqueo)</h2>
+    <p>Administra tus gastos y realiza el cierre de tu turno.</p>
   </div>
-</div>
 
-<div class="gastos-list">
-  @for (g of gastos(); track g.id) {
-    <div class="gasto-card">
-      <div class="gasto-tipo">{{ getTipoLabel(g.tipo) }}</div>
-      <div class="gasto-info">
-        <span class="gasto-desc">{{ g.descripcion }}</span>
-        <span class="gasto-hora">{{ g.hora }}</span>
+  @if (turnoId()) {
+    
+    <!-- TAB: GASTOS -->
+    <div class="gastos-tab fade-in">
+      <div class="gastos-header">
+        <h3>Gastos del Turno Actual</h3>
+        <button class="btn-primary" (click)="showModal.set(true)">+ Registrar Gasto</button>
       </div>
-      <span class="gasto-monto">-${{ g.monto | number }}</span>
-      <button class="btn-del" (click)="delete(g.id)">🗑️</button>
+
+      <div class="stats-card">
+        <div class="stat">
+          <span>Total Gastos Reportados</span>
+          <strong class="text-danger">${{ totalGastos | number }}</strong>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>Hora</th>
+              <th>Tipo</th>
+              <th>Descripción</th>
+              <th>Monto</th>
+              <th>Acciones</th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (g of gastos(); track g.id) {
+              <tr>
+                <td>{{ g.hora | date:'shortTime' }}</td>
+                <td><span class="badge">{{ getTipoLabel(g.tipo) }}</span></td>
+                <td>{{ g.descripcion }}</td>
+                <td class="text-danger">-${{ g.monto | number }}</td>
+                <td>
+                  <button class="btn-icon danger" (click)="deleteGasto(g.id)" title="Eliminar">🗑️</button>
+                </td>
+              </tr>
+            }
+            @if (gastos().length === 0) {
+              <tr><td colspan="5" class="empty-row">No hay gastos registrados en este turno.</td></tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  } @else {
+    <div class="empty-state">
+      <div class="icon">🔒</div>
+      <h3>No hay turno abierto</h3>
+      <p>Debes iniciar un turno para poder administrar la caja y registrar gastos.</p>
+      <button class="btn-primary" routerLink="/garitero/turno">Ir a Iniciar Turno</button>
     </div>
   }
-  @if (gastos().length === 0) {
-    <div class="empty"><span>💼</span><p>No hay gastos registrados hoy</p></div>
-  }
 </div>
 
+<!-- MODAL CREAR GASTO -->
 @if (showModal()) {
-  <div class="modal-overlay" (click)="showModal.set(false)">
-    <div class="modal" (click)="$event.stopPropagation()">
-      <div class="modal-header"><h3>💼 Registrar Gasto</h3><button (click)="showModal.set(false)">✕</button></div>
-      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
-        <div class="field">
-          <label>Tipo</label>
+  <div class="modal-overlay">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Registrar Salida de Caja / Gasto</h3>
+        <button class="btn-close" (click)="showModal.set(false)">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="saveGasto()" class="modal-body">
+        <div class="form-group">
+          <label>Tipo de Gasto</label>
           <select formControlName="tipo">
-            @for (t of tipos; track t.value) { <option [value]="t.value">{{ t.label }}</option> }
+            @for (t of tipos; track t.value) {
+              <option [value]="t.value">{{ t.label }}</option>
+            }
           </select>
         </div>
-        <div class="field"><label>Descripción *</label><input formControlName="descripcion" placeholder="Ej: 2 cervezas propietario" /></div>
-        <div class="field">
-          <label>Monto *</label>
-          <div class="input-prefix"><span>$</span><input formControlName="monto" type="number" /></div>
+        <div class="form-group">
+          <label>Monto ($)</label>
+          <input type="number" formControlName="monto" min="1" step="1000">
+        </div>
+        <div class="form-group">
+          <label>Descripción / Concepto</label>
+          <textarea formControlName="descripcion" rows="2" placeholder="Ej: Compra de hielo, pago al proveedor de cerveza..."></textarea>
         </div>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid">Registrar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid">Guardar Salida</button>
         </div>
       </form>
     </div>

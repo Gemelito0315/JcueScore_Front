@@ -125,14 +125,8 @@ export class PedidosService {
   private pedidoActualizadoSubject = new BehaviorSubject<Pedido | null>(null);
 
   constructor() {
-    this.iniciarActualizacionTiempoReal();
-  }
-
-  private iniciarActualizacionTiempoReal() {
-    // Actualizar pedidos activos cada 10 segundos
-    setInterval(() => {
-      this.obtenerPedidosActivos().subscribe();
-    }, 10000);
+    // El polling agresivo fue removido para evitar spam de 403 en usuarios que no son admin/garitero.
+    // Los componentes que requieran tiempo real deberían manejar su propio polling o usar WebSockets.
   }
 
   obtenerPedidos(): Observable<Pedido[]> {

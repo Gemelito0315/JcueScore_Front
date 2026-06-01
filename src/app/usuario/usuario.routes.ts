@@ -13,6 +13,20 @@ export const USUARIO_ROUTES: Routes = [
     canActivate: [authGuard]
   },
   {
+    path: 'mesas',
+    loadComponent: () => import('./pages/mesas/mesas.page').then(m => m.UsuarioMesasPage),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'espectador',
+    loadComponent: () => import('./pages/espectador/espectador.page').then(m => m.EspectadorLobbyPage),
+    canActivate: [authGuard]
+  },
+  {
+    path: 'espectador-vivo/:id',
+    loadComponent: () => import('../mesa/mesa').then(m => m.Mesa)
+  },
+  {
     path: '**',
     redirectTo: 'pedidos'
   }

@@ -1,9 +1,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { RouterLink } from '@angular/router';
 
 @Component({
   selector: 'app-mantenimiento',
-  imports: [],
+  imports: [RouterLink],
   templateUrl: './mantenimiento.html',
   styleUrl: './mantenimiento.scss'
 })

@@ -52,9 +52,15 @@
       </div>
       <div class="timer-group">
         <div class="timer-display" [class.paused]="!timerActivo()">{{ tiempoFormateado }}</div>
-        <button class="btn-pause" (click)="pausarTimer()">{{ timerActivo() ? '⏸ PAUSAR' : '▶ REANUDAR' }}</button>
+        @if (!isViewer()) {
+          <button class="btn-pause" (click)="pausarTimer()">{{ timerActivo() ? '⏸ PAUSAR' : '▶ REANUDAR' }}</button>
+        }
       </div>
-      <button class="btn-reset" (click)="resetPartida()">↻ ABANDONAR PARTIDA</button>
+      @if (!isViewer()) {
+        <button class="btn-reset" (click)="resetPartida()">↻ ABANDONAR PARTIDA</button>
+      } @else {
+        <button class="btn-reset" (click)="volverLobby()">⬅ VOLVER AL LOBBY</button>
+      }
     </header>
 
     <!-- MAIN BOARD -->
@@ -68,7 +74,6 @@
           <div class="name-block">
             <div class="name">
               {{ jugadores()[0].nombre }} 
-              <span class="elo-badge p1">{{jugadores()[0].rank}} {{jugadores()[0].eloRating}}</span>
             </div>
             @if (jugadores()[0].handicap > 0) { 
               <div class="handicap">+{{jugadores()[0].handicap}} PTS de Ventaja</div> 
@@ -91,43 +96,70 @@
           </div>
         </div>
 
-        <div class="controls">
-          <div class="add-buttons">
-            @for (n of [1,2,3,4,5]; track n) {
-              <button class="p1" (click)="sumarPuntos(0,n)">+{{ n }}</button>
-            }
+        @if (!isViewer()) {
+          <div class="controls">
+            <div class="add-buttons">
+              @for (n of [1, 2, 3, 4, 5]; track n) {
+                <button class="p1" (click)="sumarPuntos(0,n)">+{{ n }}</button>
+              }
+            </div>
+            <button class="btn-minus" (click)="restarPuntos(0)">− Restar Punto</button>
           </div>
-          <button class="btn-minus" (click)="restarPuntos(0)">− Restar Punto</button>
-        </div>
+        }
 
         <div class="stats-footer">
           <div class="stat-box">
-            <span class="val">{{ jugadores()[0].promedio }}</span>
+            <span class="val">{{ jugadores()[0].promedio || 0 }}</span>
             <span class="lbl">Promedio</span>
           </div>
           <div class="stat-box">
-            <span class="val">{{ jugadores()[0].rachMax }}</span>
+            <span class="val">{{ jugadores()[0].rachMax || 0 }}</span>
             <span class="lbl">Racha Máx</span>
           </div>
           <div class="stat-box">
-            <span class="val">{{ jugadores()[0].historial.length }}</span>
+            <span class="val">{{ jugadores()[0].historial.length || 0 }}</span>
             <span class="lbl">Turnos</span>
           </div>
         </div>
       </div>
 
       <!-- CAMERA FEED (CENTER) -->
-      <div class="camera-feed">
+      <div class="camera-feed" [class.fullscreen-mode]="isFullscreen()">
         <div class="live-badge">
-          <div class="pulse"></div> EN VIVO
-          <button class="btn-var-mini" (click)="abrirVarCompleto()" title="Revisar VAR de todo el partido">
-            ⏪ V.A.R
-          </button>
+          <div class="en-vivo-tag"><div class="pulse"></div> EN VIVO</div>
+          @if (!isViewer()) {
+            <button class="btn-var-mini" (click)="abrirVarCompleto()" title="Revisar VAR de todo el partido">
+              ⏪ V.A.R
+            </button>
+          } @else {
+            <button class="btn-var-mini" (click)="toggleFullscreenCamera()" title="Alternar Pantalla Completa">
+              {{ isFullscreen() ? '✕ REDUCIR VIDEO' : '⛶ EXPANDIR VIDEO' }}
+            </button>
+          }
         </div>
         <div class="scanline"></div>
 
         @if (!camaraActiva()) {
-          <img src="https://images.unsplash.com/photo-1616853609808-1cc67baec46c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1280&q=80" alt="Mesa Background" />
+          @if (isViewer() && liveFrame()) {
+            <img [src]="liveFrame()" alt="Live Stream" />
+          } @else {
+            <div class="billiard-table-mockup">
+              <div class="table-felt">
+                <div class="pocket top-left"></div>
+                <div class="pocket top-center"></div>
+                <div class="pocket top-right"></div>
+                <div class="pocket bottom-left"></div>
+                <div class="pocket bottom-center"></div>
+                <div class="pocket bottom-right"></div>
+                <div class="balls-layout">
+                  <div class="ball cue-ball"></div>
+                  <div class="ball yellow-ball"></div>
+                  <div class="ball red-ball"></div>
+                </div>
+                <div class="table-brand">JCUESCORE · MESA {{ mesaId() }}</div>
+              </div>
+            </div>
+          }
         } @else {
           <video #videoEl autoplay muted playsinline></video>
         }
@@ -148,7 +180,6 @@
           <div class="name-block">
             <div class="name">
               {{ jugadores()[1].nombre }} 
-              <span class="elo-badge p2">{{jugadores()[1].rank}} {{jugadores()[1].eloRating}}</span>
             </div>
             @if (jugadores()[1].handicap > 0) { 
               <div class="handicap">+{{jugadores()[1].handicap}} PTS de Ventaja</div> 
@@ -171,26 +202,28 @@
           </div>
         </div>
 
-        <div class="controls">
-          <div class="add-buttons">
-            @for (n of [1,2,3,4,5]; track n) {
-              <button class="p2" (click)="sumarPuntos(1,n)">+{{ n }}</button>
-            }
+        @if (!isViewer()) {
+          <div class="controls">
+            <div class="add-buttons">
+              @for (n of [1, 2, 3, 4, 5]; track n) {
+                <button class="p2" (click)="sumarPuntos(1,n)">+{{ n }}</button>
+              }
+            </div>
+            <button class="btn-minus" (click)="restarPuntos(1)">− Restar Punto</button>
           </div>
-          <button class="btn-minus" (click)="restarPuntos(1)">− Restar Punto</button>
-        </div>
+        }
 
         <div class="stats-footer">
           <div class="stat-box">
-            <span class="val">{{ jugadores()[1].promedio }}</span>
+            <span class="val">{{ jugadores()[1].promedio || 0 }}</span>
             <span class="lbl">Promedio</span>
           </div>
           <div class="stat-box">
-            <span class="val">{{ jugadores()[1].rachMax }}</span>
+            <span class="val">{{ jugadores()[1].rachMax || 0 }}</span>
             <span class="lbl">Racha Máx</span>
           </div>
           <div class="stat-box">
-            <span class="val">{{ jugadores()[1].historial.length }}</span>
+            <span class="val">{{ jugadores()[1].historial.length || 0 }}</span>
             <span class="lbl">Turnos</span>
           </div>
         </div>
@@ -228,7 +261,9 @@
           <div class="coin-robbery">
             🟡 <span>+100 JcueCoins</span> ganados y robados al perdedor
           </div>
-          <button class="btn-new" (click)="resetPartida()">FINALIZAR Y GUARDAR HIGHLIGHTS</button>
+          @if (!isViewer()) {
+            <button class="btn-new" (click)="resetPartida()">FINALIZAR Y GUARDAR HIGHLIGHTS</button>
+          }
         </div>
       </div>
     }

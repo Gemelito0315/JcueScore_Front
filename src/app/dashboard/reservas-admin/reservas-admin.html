@@ -3,9 +3,13 @@
     <h2>Reservas</h2>
     <p>Gestión de reservas del establecimiento</p>
   </div>
-  <div class="header-stats">
-    <span class="stat-pill cyan">📅 {{ totalHoy }} reservas hoy</span>
-    <span class="stat-pill green">💰 ${{ ingresoHoy | number }} completadas</span>
+  <div class="header-right">
+    <div class="header-stats">
+      <span class="stat-pill cyan">📅 {{ totalHoy }} hoy</span>
+      <span class="stat-pill orange">⏳ {{ pendientesHoy }} pendientes</span>
+      <span class="stat-pill green">💰 {{ formatPrice(ingresoHoy) }}</span>
+    </div>
+    <button class="btn-primary" (click)="openCreate()">+ Nueva</button>
   </div>
 </div>
 
@@ -18,36 +22,129 @@
       </button>
     }
   </div>
-  <input type="date" class="date-filter" [value]="filtroFecha()" (change)="filtroFecha.set($any($event.target).value)" />
+  <input type="date" class="date-filter"
+    [value]="filtroFecha()"
+    (change)="filtroFecha.set($any($event.target).value)" />
 </div>
 
 <!-- LISTA -->
-<div class="reservas-list">
-  @for (r of reservasFiltradas; track r.id) {
-    <div class="reserva-row" [class]="r.estado">
-      <div class="reserva-icon">{{ getGameIcon(r.tipo) }}</div>
-      <div class="reserva-info">
-        <span class="reserva-cliente">{{ r.cliente }}</span>
-        <span class="reserva-detalle">{{ r.mesa }} · {{ r.tipo }} · {{ r.fecha }} · {{ r.hora }}</span>
+@if (loading()) {
+  <div class="loading-state">
+    <div class="spinner"></div><p>Cargando reservas...</p>
+  </div>
+} @else {
+  <div class="reservas-list">
+    @for (r of reservasFiltradas; track r.id) {
+      <div class="reserva-row" [class]="r.estado">
+        <div class="reserva-icon">{{ getGameIcon(r.tipo) }}</div>
+        <div class="reserva-info">
+          <span class="reserva-cliente">{{ r.cliente }}</span>
+          <span class="reserva-detalle">{{ r.mesa }} · {{ r.tipo }} · {{ r.fecha }} · {{ r.hora }}</span>
+          @if (r.notas) { <span class="reserva-notas">📝 {{ r.notas }}</span> }
+        </div>
+        <span class="reserva-monto">{{ formatPrice(r.monto) }}</span>
+        <span class="estado-badge"
+          [style.color]="getEstadoColor(r.estado)"
+          [style.border-color]="getEstadoColor(r.estado)+'44'"
+          [style.background]="getEstadoColor(r.estado)+'11'">
+          {{ r.estado }}
+        </span>
+        <div class="reserva-actions">
+          @if (r.estado === 'pendiente') {
+            <button class="btn-confirm" (click)="confirmar(r.id)">✅ Confirmar</button>
+          }
+          @if (r.estado === 'confirmada') {
+            <button class="btn-complete" (click)="completar(r.id)">🏁 Completar</button>
+          }
+          @if (r.estado !== 'cancelada' && r.estado !== 'completada') {
+            <button class="btn-cancel" (click)="cancelar(r.id)">✕ Cancelar</button>
+          }
+          @if (r.estado === 'cancelada') {
+            <button class="btn-cancel" style="background:#ef4444; color:white; border-color:#dc2626" (click)="eliminar(r.id)">🗑️ Eliminar</button>
+          }
+        </div>
       </div>
-      <span class="reserva-monto">${{ r.monto | number }}</span>
-      <span class="estado-badge" [style.color]="getEstadoColor(r.estado)" [style.border-color]="getEstadoColor(r.estado)+'44'" [style.background]="getEstadoColor(r.estado)+'11'">
-        {{ r.estado }}
-      </span>
-      <div class="reserva-actions">
-        @if (r.estado === 'pendiente') {
-          <button class="btn-confirm" (click)="confirmar(r.id)">✅ Confirmar</button>
-        }
-        @if (r.estado !== 'cancelada' && r.estado !== 'completada') {
-          <button class="btn-cancel" (click)="cancelar(r.id)">✕</button>
-        }
+    }
+    @if (reservasFiltradas.length === 0) {
+      <div class="empty-state">
+        <span>📅</span>
+        <p>No hay reservas con este filtro</p>
       </div>
+    }
+  </div>
+}
+
+<!-- MODAL CREAR RESERVA -->
+@if (showModal()) {
+  <div class="modal-overlay" (click)="showModal.set(false)">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Nueva Reserva</h3>
+        <button (click)="showModal.set(false)">✕</button>
+      </div>
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+        <div class="field">
+          <label>Tipo de Cliente</label>
+          <div class="radio-group" style="display:flex; gap:15px; margin-bottom: 10px;">
+            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
+              <input type="radio" formControlName="clienteTipo" value="registrado" /> Registrado
+            </label>
+            <label style="display:flex; align-items:center; gap:5px; cursor:pointer;">
+              <input type="radio" formControlName="clienteTipo" value="invitado" /> Invitado
+            </label>
+          </div>
+        </div>
+        
+        @if (form.value.clienteTipo === 'registrado') {
+          <div class="field">
+            <label>Cliente</label>
+            <select formControlName="userId">
+              <option [value]="null">— Seleccionar usuario —</option>
+              @for (u of usuarios(); track u.id) {
+                <option [value]="u.id">{{ u.name }} {{ u.lastName }}</option>
+              }
+            </select>
+          </div>
+        } @else {
+          <div class="field">
+            <label>Nombre del Invitado</label>
+            <input type="text" formControlName="guestName" placeholder="Ej: Juan Pérez" />
+          </div>
+        }
+        <div class="field">
+          <label>Mesa / Recurso</label>
+          <select formControlName="recursoId">
+            <option [value]="null">— Seleccionar recurso —</option>
+            @for (r of recursos(); track r.id) {
+              <option [value]="r.id">{{ r.code }} · {{ r.gameType?.name ?? r.gameType }}</option>
+            }
+          </select>
+        </div>
+        <div class="field">
+          <label>Fecha</label>
+          <input type="date" formControlName="fecha" [min]="hoy" />
+        </div>
+        <div class="row">
+          <div class="field">
+            <label>Hora inicio</label>
+            <input type="time" formControlName="horaInicio" [min]="config()?.horarioApertura || '08:00'" [max]="config()?.horarioCierre || '22:00'" />
+          </div>
+          <div class="field">
+            <label>Hora fin</label>
+            <input type="time" formControlName="horaFin" [min]="config()?.horarioApertura || '08:00'" [max]="config()?.horarioCierre || '22:00'" />
+          </div>
+        </div>
+        <div class="field">
+          <label>Notas (opcional)</label>
+          <textarea formControlName="notas" rows="2" placeholder="Indicaciones..."></textarea>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || saving()">
+            {{ saving() ? 'Guardando...' : 'Crear Reserva' }}
+          </button>
+        </div>
+      </form>
     </div>
-  }
-  @if (reservasFiltradas.length === 0) {
-    <div class="empty-state">
-      <span>📅</span>
-      <p>No hay reservas con este filtro</p>
-    </div>
-  }
-</div>
+  </div>
+}

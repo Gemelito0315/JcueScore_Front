@@ -40,7 +40,11 @@
           </div>
         </div>
         <div class="mesa-actions">
-          <button class="btn-icon play" (click)="abrirMesa(r)">▶ Jugar</button>
+          @if (r.status === 'occupied') {
+            <button class="btn-icon play" style="background: #2563eb; color: white;" (click)="abrirMesa(r)">📺 Ver VAR</button>
+          } @else {
+            <button class="btn-icon play" (click)="abrirMesa(r)">▶ Abrir</button>
+          }
           <button class="btn-icon" (click)="openEdit(r)">✏️ Editar</button>
           <button class="btn-icon danger" (click)="delete(r.id)">🗑️</button>
         </div>
@@ -75,9 +79,9 @@
           <div class="field">
             <label>Tipo de juego *</label>
             <select formControlName="gameTypeId">
-              <option [value]="null">Seleccionar...</option>
+              <option [ngValue]="null">Seleccionar...</option>
               @for (t of tiposJuego(); track t.id) {
-                <option [value]="t.id">{{ t.name }}</option>
+                <option [ngValue]="t.id">{{ t.name }}</option>
               }
             </select>
           </div>

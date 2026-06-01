@@ -1,16 +1,63 @@
-<div class="page-header">
-  <div>
-    <h2>Clientes / Jugadores</h2>
-    <p>Base de datos de clientes con historial y puntos</p>
+<!-- STATS -->
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-icon cyan">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/>
+        <path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    </div>
+    <div>
+      <span class="stat-num">{{ stats.total }}</span>
+      <span class="stat-label">Total clientes</span>
+    </div>
   </div>
-  <button class="btn-primary" (click)="openCreate()">+ Nuevo Cliente</button>
+  <div class="stat-card">
+    <div class="stat-icon green">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>
+      </svg>
+    </div>
+    <div>
+      <span class="stat-num">{{ stats.activos }}</span>
+      <span class="stat-label">Activos</span>
+    </div>
+  </div>
+
+  <div class="stat-card">
+    <div class="stat-icon purple">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/><polygon points="10 8 16 12 10 16 10 8"/>
+      </svg>
+    </div>
+    <div>
+      <span class="stat-num">{{ stats.partidas }}</span>
+      <span class="stat-label">Partidas totales</span>
+    </div>
+  </div>
 </div>
 
-<!-- BÚSQUEDA -->
-<div class="search-bar">
-  <span class="search-icon">🔍</span>
-  <input placeholder="Buscar por nombre, email o teléfono..."
-    (input)="busqueda.set($any($event.target).value)" />
+<!-- HEADER -->
+<div class="page-header">
+  <div>
+    <h2>Gestión de Clientes</h2>
+    <p>Administra el registro de jugadores del establecimiento</p>
+  </div>
+  <div class="header-actions">
+    <div class="search-box">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+      </svg>
+      <input type="text" placeholder="Buscar cliente..." [value]="filtro()"
+             (input)="filtro.set($any($event.target).value)" />
+    </div>
+    <button class="btn-primary" (click)="openCreate()" aria-label="Nuevo cliente">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+      Nuevo Cliente
+    </button>
+  </div>
 </div>
 
 <!-- TABLA -->
@@ -19,86 +66,142 @@
     <thead>
       <tr>
         <th>Cliente</th>
+        <th>Documento</th>
         <th>Contacto</th>
-        <th>Visitas</th>
-        <th>Gasto total</th>
-        <th>Puntos</th>
-        <th>Nivel</th>
-        <th>Última visita</th>
+        <th>Partidas</th>
+        <th>Estado</th>
         <th>Acciones</th>
       </tr>
     </thead>
     <tbody>
-      @for (c of clientesFiltrados; track c.id) {
+      @for (c of clientes(); track c.id) {
         <tr>
           <td>
-            <div class="cliente-cell">
-              <div class="avatar-cliente" [style.background]="getNivelColor(c.nivel)+'22'" [style.color]="getNivelColor(c.nivel)">
-                {{ c.firstName.charAt(0) }}{{ c.lastName.charAt(0) }}
-              </div>
+            <div class="user-cell">
+              <span class="avatar">
+                {{ c.name.charAt(0) }}{{ c.lastName.charAt(0) }}
+              </span>
               <div>
-                <span class="cliente-nombre">{{ c.firstName }} {{ c.lastName }}</span>
+                <span class="user-name">{{ c.name }} {{ c.lastName }}</span>
+                <span class="user-email">{{ c.email }}</span>
               </div>
             </div>
           </td>
+          <td>{{ c.docType }} · {{ c.docNumber }}</td>
+          <td>{{ c.phone }}</td>
+          <td class="centered">{{ c.totalPartidas }}</td>
           <td>
-            <div class="contact-cell">
-              <span>{{ c.email }}</span>
-              <span class="phone">{{ c.phone }}</span>
-            </div>
-          </td>
-          <td><span class="visits-badge">{{ c.visitas }} visitas</span></td>
-          <td class="green-text">${{ c.gasto | number }}</td>
-          <td>
-            <div class="puntos-bar">
-              <span class="puntos-num">{{ c.puntos }} pts</span>
-              <div class="puntos-track">
-                <div class="puntos-fill" [style.width.%]="(c.puntos / 500) * 100" [style.background]="getNivelColor(c.nivel)"></div>
-              </div>
-            </div>
-          </td>
-          <td>
-            <span class="nivel-badge" [style.color]="getNivelColor(c.nivel)" [style.border-color]="getNivelColor(c.nivel)+'44'" [style.background]="getNivelColor(c.nivel)+'11'">
-              {{ getNivelIcon(c.nivel) }} {{ c.nivel }}
+            <span class="status-badge" [class.active]="c.isActive"
+                  (click)="toggleActive(c)" role="button"
+                  [attr.aria-label]="c.isActive ? 'Desactivar cliente' : 'Activar cliente'">
+              {{ c.isActive ? 'Activo' : 'Inactivo' }}
             </span>
           </td>
-          <td class="fecha-text">{{ c.ultimaVisita }}</td>
           <td class="actions">
-            <button class="btn-icon edit" (click)="openEdit(c)">✏️</button>
-            <button class="btn-icon delete" (click)="delete(c.id)">🗑️</button>
+            <button class="btn-icon info"  (click)="openDetail(c)" aria-label="Ver detalle">👁️</button>
+            <button class="btn-icon edit"  (click)="openEdit(c)"   aria-label="Editar">✏️</button>
+            <button class="btn-icon delete" (click)="delete(c.id)" aria-label="Eliminar">🗑️</button>
           </td>
+        </tr>
+      }
+      @empty {
+        <tr>
+          <td colspan="6" class="empty-row">No se encontraron clientes con ese criterio de búsqueda.</td>
         </tr>
       }
     </tbody>
   </table>
 </div>
 
-<!-- MODAL -->
+<!-- MODAL EDICIÓN / CREACIÓN -->
 @if (showModal()) {
-  <div class="modal-overlay" (click)="showModal.set(false)">
+  <div class="modal-overlay" (click)="closeModal()" role="dialog" aria-modal="true" aria-label="Formulario de cliente">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
         <h3>{{ editingId() ? 'Editar Cliente' : 'Nuevo Cliente' }}</h3>
-        <button (click)="showModal.set(false)">✕</button>
+        <button (click)="closeModal()" aria-label="Cerrar">✕</button>
       </div>
-      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
+      <form [formGroup]="form" (ngSubmit)="save()" class="modal-form" novalidate>
         <div class="row">
-          <div class="field"><label>Nombre *</label><input formControlName="firstName" placeholder="Carlos" /></div>
-          <div class="field"><label>Apellido *</label><input formControlName="lastName" placeholder="Rodríguez" /></div>
+          <div class="field">
+            <label for="inp-name">Nombre</label>
+            <input id="inp-name" formControlName="name" placeholder="Juan" />
+          </div>
+          <div class="field">
+            <label for="inp-lastname">Apellido</label>
+            <input id="inp-lastname" formControlName="lastName" placeholder="Pérez" />
+          </div>
         </div>
-        <div class="field"><label>Email *</label><input formControlName="email" type="email" placeholder="correo@ejemplo.com" /></div>
         <div class="row">
-          <div class="field"><label>Teléfono</label><input formControlName="phone" placeholder="3001234567" /></div>
-          <div class="field"><label>Documento</label><input formControlName="docNumber" placeholder="1234567890" /></div>
+          <div class="field">
+            <label for="inp-doctype">Tipo Doc.</label>
+            <select id="inp-doctype" formControlName="docType">
+              @for (t of docTypes; track t) {
+                <option [value]="t">{{ t }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="inp-docnum">Número Doc.</label>
+            <input id="inp-docnum" formControlName="docNumber" placeholder="1234567890" />
+          </div>
         </div>
-        <div class="field"><label>Notas</label><textarea formControlName="notes" rows="2" placeholder="Observaciones..."></textarea></div>
+        <div class="field">
+          <label for="inp-email">Email</label>
+          <input id="inp-email" formControlName="email" type="email" placeholder="correo@ejemplo.com" />
+        </div>
+        <div class="field">
+          <label for="inp-phone">Teléfono</label>
+          <input id="inp-phone" formControlName="phone" placeholder="3001234567" />
+        </div>
+        <div class="field checkbox">
+          <label>
+            <input type="checkbox" formControlName="isActive" />
+            Cliente activo
+          </label>
+        </div>
         <div class="modal-actions">
-          <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
+          <button type="button" class="btn-secondary" (click)="closeModal()">Cancelar</button>
           <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
             {{ loading() ? 'Guardando...' : 'Guardar' }}
           </button>
         </div>
       </form>
+    </div>
+  </div>
+}
+
+<!-- MODAL DETALLE -->
+@if (showDetail() && detailCliente()) {
+  <div class="modal-overlay" (click)="showDetail.set(false)" role="dialog" aria-modal="true" aria-label="Detalle de cliente">
+    <div class="modal detail-modal" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h3>Perfil de Jugador</h3>
+        <button (click)="showDetail.set(false)" aria-label="Cerrar">✕</button>
+      </div>
+      <div class="detail-body">
+        <div class="detail-avatar">
+          {{ detailCliente()!.name.charAt(0) }}{{ detailCliente()!.lastName.charAt(0) }}
+        </div>
+        <h4>{{ detailCliente()!.name }} {{ detailCliente()!.lastName }}</h4>
+        <div class="detail-stats">
+          <div class="d-stat">
+            <span class="d-num">{{ detailCliente()!.totalPartidas }}</span>
+            <span class="d-label">Partidas</span>
+          </div>
+        </div>
+        <div class="detail-info">
+          <div class="info-row"><span>Email</span><span>{{ detailCliente()!.email }}</span></div>
+          <div class="info-row"><span>Teléfono</span><span>{{ detailCliente()!.phone }}</span></div>
+          <div class="info-row"><span>Documento</span><span>{{ detailCliente()!.docType }} {{ detailCliente()!.docNumber }}</span></div>
+          <div class="info-row"><span>Registrado</span><span>{{ detailCliente()!.registeredAt }}</span></div>
+          <div class="info-row"><span>Estado</span>
+            <span class="status-badge" [class.active]="detailCliente()!.isActive">
+              {{ detailCliente()!.isActive ? 'Activo' : 'Inactivo' }}
+            </span>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 }

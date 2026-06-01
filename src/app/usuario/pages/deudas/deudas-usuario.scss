@@ -1,18 +1,499 @@
-.deudas-page { padding: 0; }
-.page-header { margin-bottom: 20px; h2{font-size:1.3rem;font-weight:700;color:#f1f5f9;} p{color:#64748b;font-size:0.85rem;margin-top:4px;} }
-.alerta-deuda { background:rgba(248,113,113,0.08); border:1px solid rgba(248,113,113,0.2); border-radius:12px; padding:16px 20px; display:flex; align-items:center; gap:14px; margin-bottom:20px; .alerta-icon{font-size:1.8rem;} .alerta-titulo{display:block;font-weight:700;color:#f87171;} .alerta-monto{display:block;font-size:0.85rem;color:#94a3b8;margin-top:2px;} }
-.alerta-ok { background:rgba(52,211,153,0.08); border:1px solid rgba(52,211,153,0.2); border-radius:12px; padding:14px 20px; display:flex; align-items:center; gap:10px; color:#34d399; font-weight:600; margin-bottom:20px; span:first-child{font-size:1.3rem;} }
-.deudas-list { display:flex; flex-direction:column; gap:12px; }
-.deuda-card { background:rgba(30,41,59,0.6); border:1px solid rgba(255,255,255,0.06); border-radius:14px; padding:18px; display:flex; flex-direction:column; gap:10px; &.pendiente{border-left:4px solid #f87171;} &.parcial{border-left:4px solid #f59e0b;} &.pagada{border-left:4px solid #34d399;opacity:0.75;} }
-.deuda-header { display:flex; justify-content:space-between; align-items:center; gap:10px; }
-.deuda-desc { font-weight:600; color:#f1f5f9; font-size:0.9rem; }
-.estado-pill { padding:3px 10px; border-radius:20px; font-size:0.72rem; font-weight:700; border:1px solid; flex-shrink:0; }
-.deuda-montos { display:flex; flex-direction:column; gap:4px; }
-.monto-row { display:flex; justify-content:space-between; font-size:0.85rem; }
-.m-label { color:#64748b; }
-.m-val { font-weight:600; color:#e2e8f0; &.green{color:#34d399;} &.red{color:#f87171;} }
-.pago-track { height:5px; background:rgba(255,255,255,0.06); border-radius:3px; overflow:hidden; }
-.pago-fill { height:100%; border-radius:3px; transition:width 0.3s; }
-.deuda-notas { color:#64748b; font-size:0.78rem; font-style:italic; }
-.deuda-fecha { color:#475569; font-size:0.72rem; }
-.empty { text-align:center; padding:48px; color:#475569; span{font-size:2.5rem;display:block;margin-bottom:10px;} }
+/* ==========================================================================
+   ESTILOS DE CUENTAS DE USUARIO (PREMIUM GLASSMORPHIC & NEON GLOW)
+   ========================================================================== */
+
+.deudas-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+/* Cabecera Premium */
+.page-header-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  .header-titles {
+    h2 {
+      font-size: 1.8rem;
+      font-weight: 800;
+      background: linear-gradient(135deg, #f1f5f9 30%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin: 0;
+    }
+    p {
+      color: #64748b;
+      font-size: 0.9rem;
+      margin-top: 4px;
+    }
+  }
+
+  .global-debt-badge {
+    background: rgba(244, 63, 94, 0.08);
+    border: 1px solid rgba(244, 63, 94, 0.2);
+    padding: 10px 20px;
+    border-radius: 12px;
+    color: #fda4af;
+    font-weight: 600;
+    font-size: 0.95rem;
+    box-shadow: 0 4px 20px rgba(244, 63, 94, 0.08);
+
+    span {
+      font-size: 1.2rem;
+      font-weight: 900;
+      color: #f43f5e;
+      margin-left: 6px;
+      text-shadow: 0 0 10px rgba(244, 63, 94, 0.3);
+    }
+  }
+}
+
+/* Sección de Cuentas Activas */
+.active-account-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: #f1f5f9;
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+
+  &.history {
+    color: #94a3b8;
+    margin-top: 10px;
+  }
+}
+
+/* Punto Pulsante Activo */
+.pulse-dot {
+  width: 8px;
+  height: 8px;
+  background-color: #22d3ee;
+  border-radius: 50%;
+  box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+  animation: pulse 1.6s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0.7);
+  }
+  70% {
+    transform: scale(1);
+    box-shadow: 0 0 0 10px rgba(34, 211, 238, 0);
+  }
+  100% {
+    transform: scale(0.95);
+    box-shadow: 0 0 0 0 rgba(34, 211, 238, 0);
+  }
+}
+
+/* Grid de Cuentas Activas */
+.active-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: 20px;
+}
+
+/* Tarjeta Activa Premium */
+.premium-active-card {
+  position: relative;
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.8) 0%, rgba(15, 23, 42, 0.95) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  overflow: hidden;
+  backdrop-filter: blur(16px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+  transition: transform 0.3s, border-color 0.3s, box-shadow 0.3s;
+
+  &:hover {
+    transform: translateY(-4px);
+    border-color: rgba(6, 182, 212, 0.4);
+    box-shadow: 0 12px 40px rgba(6, 182, 212, 0.15);
+  }
+
+  &.pendiente {
+    border-left: 5px solid #ef4444;
+    .card-glow {
+      background: radial-gradient(circle at 100% 0%, rgba(239, 68, 68, 0.08), transparent 60%);
+    }
+  }
+
+  &.parcial {
+    border-left: 5px solid #f59e0b;
+    .card-glow {
+      background: radial-gradient(circle at 100% 0%, rgba(245, 158, 11, 0.08), transparent 60%);
+    }
+  }
+}
+
+.card-glow {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  z-index: 1;
+
+  .card-title-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .category-tag {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #06b6d4;
+  }
+
+  .deuda-desc {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0;
+    line-height: 1.4;
+  }
+}
+
+/* Badges de Estado */
+.status-badge {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  flex-shrink: 0;
+
+  &.pendiente {
+    background: rgba(239, 68, 68, 0.1);
+    color: #f87171;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+  }
+
+  &.parcial {
+    background: rgba(245, 158, 11, 0.1);
+    color: #fbbf24;
+    border: 1px solid rgba(245, 158, 11, 0.2);
+  }
+}
+
+/* Estadísticas de Montos */
+.monto-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  padding: 12px;
+  z-index: 1;
+
+  .stat-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    padding: 4px;
+
+    &.highlighted {
+      background: rgba(239, 68, 68, 0.04);
+      border-radius: 10px;
+    }
+  }
+
+  .stat-label {
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+    text-align: center;
+  }
+
+  .stat-value {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #cbd5e1;
+
+    &.total {
+      color: #f8fafc;
+    }
+
+    &.green {
+      color: #10b981;
+    }
+
+    &.red {
+      color: #ef4444;
+      text-shadow: 0 0 10px rgba(239, 68, 68, 0.15);
+    }
+  }
+}
+
+/* Barra de progreso de pago */
+.progress-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 1;
+
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  .progress-bar-track {
+    height: 6px;
+    background: rgba(15, 23, 42, 0.6);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .progress-bar-fill {
+    height: 100%;
+    border-radius: 10px;
+    transition: width 0.4s ease;
+
+    &.pendiente {
+      background: linear-gradient(90deg, #ef4444, #f87171);
+    }
+
+    &.parcial {
+      background: linear-gradient(90deg, #d97706, #fbbf24);
+    }
+  }
+}
+
+/* Notas */
+.card-notes {
+  display: flex;
+  gap: 8px;
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px dashed rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  padding: 10px 14px;
+  z-index: 1;
+
+  .note-icon {
+    font-size: 0.9rem;
+  }
+
+  .note-text {
+    font-size: 0.78rem;
+    color: #94a3b8;
+    margin: 0;
+    line-height: 1.4;
+    font-style: italic;
+  }
+}
+
+/* Footer de la tarjeta */
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 600;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  padding-top: 12px;
+  z-index: 1;
+
+  .card-date {
+    color: #475569;
+  }
+
+  .action-alert {
+    color: #fda4af;
+  }
+}
+
+/* Banner de Estar al Día (Glassmorphic) */
+.glass-empty-banner {
+  background: linear-gradient(135deg, rgba(16, 185, 129, 0.04) 0%, rgba(5, 150, 105, 0.06) 100%);
+  border: 1px solid rgba(16, 185, 129, 0.15);
+  border-radius: 18px;
+  padding: 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  box-shadow: 0 8px 32px rgba(16, 185, 129, 0.04);
+
+  .banner-icon {
+    font-size: 2.2rem;
+    background: rgba(16, 185, 129, 0.1);
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+  }
+
+  .banner-text {
+    h4 {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: #34d399;
+      margin: 0;
+    }
+    p {
+      color: #94a3b8;
+      font-size: 0.85rem;
+      margin: 4px 0 0 0;
+    }
+  }
+}
+
+/* Sección Historial */
+.history-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Fila de Historial Satisfecho */
+.history-card-premium {
+  background: rgba(30, 41, 59, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 14px;
+  padding: 14px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  transition: background-color 0.2s, border-color 0.2s;
+
+  &:hover {
+    background: rgba(30, 41, 59, 0.5);
+    border-color: rgba(255, 255, 255, 0.08);
+  }
+
+  .history-left {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .check-badge {
+    background: rgba(16, 185, 129, 0.1);
+    color: #34d399;
+    border: 1px solid rgba(16, 185, 129, 0.2);
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: bold;
+  }
+
+  .history-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .history-desc {
+    font-size: 0.88rem;
+    font-weight: 600;
+    color: #cbd5e1;
+  }
+
+  .history-date {
+    font-size: 0.72rem;
+    color: #475569;
+  }
+
+  .history-right {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .history-amount {
+    font-size: 0.95rem;
+    font-weight: 800;
+    color: #e2e8f0;
+  }
+
+  .history-status-pill {
+    background: rgba(16, 185, 129, 0.06);
+    color: #34d399;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    border: 1px solid rgba(16, 185, 129, 0.12);
+  }
+}
+
+.empty-history {
+  text-align: center;
+  padding: 30px;
+  color: #475569;
+  font-size: 0.85rem;
+  border: 1px dashed rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+}
+
+/* Animaciones */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

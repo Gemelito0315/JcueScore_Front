@@ -12,7 +12,7 @@ export const maintenanceGuard: CanActivateFn = () => {
 
   // Admin siempre puede entrar
   const user = auth.currentUser();
-  if (user?.roles?.some(r => r.id === 1)) return true;
+  if (user?.roles?.some(r => r.name?.toLowerCase() === 'admin')) return true;
 
   return http.get<any>('http://localhost:3000/maintenance').pipe(
     map(data => {

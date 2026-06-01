@@ -1,7 +1,8 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
+import { DEFAULT_VENUE_ID } from '../../core/constants';
 
 const API = 'http://localhost:3000';
 
@@ -33,18 +34,28 @@ export class Productos implements OnInit {
     minStock: [0],
     unit: ['unidad'],
     isActive: [true],
-    productTypeId: [null],
-    venueId: [1],
+    productTypeId: [null, Validators.required],
+    venueId: [DEFAULT_VENUE_ID, Validators.required],
     imageUrl: [''],
   });
 
   ngOnInit() {
     this.loadProductos();
-    this.http.get<any[]>(`${API}/inventario/tipos`).subscribe(d => this.categorias.set(d));
+    this.loadCategorias();
+  }
+
+  loadCategorias() {
+    this.http.get<any[]>(`${API}/inventario/tipos`).subscribe({
+      next: d => this.categorias.set(d || []),
+      error: err => console.error('Error loading categorías:', err)
+    });
   }
 
   loadProductos() {
-    this.http.get<any[]>(`${API}/productos`).subscribe(d => this.productos.set(d));
+    this.http.get<any[]>(`${API}/productos`).subscribe({
+      next: d => this.productos.set(d || []),
+      error: err => console.error('Error loading productos:', err)
+    });
   }
 
   openCreate() {
@@ -57,6 +68,7 @@ export class Productos implements OnInit {
   openEdit(p: any) {
     this.editingId.set(p.id);
     this.previewImg.set(p.imageUrl || null);
+    this.form.enable();
     this.form.patchValue({
       ...p,
       imageUrl: p.imageUrl || '',
@@ -101,8 +113,8 @@ export class Productos implements OnInit {
     const val = this.form.value;
     const payload = {
       ...val,
-      venueId: 1,
-      productTypeId: val.productTypeId ? Number(val.productTypeId) : null,
+      venueId: Number(val.venueId) || DEFAULT_VENUE_ID,
+      productTypeId: val.productTypeId != null ? Number(val.productTypeId) : null,
       price: Number(val.price),
       cost: Number(val.cost),
       stock: Number(val.stock),

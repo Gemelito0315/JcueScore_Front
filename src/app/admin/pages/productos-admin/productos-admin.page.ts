@@ -19,6 +19,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 import { ProductosService, Producto, CreateProductoDto } from '../../../core/services/productos.service';
 
+import { DEFAULT_VENUE_ID } from '../../../core/constants';
+
 @Component({
   selector: 'app-productos-admin-page',
   standalone: true,
@@ -67,7 +69,7 @@ export class ProductosAdminPage implements OnInit {
     unit: new FormControl('unidad'),
     brand: new FormControl(''),
     presentation: new FormControl(''),
-    venueId: new FormControl(1, [Validators.required]),
+    venueId: new FormControl(DEFAULT_VENUE_ID, [Validators.required]),
     productTypeId: new FormControl(1, [Validators.required]),
     isActive: new FormControl(true)
   }));
@@ -157,7 +159,7 @@ export class ProductosAdminPage implements OnInit {
       unit: 'unidad',
       brand: '',
       presentation: '',
-      venueId: 1,
+      venueId: DEFAULT_VENUE_ID,
       productTypeId: 1,
       isActive: true
     });

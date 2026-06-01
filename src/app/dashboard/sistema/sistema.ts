@@ -39,7 +39,7 @@ export class Sistema implements OnInit {
   confirmToggle() {
     this.loading.set(true);
     const newState = !this.maintenanceMode();
-    this.http.post(`${API}/maintenance`, {
+    this.http.put(`${API}/maintenance`, {
       active: newState,
       message: this.form.value.message,
       estimatedTime: this.form.value.estimatedTime,
@@ -55,7 +55,7 @@ export class Sistema implements OnInit {
 
   saveSettings() {
     this.loading.set(true);
-    this.http.post(`${API}/maintenance`, {
+    this.http.put(`${API}/maintenance`, {
       active: this.maintenanceMode(),
       message: this.form.value.message,
       estimatedTime: this.form.value.estimatedTime,

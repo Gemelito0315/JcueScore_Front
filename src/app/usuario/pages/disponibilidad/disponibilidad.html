@@ -3,37 +3,68 @@
     <h2>Disponibilidad</h2>
     <p>Estado en tiempo real de mesas y recursos</p>
   </div>
-  <div class="live-badge">
-    <span class="live-dot"></span> En vivo
+  <div class="header-right" style="display: flex; gap: 12px; align-items: center;">
+    <div class="live-badge">
+      <span class="live-dot"></span> En vivo
+    </div>
   </div>
 </div>
 
-<div class="legend">
-  <span class="leg libre">● Libre</span>
-  <span class="leg ocupada">● Ocupada</span>
-  <span class="leg mant">● Mantenimiento</span>
+<!-- CONTADORES -->
+<div class="status-summary">
+  <div class="summary-chip libre">
+    <span class="dot"></span>
+    <strong>{{ libres }}</strong> Libre{{ libres !== 1 ? 's' : '' }}
+  </div>
+  <div class="summary-chip ocupada">
+    <span class="dot"></span>
+    <strong>{{ ocupadas }}</strong> Ocupada{{ ocupadas !== 1 ? 's' : '' }}
+  </div>
+  <div class="summary-chip mant">
+    <span class="dot"></span>
+    <strong>{{ enMant }}</strong> Mantenimiento
+  </div>
 </div>
 
 <div class="filters">
-  <button [class.active]="filtro() === 'todos'" (click)="filtro.set('todos')">Todos</button>
-  <button [class.active]="filtro() === 'billar'" (click)="filtro.set('billar')">🎱 Billar</button>
-  <button [class.active]="filtro() === 'tejo'" (click)="filtro.set('tejo')">🎯 Tejo</button>
+  <button [class.active]="filtro() === 'todos'"    (click)="filtro.set('todos')">Todos</button>
+  <button [class.active]="filtro() === 'billar'"   (click)="filtro.set('billar')">🎱 Billar</button>
+  <button [class.active]="filtro() === 'tejo'"     (click)="filtro.set('tejo')">🎯 Tejo</button>
   <button [class.active]="filtro() === 'bolirama'" (click)="filtro.set('bolirama')">🎳 Bolirama</button>
 </div>
 
-<div class="recursos-grid">
-  @for (r of filtrados; track r.id) {
-    <div class="recurso-card" [class]="getEstadoClass(r.estado)">
-      <div class="recurso-top">
-        <span class="recurso-icon">{{ getIcon(r.tipo) }}</span>
-        <span class="estado-badge" [class]="getEstadoClass(r.estado)">{{ r.estado }}</span>
+@if (loading()) {
+  <div class="loading-state">
+    <div class="spinner"></div>
+    <p>Cargando recursos reales...</p>
+  </div>
+} @else if (errorMessage()) {
+  <div class="error-state" style="color: #f87171; text-align: center; padding: 2rem;">
+    <span>⚠️</span>
+    <p>Error cargando mesas: {{ errorMessage() }}</p>
+  </div>
+} @else {
+  <div class="recursos-grid">
+    @for (r of filtrados; track r.id) {
+      <div class="recurso-card" [class]="getEstadoClass(r.status)">
+        <div class="recurso-top">
+          <span class="recurso-icon">{{ getIcon(r.gameType) }}</span>
+          <span class="estado-badge" [class]="getEstadoClass(r.status)">{{ getEstadoLabel(r.status) }}</span>
+        </div>
+        <h4>{{ r.code }}</h4>
+        <p class="tipo">{{ r.gameType || 'Billar' }}</p>
+        <p class="precio">{{ formatPrice(r.pricePerHour) }}/hora</p>
+        
+        @if (r.status === 'available') {
+          <a routerLink="/usuario/reservas" class="btn-reservar">Reservar</a>
+        }
       </div>
-      <h4>{{ r.nombre }}</h4>
-      <p class="tipo">{{ r.tipo }}</p>
-      <p class="precio">${{ r.precio | number }}/hora</p>
-      @if (r.estado === 'libre') {
-        <button class="btn-reservar">Reservar</button>
-      }
-    </div>
-  }
-</div>
+    }
+    @if (filtrados.length === 0) {
+      <div class="empty-state" style="grid-column: 1/-1;">
+        <span>🔍</span>
+        <p>No hay recursos con este filtro</p>
+      </div>
+    }
+  </div>
+}

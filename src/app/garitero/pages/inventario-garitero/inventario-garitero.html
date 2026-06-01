@@ -1,30 +1,67 @@
 <div class="page-header">
-  <div><h2>📦 Inventario</h2><p>Ingresa productos y verifica el stock</p></div>
+  <div class="header-content">
+    <div>
+      <h2>📦 Gestión de Inventario</h2>
+      <p>Supervisa el stock y registra el ingreso de mercancía</p>
+    </div>
+    <div class="filtros-container">
+      <div class="search-box">
+        <span>🔍</span>
+        <input type="text" [ngModel]="searchTerm()" (ngModelChange)="onSearchChange($event)" placeholder="Buscar producto por nombre..." />
+      </div>
+      <div class="filter-tabs">
+        <button [class.active]="filterStatus() === 'all'" (click)="setFilter('all')">Todos</button>
+        <button [class.active]="filterStatus() === 'low'" (click)="setFilter('low')">Stock Bajo</button>
+        <button [class.active]="filterStatus() === 'out'" (click)="setFilter('out')">Agotados</button>
+      </div>
+    </div>
+  </div>
 </div>
 
-<div class="productos-list">
-  @for (p of productos(); track p.id) {
-    <div class="producto-row" [class.low]="p.stock <= p.minStock" [class.empty]="p.stock <= 0">
+<div class="productos-grid">
+  @for (p of productosFiltrados(); track p.id) {
+    <div class="producto-card" [class.low]="p.stock <= p.minStock" [class.empty]="p.stock <= 0">
+      
+      <div class="p-status">
+        @if (p.stock <= 0) {
+          <span class="badge red">❌ Agotado</span>
+        } @else if (p.stock <= p.minStock) {
+          <span class="badge yellow">⚠️ Bajo (Min: {{ p.minStock }})</span>
+        } @else {
+          <span class="badge green">✅ Disponible</span>
+        }
+      </div>
+
+      <div class="p-img-container">
+        <img [src]="p.imageUrl || 'assets/no-image.png'" alt="{{ p.name }}" class="p-img" onerror="this.src='https://placehold.co/400x400/1e293b/34d399?text=Sin+Imagen'"/>
+      </div>
+      
       <div class="p-info">
         <span class="p-nombre">{{ p.name }}</span>
-        <span class="p-sku">SKU: {{ p.sku }}</span>
+        <span class="p-sku">SKU: {{ p.sku }} | Presentación: {{ p.presentation || 'N/A' }}</span>
+        
+        <div class="p-stats">
+          <div class="stat">
+            <span class="label">Stock Actual</span>
+            <span class="value" [style.color]="getStockColor(p)">{{ p.stock }} {{ p.unit }}</span>
+          </div>
+          <div class="stat">
+            <span class="label">Precio Venta</span>
+            <span class="value precio">${{ p.price | number }}</span>
+          </div>
+        </div>
       </div>
-      <div class="p-stock">
-        <span class="stock-num" [style.color]="getStockColor(p)">{{ p.stock }}</span>
-        <span class="stock-label">en stock</span>
-        @if (p.stock <= p.minStock && p.stock > 0) {
-          <span class="alerta-stock">⚠️ Stock bajo</span>
-        }
-        @if (p.stock <= 0) {
-          <span class="alerta-stock red">❌ Agotado</span>
-        }
-      </div>
-      <span class="p-precio">${{ p.price | number }}</span>
-      <button class="btn-ingreso" (click)="openIngreso(p)">+ Ingresar</button>
+      
+      <button class="btn-ingreso" (click)="openIngreso(p)">
+        ➕ Surtir Inventario
+      </button>
     </div>
   }
-  @if (productos().length === 0) {
-    <div class="empty"><span>📦</span><p>No hay productos registrados</p></div>
+  @if (productosFiltrados().length === 0) {
+    <div class="empty-state">
+      <span class="icon">📦</span>
+      <p>No se encontraron productos</p>
+    </div>
   }
 </div>
 
@@ -32,26 +69,52 @@
   <div class="modal-overlay" (click)="showModal.set(false)">
     <div class="modal" (click)="$event.stopPropagation()">
       <div class="modal-header">
-        <h3>📦 Ingresar Stock</h3>
-        <button (click)="showModal.set(false)">✕</button>
+        <h3>📦 Ingresar Stock (Surtir)</h3>
+        <button class="close-btn" (click)="showModal.set(false)">✕</button>
       </div>
-      <div class="producto-info">
-        <span class="p-nombre-modal">{{ productoSeleccionado()?.name }}</span>
-        <span>Stock actual: <strong>{{ productoSeleccionado()?.stock }}</strong></span>
+      
+      <div class="producto-info-modal">
+        <img [src]="productoSeleccionado()?.imageUrl || 'https://placehold.co/100x100/1e293b/34d399?text=Sin+Imagen'" alt="" class="modal-img">
+        <div>
+          <h4>{{ productoSeleccionado()?.name }}</h4>
+          <p>Stock actual: <strong>{{ productoSeleccionado()?.stock }}</strong></p>
+        </div>
       </div>
+
       <form [formGroup]="form" (ngSubmit)="save()" class="modal-form">
         <div class="field">
-          <label>Cantidad a ingresar *</label>
-          <input formControlName="cantidad" type="number" placeholder="0" />
+          <label>Cantidad a ingresar (+)</label>
+          <input formControlName="cantidad" type="number" placeholder="Ej: 24" />
         </div>
+        
+        <div class="field checkbox-field">
+          <label class="checkbox-container">
+            <input type="checkbox" formControlName="pagadoCaja">
+            <span class="checkmark"></span>
+            ¿Se pagó con dinero de la caja registradora?
+          </label>
+        </div>
+
+        @if (form.value.pagadoCaja) {
+          <div class="field fade-in">
+            <label>Costo Total del Pedido (Dinero que sale de caja) *</label>
+            <div class="input-prefix">
+              <span>$</span>
+              <input formControlName="costoTotal" type="number" placeholder="Ej: 50000" />
+            </div>
+            <small>Esto generará un "Gasto Interno" automáticamente para no descuadrar tu caja.</small>
+          </div>
+        }
+
         <div class="field">
-          <label>Notas (opcional)</label>
-          <input formControlName="notas" placeholder="Ej: Pedido del proveedor..." />
+          <label>Notas / Proveedor (opcional)</label>
+          <input formControlName="notas" placeholder="Ej: Postobón, Factura #123..." />
         </div>
+        
         <div class="modal-actions">
           <button type="button" class="btn-secondary" (click)="showModal.set(false)">Cancelar</button>
-          <button type="submit" class="btn-primary" [disabled]="form.invalid||loading()">
-            {{ loading() ? 'Guardando...' : '✅ Confirmar ingreso' }}
+          <button type="submit" class="btn-primary" [disabled]="form.invalid || loading()">
+            {{ loading() ? 'Guardando...' : '✅ Surtir y Confirmar' }}
           </button>
         </div>
       </form>

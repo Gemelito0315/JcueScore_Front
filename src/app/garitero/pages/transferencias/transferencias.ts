@@ -1,6 +1,9 @@
-import { Component, signal } from '@angular/core';
+import { Component, signal, OnInit, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
+
+const API = 'http://localhost:3000';
 
 interface Transferencia {
   id: number;
@@ -17,12 +20,14 @@ interface Transferencia {
   templateUrl: './transferencias.html',
   styleUrl: './transferencias.scss'
 })
-export class Transferencias {
+export class Transferencias implements OnInit {
   private fb = new FormBuilder();
+  private http = inject(HttpClient);
 
   transferencias = signal<Transferencia[]>([]);
   showModal = signal(false);
   fotoPreview = signal<string | null>(null);
+  turnoId = signal<number | null>(null);
 
   form = this.fb.group({
     cliente: ['', Validators.required],
@@ -31,8 +36,25 @@ export class Transferencias {
     foto: [''],
   });
 
+  ngOnInit() {
+    this.http.get<any>(`${API}/operaciones/turno/activo`).subscribe({
+      next: (t) => {
+        if (t) {
+          this.turnoId.set(t.id);
+          this.loadTransferencias(t.id);
+        }
+      }
+    });
+  }
+
+  loadTransferencias(tId: number) {
+    this.http.get<Transferencia[]>(`${API}/operaciones/turno/${tId}/transferencias`).subscribe({
+      next: (ts) => this.transferencias.set(ts)
+    });
+  }
+
   get totalTransferencias() {
-    return this.transferencias().reduce((a, t) => a + t.monto, 0);
+    return this.transferencias().reduce((a, t) => a + Number(t.monto), 0);
   }
 
   onFotoChange(event: any) {
@@ -47,22 +69,28 @@ export class Transferencias {
   }
 
   save() {
-    if (this.form.invalid) return;
+    if (this.form.invalid || !this.turnoId()) return;
     const val = this.form.value;
-    this.transferencias.update(ts => [...ts, {
-      id: Date.now(),
-      cliente: val.cliente ?? '',
-      monto: val.monto ?? 0,
-      concepto: val.concepto ?? '',
-      hora: new Date().toLocaleTimeString('es-CO', { hour: '2-digit', minute: '2-digit' }),
-      foto: this.fotoPreview(),
-    }]);
-    this.showModal.set(false);
-    this.fotoPreview.set(null);
-    this.form.reset({ concepto: 'Pago partida', monto: 0 });
+    const body = {
+      cliente: val.cliente!,
+      monto: Number(val.monto),
+      concepto: val.concepto!,
+      foto: this.fotoPreview() ?? undefined
+    };
+
+    this.http.post<Transferencia>(`${API}/operaciones/turno/${this.turnoId()}/transferencias`, body).subscribe({
+      next: (t) => {
+        this.transferencias.update(ts => [t, ...ts]);
+        this.showModal.set(false);
+        this.fotoPreview.set(null);
+        this.form.reset({ concepto: 'Pago partida', monto: 0 });
+      }
+    });
   }
 
   delete(id: number) {
-    this.transferencias.update(ts => ts.filter(t => t.id !== id));
+    this.http.delete(`${API}/operaciones/transferencias/${id}`).subscribe({
+      next: () => this.transferencias.update(ts => ts.filter(t => t.id !== id))
+    });
   }
 }

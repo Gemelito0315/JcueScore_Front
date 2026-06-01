@@ -1,6 +1,7 @@
 import { Injectable, signal, inject } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, interval, switchMap, startWith } from 'rxjs';
+import { WebsocketsService } from './websockets.service';
 
 export interface Mesa {
   id: number;
@@ -25,20 +26,53 @@ export interface MesaActiva extends Mesa {
 export class MesasService {
   private readonly API_URL = 'http://localhost:3000';
   private http = inject(HttpClient);
+  private websocketsService = inject(WebsocketsService);
 
   mesasActivas = signal<MesaActiva[]>([]);
   tiempos = signal<Record<number, string>>({});
   ingresos = signal<Record<number, number>>({});
 
   constructor() {
-    this.iniciarActualizacionTiempoReal();
+    this.cargarMesasIniciales();
+    this.iniciarActualizacionTiempos();
+    this.iniciarEscuchaSockets();
   }
 
-  private iniciarActualizacionTiempoReal() {
-    interval(5000).pipe(
-      startWith(0),
-      switchMap(() => this.obtenerMesasActivas())
-    ).subscribe();
+  private cargarMesasIniciales() {
+    this.obtenerMesasActivas().subscribe(mesas => {
+      const mapeadas = mesas.map(m => ({
+        ...m,
+        tiempoInicio: m.tiempoInicio ? new Date(m.tiempoInicio) : undefined
+      }));
+      this.mesasActivas.set(mapeadas);
+      this.actualizarTiempos();
+    });
+  }
+
+  private iniciarActualizacionTiempos() {
+    // Actualizar el cronómetro local de las mesas activas cada segundo, sin consultas al servidor.
+    interval(1000).subscribe(() => {
+      this.actualizarTiempos();
+    });
+  }
+
+  private iniciarEscuchaSockets() {
+    this.websocketsService.onPartidaActualizada().subscribe(data => {
+      const actuales = this.mesasActivas();
+      const index = actuales.findIndex(m => m.id === data.mesaId);
+      if (index >= 0) {
+        actuales[index] = {
+          ...actuales[index],
+          status: data.estado === 'en_juego' ? 'occupied' : 'available',
+          tiempoInicio: data.tiempoInicio ? new Date(data.tiempoInicio) : undefined,
+          jugadores: data.jugadores || [],
+          marcador: data.marcador || undefined,
+          partidaId: data.partidaId || undefined
+        };
+        this.mesasActivas.set([...actuales]);
+        this.actualizarTiempos();
+      }
+    });
   }
 
   obtenerMesasActivas(): Observable<MesaActiva[]> {
@@ -54,7 +88,7 @@ export class MesasService {
   }
 
   finalizarPartida(partidaId: number, marcador: { j1: number; j2: number }): Observable<any> {
-    return this.http.post(`${this.API_URL}/partidas/finalizar`, {
+    return this.http.put(`${this.API_URL}/partidas/finalizar`, {
       partidaId,
       marcador,
       endTime: new Date().toISOString()

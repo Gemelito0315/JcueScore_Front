@@ -1,0 +1,48 @@
+<div class="lobby-container">
+  <div class="lobby-header">
+    <h1>🔴 Mesas en Vivo</h1>
+    <p>Selecciona una mesa para observar la partida en tiempo real.</p>
+  </div>
+
+  <div class="matches-grid">
+    @for (m of activeMatches(); track m.mesaId) {
+      <div class="match-card" (click)="verPartida(m.mesaId)">
+        <div class="match-header">
+          <span class="live-indicator">LIVE</span>
+          <h3>Mesa {{ m.mesaId }}</h3>
+        </div>
+        
+        @if (m.state?.frame) {
+          <div class="match-preview">
+            <img [src]="m.state.frame" alt="Mesa en vivo" />
+          </div>
+        }
+
+        @if (m.state?.jugadores) {
+          <div class="match-players">
+            <div class="player">
+              <span class="name">{{ m.state.jugadores[0]?.nombre }}</span>
+              <span class="score">{{ m.state.jugadores[0]?.puntos }}</span>
+            </div>
+            <div class="vs">vs</div>
+            <div class="player">
+              <span class="name">{{ m.state.jugadores[1]?.nombre }}</span>
+              <span class="score">{{ m.state.jugadores[1]?.puntos }}</span>
+            </div>
+          </div>
+        }
+
+        <div class="match-footer">
+          <span class="meta">Meta: {{ m.state?.jugadores ? m.state.jugadores[0]?.meta : 0 }}</span>
+          <button class="btn-watch">Observar 👁️</button>
+        </div>
+      </div>
+    } @empty {
+      <div class="empty-state">
+        <div class="icon">🎱</div>
+        <h3>No hay partidas en vivo en este momento</h3>
+        <p>Vuelve más tarde para ver acción en las mesas.</p>
+      </div>
+    }
+  </div>
+</div>

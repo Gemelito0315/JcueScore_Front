@@ -1,26 +1,619 @@
-.page-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;flex-wrap:wrap;gap:12px;h2{font-size:1.4rem;font-weight:700;color:#f1f5f9;}p{color:#64748b;font-size:0.85rem;margin-top:4px;}}
-.header-right{display:flex;align-items:center;gap:10px;}
-.total-badge{background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.2);color:#f87171;padding:8px 16px;border-radius:10px;font-weight:700;font-size:0.9rem;}
-.deudas-list{display:flex;flex-direction:column;gap:10px;}
-.deuda-card{background:rgba(30,41,59,0.6);border:1px solid rgba(255,255,255,0.06);border-radius:12px;padding:14px 18px;display:flex;align-items:center;gap:14px;flex-wrap:wrap;&.pendiente{border-left:4px solid #f87171;}&.parcial{border-left:4px solid #f59e0b;}}
-.deuda-info{flex:1;display:flex;flex-direction:column;gap:2px;}
-.deuda-nombre{font-weight:700;color:#f1f5f9;font-size:0.9rem;}
-.deuda-desc{color:#94a3b8;font-size:0.82rem;}
-.deuda-notas{color:#64748b;font-size:0.75rem;font-style:italic;}
-.deuda-montos{display:flex;flex-direction:column;gap:2px;min-width:120px;}
-.monto-total{font-size:1rem;font-weight:900;color:#f1f5f9;}
-.monto-pagado{font-size:0.78rem;color:#34d399;}
-.monto-pendiente{font-size:0.85rem;font-weight:700;}
-.estado-pill{padding:3px 10px;border-radius:20px;font-size:0.75rem;font-weight:700;border:1px solid;flex-shrink:0;}
-.btn-pago{background:rgba(52,211,153,0.1);border:1px solid rgba(52,211,153,0.2);color:#34d399;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:0.82rem;font-weight:600;&:hover{background:rgba(52,211,153,0.2);}}
-.empty{text-align:center;padding:48px;color:#475569;span{font-size:2.5rem;display:block;margin-bottom:10px;}}
-.btn-primary{background:#06b6d4;color:#0f172a;border:none;padding:10px 20px;border-radius:10px;font-weight:700;cursor:pointer;&:disabled{opacity:0.5;cursor:not-allowed;}}
-.btn-secondary{background:rgba(30,41,59,0.8);border:1px solid rgba(255,255,255,0.08);color:#94a3b8;padding:10px 20px;border-radius:10px;cursor:pointer;}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:100;padding:16px;}
-.modal{background:#1e293b;border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:28px;width:100%;max-width:460px;max-height:90vh;overflow-y:auto;}
-.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;h3{color:#06b6d4;font-size:1.1rem;font-weight:700;}button{background:none;border:none;color:#64748b;font-size:1.2rem;cursor:pointer;}}
-.modal-form{display:flex;flex-direction:column;gap:14px;}
-.field{display:flex;flex-direction:column;gap:6px;label{color:#64748b;font-size:0.82rem;}input,select,textarea{background:#0f172a;border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px 12px;color:#e2e8f0;font-size:0.9rem;outline:none;resize:vertical;&:focus{border-color:#06b6d4;}option{background:#0f172a;}}}
-.modal-actions{display:flex;justify-content:flex-end;gap:12px;margin-top:8px;}
-.pago-info{background:rgba(15,23,42,0.5);border-radius:10px;padding:14px;margin-bottom:16px;display:flex;flex-direction:column;gap:4px;color:#94a3b8;font-size:0.85rem;}
-.pago-pendiente{color:#f87171;font-weight:700;}
+/* ==========================================================================
+   ESTILOS DE CUENTAS DE GARITERO (PREMIUM CLUB DE CONTROL)
+   ========================================================================== */
+
+.page-header-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+
+  .header-titles {
+    h2 {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: #f8fafc;
+      margin: 0;
+    }
+    p {
+      color: #64748b;
+      font-size: 0.85rem;
+      margin-top: 4px;
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .total-badge {
+    background: rgba(239, 68, 68, 0.08);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    color: #fda4af;
+    padding: 8px 16px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: 0.88rem;
+
+    span {
+      color: #f43f5e;
+      font-weight: 800;
+      margin-left: 4px;
+      text-shadow: 0 0 8px rgba(244, 63, 94, 0.4);
+    }
+  }
+}
+
+/* Selector de Pestañas (Neon Glassmorphic Tabs) */
+.tabs-selector-container {
+  display: flex;
+  gap: 10px;
+  background: rgba(15, 23, 42, 0.4);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  padding: 6px;
+  border-radius: 14px;
+  margin-bottom: 24px;
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: none;
+  border: none;
+  color: #64748b;
+  padding: 12px 20px;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.3s;
+
+  &:hover {
+    color: #cbd5e1;
+    background: rgba(255, 255, 255, 0.02);
+  }
+
+  &.active {
+    background: rgba(6, 182, 212, 0.1);
+    color: #22d3ee;
+    border: 1px solid rgba(6, 182, 212, 0.25);
+    box-shadow: 0 4px 15px rgba(6, 182, 212, 0.05);
+  }
+}
+
+/* Badges Numéricos */
+.count-badge {
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 0.72rem;
+  font-weight: 800;
+
+  &.active {
+    background: rgba(34, 211, 238, 0.15);
+    color: #22d3ee;
+  }
+
+  &.paid {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34d399;
+  }
+}
+
+/* Listado de Cuentas Premium */
+.deudas-list-premium {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Fila/Tarjeta de Deuda Premium */
+.deuda-card-premium {
+  background: linear-gradient(135deg, rgba(30, 41, 59, 0.4) 0%, rgba(15, 23, 42, 0.6) 100%);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 16px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  backdrop-filter: blur(12px);
+  transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+
+  &:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  }
+
+  &.pendiente {
+    border-left: 4px solid #ef4444;
+  }
+
+  &.parcial {
+    border-left: 4px solid #f59e0b;
+  }
+
+  &.paid {
+    border-left: 4px solid #10b981;
+    opacity: 0.82;
+  }
+}
+
+.card-left-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex: 1;
+  min-width: 280px;
+}
+
+.avatar-circle {
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.15);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 1.1rem;
+
+  &.external {
+    background: rgba(245, 158, 11, 0.08);
+    border-color: rgba(245, 158, 11, 0.15);
+  }
+
+  &.paid {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.2);
+    color: #34d399;
+    font-weight: 900;
+  }
+}
+
+.deuda-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.deuda-nombre-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.deuda-nombre {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #f1f5f9;
+}
+
+.visitante-tag {
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.2);
+  color: #fbbf24;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.registrado-tag {
+  background: rgba(6, 182, 212, 0.08);
+  border: 1px solid rgba(6, 182, 212, 0.2);
+  color: #22d3ee;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 20px;
+  text-transform: uppercase;
+}
+
+.deuda-desc {
+  color: #94a3b8;
+  font-size: 0.82rem;
+}
+
+.deuda-tel {
+  color: #64748b;
+  font-size: 0.75rem;
+}
+
+.deuda-notas {
+  color: #64748b;
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.deuda-fecha-pago {
+  color: #475569;
+  font-size: 0.72rem;
+}
+
+/* Lado Derecho de la Tarjeta */
+.deuda-right-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.deuda-montos {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 130px;
+}
+
+.monto-row-item {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.8rem;
+  color: #64748b;
+
+  &.highlighted {
+    font-size: 0.9rem;
+    font-weight: 700;
+  }
+}
+
+.m-val {
+  color: #e2e8f0;
+  font-weight: 700;
+
+  &.green { color: #10b981; }
+  &.red { color: #ef4444; }
+  &.font-large { font-size: 1.05rem; }
+}
+
+.estado-pill-premium {
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid;
+
+  &.pagada {
+    background: rgba(16, 185, 129, 0.08);
+    color: #34d399;
+    border-color: rgba(16, 185, 129, 0.2);
+  }
+}
+
+/* Botones */
+.btn-cobrar-premium {
+  background: rgba(16, 185, 129, 0.08);
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  color: #34d399;
+  padding: 8px 16px;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 700;
+  transition: all 0.2s;
+
+  &:hover {
+    background: rgba(16, 185, 129, 0.18);
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.15);
+  }
+}
+
+.btn-primary-glow {
+  background: #06b6d4;
+  color: #0f172a;
+  border: none;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 800;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 14px rgba(6, 182, 212, 0.3);
+
+  &:hover {
+    background: #22d3ee;
+    box-shadow: 0 4px 20px rgba(6, 182, 212, 0.5);
+  }
+}
+
+/* Banner Vacío Glassmorphic */
+.empty-banner-glass {
+  background: rgba(30, 41, 59, 0.2);
+  border: 1px dashed rgba(255, 255, 255, 0.05);
+  border-radius: 16px;
+  padding: 40px 20px;
+  text-align: center;
+  color: #64748b;
+
+  .empty-icon {
+    font-size: 2.2rem;
+    display: block;
+    margin-bottom: 12px;
+  }
+
+  h4 {
+    color: #94a3b8;
+    margin: 0;
+    font-size: 1.05rem;
+    font-weight: 700;
+  }
+
+  p {
+    font-size: 0.82rem;
+    margin: 6px 0 0 0;
+  }
+}
+
+/* ================= MODAL ESTILOS PREMIUM ================= */
+.modal-overlay-glass {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal-premium {
+  background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 20px;
+  padding: 24px;
+  width: 100%;
+  max-width: 480px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+
+  &.payment {
+    max-width: 420px;
+  }
+}
+
+.modal-header-premium {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  h3 {
+    color: #06b6d4;
+    font-size: 1.15rem;
+    font-weight: 800;
+    margin: 0;
+  }
+
+  .btn-close-modal {
+    background: none;
+    border: none;
+    color: #64748b;
+    font-size: 1.2rem;
+    cursor: pointer;
+    &:hover { color: #94a3b8; }
+  }
+}
+
+.modo-toggle-premium {
+  display: flex;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  padding: 4px;
+  gap: 4px;
+}
+
+.modo-btn-premium {
+  flex: 1;
+  background: none;
+  border: none;
+  color: #64748b;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.8rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover { color: #cbd5e1; }
+
+  &.active {
+    background: rgba(6, 182, 212, 0.15);
+    color: #22d3ee;
+    border: 1px solid rgba(6, 182, 212, 0.2);
+  }
+}
+
+.modal-form-premium {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.field-premium {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  label {
+    color: #64748b;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  input, select, textarea {
+    background: #090d16;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 10px;
+    padding: 10px 14px;
+    color: #e2e8f0;
+    font-size: 0.88rem;
+    outline: none;
+    resize: none;
+    transition: border-color 0.2s;
+
+    &:focus {
+      border-color: #06b6d4;
+    }
+  }
+}
+
+/* Prefijo de Input $ */
+.input-prefix-premium {
+  display: flex;
+  align-items: center;
+  background: #090d16;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 10px;
+  overflow: hidden;
+
+  &:focus-within { border-color: #06b6d4; }
+
+  span {
+    color: #06b6d4;
+    font-weight: 800;
+    padding: 10px 14px;
+    background: rgba(6, 182, 212, 0.06);
+    border-right: 1px solid rgba(255, 255, 255, 0.04);
+  }
+
+  input {
+    flex: 1;
+    background: transparent !important;
+    border: none !important;
+    padding: 10px 14px;
+  }
+}
+
+.info-alert-externo {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  background: rgba(245, 158, 11, 0.04);
+  border: 1px solid rgba(245, 158, 11, 0.15);
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: #fbbf24;
+
+  .info-icon { font-size: 1.1rem; }
+  p { font-size: 0.78rem; line-height: 1.4; margin: 0; }
+}
+
+.error-msg-premium {
+  color: #f87171;
+  font-size: 0.8rem;
+  background: rgba(239, 68, 68, 0.06);
+  padding: 10px 14px;
+  border-radius: 8px;
+  border-left: 3px solid #ef4444;
+  margin: 0;
+}
+
+.modal-actions-premium {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.btn-secondary-premium {
+  background: rgba(30, 41, 59, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  color: #94a3b8;
+  padding: 10px 18px;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.btn-primary-premium {
+  background: #06b6d4;
+  color: #0f172a;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-weight: 800;
+  cursor: pointer;
+  font-size: 0.85rem;
+  transition: opacity 0.2s;
+
+  &:hover { opacity: 0.9; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
+/* Caja de Info Pago */
+.payment-info-box {
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+  border-radius: 12px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+
+  .payment-client-label {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: #64748b;
+    text-transform: uppercase;
+  }
+
+  .payment-client-name {
+    font-size: 1.05rem;
+    font-weight: 800;
+    color: #f1f5f9;
+  }
+
+  .payment-debt-summary {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    color: #94a3b8;
+    margin-top: 8px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.06);
+    width: 100%;
+    justify-content: center;
+    padding-top: 8px;
+  }
+
+  .payment-pending-amount {
+    color: #ef4444;
+    font-size: 1rem;
+    font-weight: 800;
+  }
+}
+
+.opcional { color: #475569; font-size: 0.72rem; }
+
+/* Animaciones */
+.animate-fade-in {
+  animation: fadeIn 0.4s ease-out forwards;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

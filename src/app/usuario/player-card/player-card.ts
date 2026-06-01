@@ -4,10 +4,7 @@ import { CommonModule } from '@angular/common';
 export interface PlayerStats {
   name: string;
   lastName: string;
-  eloRating: number;
-  winRate: number;
   jcueCoins: number;
-  rank: 'Bronze' | 'Silver' | 'Gold' | 'Diamond';
   clubName: string;
 }
 
@@ -23,10 +20,7 @@ export class PlayerCardComponent {
   @Input() player: PlayerStats = {
     name: 'Juan',
     lastName: 'Pérez',
-    eloRating: 2500,
-    winRate: 85,
     jcueCoins: 1250,
-    rank: 'Diamond',
     clubName: 'JcueScore Elite'
   };
 }

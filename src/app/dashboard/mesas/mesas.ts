@@ -4,6 +4,8 @@ import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 
+import { DEFAULT_VENUE_ID } from '../../core/constants';
+
 const API = 'http://localhost:3000';
 
 @Component({
@@ -28,7 +30,7 @@ export class Mesas implements OnInit {
   form = this.fb.group({
     code: ['', Validators.required],
     gameTypeId: [null, Validators.required],
-    venueId: [1],
+    venueId: [DEFAULT_VENUE_ID, Validators.required],
     pricePerHour: [0, Validators.required],
     status: ['available'],
     isActive: [true],
@@ -43,11 +45,21 @@ export class Mesas implements OnInit {
 
   ngOnInit() {
     this.loadRecursos();
-    this.http.get<any[]>(`${API}/tipos-juego`).subscribe(d => this.tiposJuego.set(d));
+    this.loadTiposJuego();
+  }
+
+  loadTiposJuego() {
+    this.http.get<any[]>(`${API}/tipos-juego`).subscribe({
+      next: d => this.tiposJuego.set(d || []),
+      error: err => console.error('Error loading tipos de juego:', err)
+    });
   }
 
   loadRecursos() {
-    this.http.get<any[]>(`${API}/recursos`).subscribe(d => this.recursos.set(d));
+    this.http.get<any[]>(`${API}/recursos`).subscribe({
+      next: d => this.recursos.set(d || []),
+      error: err => console.error('Error loading recursos:', err)
+    });
   }
 
   get filteredRecursos() {
@@ -59,14 +71,19 @@ export class Mesas implements OnInit {
   openCreate() {
     this.editingId.set(null);
     this.previewImg.set(null);
-    this.form.reset({ status: 'available', venueId: 1, pricePerHour: 0, isActive: true });
+    this.form.reset({ status: 'available', venueId: DEFAULT_VENUE_ID, pricePerHour: 0, isActive: true });
     this.showModal.set(true);
   }
 
   openEdit(r: any) {
     this.editingId.set(r.id);
     this.previewImg.set(null);
-    this.form.patchValue({ ...r, gameTypeId: r.gameType?.id });
+    this.form.enable();
+    this.form.patchValue({
+      ...r,
+      gameTypeId: r.gameType?.id,
+      venueId: r.venueId,
+    });
     this.showModal.set(true);
   }
 
@@ -82,11 +99,17 @@ export class Mesas implements OnInit {
     if (this.form.invalid) return;
     this.loading.set(true);
     const val = this.form.value;
+    // Remove specifications if null to satisfy DTO validation
+    if (val.specifications === null) {
+      delete val.specifications;
+    }
     const payload = {
       ...val,
-      venueId: 1,
-      gameTypeId: Number(val.gameTypeId),
+      // Preserve the venueId from the form (do not force DEFAULT_VENUE_ID)
+      venueId: Number(val.venueId) || DEFAULT_VENUE_ID,
+      gameTypeId: val.gameTypeId != null ? Number(val.gameTypeId) : null,
       pricePerHour: Number(val.pricePerHour),
+      imageUrl: this.previewImg() || null,
     };
     const req = this.editingId()
       ? this.http.put(`${API}/recursos/${this.editingId()}`, payload)
