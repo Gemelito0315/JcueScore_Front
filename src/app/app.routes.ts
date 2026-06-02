@@ -36,7 +36,7 @@ export const routes: Routes = [
       { path: 'mesas', loadComponent: () => import('./dashboard/mesas/mesas').then(m => m.Mesas) },
       { path: 'sistema', loadComponent: () => import('./dashboard/sistema/sistema').then(m => m.Sistema) },
       { path: 'espectador', loadComponent: () => import('./usuario/pages/espectador/espectador.page').then(m => m.EspectadorLobbyPage) },
-      { path: 'espectador-vivo/:id', loadComponent: () => import('./mesa/mesa').then(m => m.Mesa) },
+      { path: 'espectador-vivo/:id', redirectTo: '/mesa/:id' },
     ]
   },
   {
@@ -56,7 +56,7 @@ export const routes: Routes = [
       { path: 'mi-partida', loadComponent: () => import('./usuario/pages/mi-partida/mi-partida.page').then(m => m.MiPartidaPage) },
       { path: 'mesas', loadComponent: () => import('./usuario/pages/mesas/mesas.page').then(m => m.UsuarioMesasPage) },
       { path: 'espectador', loadComponent: () => import('./usuario/pages/espectador/espectador.page').then(m => m.EspectadorLobbyPage) },
-      { path: 'espectador-vivo/:id', loadComponent: () => import('./mesa/mesa').then(m => m.Mesa) },
+      { path: 'espectador-vivo/:id', redirectTo: '/mesa/:id' },
     ]
   },
   {
@@ -73,7 +73,7 @@ export const routes: Routes = [
       { path: 'cuentas', loadComponent: () => import('./garitero/pages/deudas-garitero/deudas-garitero').then(m => m.DeudasGaritero) },
       { path: 'inventario', loadComponent: () => import('./garitero/pages/inventario-garitero/inventario-garitero').then(m => m.InventarioGaritero) },
       { path: 'espectador', loadComponent: () => import('./usuario/pages/espectador/espectador.page').then(m => m.EspectadorLobbyPage) },
-      { path: 'espectador-vivo/:id', loadComponent: () => import('./mesa/mesa').then(m => m.Mesa) },
+      { path: 'espectador-vivo/:id', redirectTo: '/mesa/:id' },
     ]
   },
   {

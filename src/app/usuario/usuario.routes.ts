@@ -24,7 +24,7 @@ export const USUARIO_ROUTES: Routes = [
   },
   {
     path: 'espectador-vivo/:id',
-    loadComponent: () => import('../mesa/mesa').then(m => m.Mesa)
+    redirectTo: '/mesa/:id'
   },
   {
     path: '**',

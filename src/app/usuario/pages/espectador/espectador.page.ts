@@ -66,7 +66,7 @@ export class EspectadorLobbyPage implements OnInit, OnDestroy {
   }
 
   verPartida(mesaId: string) {
-    this.router.navigate(['../espectador-vivo', mesaId], { relativeTo: this.route, queryParams: { mode: 'viewer' } });
+    this.router.navigate(['/mesa', mesaId], { queryParams: { mode: 'viewer' } });
   }
 
   trackByMesaId(index: number, match: any) {
