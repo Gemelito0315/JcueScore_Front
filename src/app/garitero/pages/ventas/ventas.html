@@ -388,13 +388,15 @@
                         <span>Pedido #{{ p.id }}</span>
                         <span class="badge-estado" [class]="p.estado">{{ p.estado.replace('_', ' ') | uppercase }}</span>
                       </div>
-                      <button class="btn-cancelar-pedido" title="Cancelar Pedido" (click)="cancelarPedido(p.id)">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-trash">
-                          <polyline points="3 6 5 6 21 6"></polyline>
-                          <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                        </svg>
-                        <span>Cancelar</span>
-                      </button>
+                      @if (p.estado !== 'entregado' && p.estado !== 'cancelado') {
+                        <button class="btn-cancelar-pedido" title="Cancelar Pedido" (click)="cancelarPedido(p.id)">
+                          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="icon-trash">
+                            <polyline points="3 6 5 6 21 6"></polyline>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                          </svg>
+                          <span>Cancelar</span>
+                        </button>
+                      }
                     </div>
                     
                     <div class="pedido-items-list">
