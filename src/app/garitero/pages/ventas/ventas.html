@@ -273,9 +273,12 @@
               <span class="monto-restante"><strong>Resta: {{ formatCurrency(d.monto - (d.montoPagado || 0)) }}</strong></span>
             </div>
           </div>
-          <div class="deuda-footer">
+          <div class="deuda-footer" style="display: flex; gap: 8px; justify-content: flex-end; width: 100%;">
             <button class="btn-cobrar-deuda" (click)="abrirCobroDeuda(d)">
               💵 Cobrar Saldo
+            </button>
+            <button class="btn-archive-premium" style="background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.3); color: #f59e0b; padding: 8px 14px; border-radius: 8px; font-size: 0.85rem; cursor: pointer; transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center; gap: 4px;" (click)="traspasarDeudaAHistorial(d.id)">
+              📤 Historial
             </button>
           </div>
         </div>
@@ -478,6 +481,19 @@
           <div class="cobrar-acciones-row" style="width: 100%;">
             <button class="btn-finalizar-tiempo-principal" (click)="abrirFinalizarMesa(selectedCuentaDetail()!)">
               🛑 Finalizar Tiempo / Asignar Cuenta
+            </button>
+          </div>
+        } @else if ((selectedCuentaDetail()?.tipo === 'cliente' || (selectedCuentaDetail()?.tipo === 'mesa' && !selectedCuentaDetail()?.partidaId)) && (selectedCuentaDetail()?.pedidos?.length ?? 0) > 0) {
+          <!-- CLIENTE BARRA / MESA LIBRE CON CONSUMOS: COBRAR O TRASPASAR A DEUDA -->
+          <div class="cobrar-acciones-row" style="width: 100%; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+            <button class="btn-primary" style="background: #10b981; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;" (click)="cerrarCuentaCliente(selectedCuentaDetail()!, 'efectivo')">
+              💵 Cobrar Efectivo
+            </button>
+            <button class="btn-primary" style="background: #3b82f6; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;" (click)="cerrarCuentaCliente(selectedCuentaDetail()!, 'transferencia')">
+              📱 Cobrar Transf.
+            </button>
+            <button class="btn-primary" style="background: #f59e0b; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;" (click)="cerrarCuentaCliente(selectedCuentaDetail()!, 'deuda')">
+              📝 Dejar como Deuda (Cuentas Hoy)
             </button>
           </div>
         }

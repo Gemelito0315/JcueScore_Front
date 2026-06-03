@@ -825,6 +825,84 @@ export class Ventas implements OnInit, OnDestroy {
     });
   }
 
+  cerrarCuentaCliente(cuenta: CuentaActiva, metodoPago: 'efectivo' | 'transferencia' | 'deuda') {
+    if (!cuenta.pedidos || cuenta.pedidos.length === 0) return;
+
+    const total = cuenta.totalConsumo;
+    const itemsDescription = cuenta.pedidos
+      .flatMap(p => p.items || [])
+      .map(i => `${i.cantidad}x ${i.producto?.name || 'Producto'}`)
+      .join(', ');
+
+    const processClosure = () => {
+      let completedRequests = 0;
+      const pedidos = cuenta.pedidos;
+
+      pedidos.forEach(p => {
+        this.http.put(`${API}/pedidos/${p.id}/entregar`, {
+          metodoPago: metodoPago,
+          pagado: p.total
+        }).subscribe({
+          next: () => {
+            completedRequests++;
+            if (completedRequests === pedidos.length) {
+              this.finalizarCierreCuentaCliente(cuenta, metodoPago);
+            }
+          },
+          error: () => {
+            completedRequests++;
+            if (completedRequests === pedidos.length) {
+              this.finalizarCierreCuentaCliente(cuenta, metodoPago);
+            }
+          }
+        });
+      });
+    };
+
+    if (metodoPago === 'deuda') {
+      const bodyDeuda = {
+        userId: cuenta.usuarioId || null,
+        nombreCliente: cuenta.usuarioId ? undefined : cuenta.nombre,
+        monto: total,
+        descripcion: `Consumo de barra/alimentos (${cuenta.nombre}): ${itemsDescription.substring(0, 100)}`,
+        notas: 'Registrado desde el control de pedidos por el garitero.'
+      };
+
+      this.http.post(`${API}/deudas`, bodyDeuda).subscribe({
+        next: () => {
+          processClosure();
+        },
+        error: () => {
+          this.mostrarToast('❌ Error al registrar la deuda en el sistema.');
+        }
+      });
+    } else {
+      processClosure();
+    }
+  }
+
+  private finalizarCierreCuentaCliente(cuenta: CuentaActiva, metodoPago: string) {
+    this.selectedCuenta.set(null);
+    this.cargarDatos();
+    this.cargarHistorialBarra();
+    
+    if (metodoPago === 'deuda') {
+      this.mostrarToast(`💰 Cuenta de ${cuenta.nombre} registrada como Deuda Pendiente.`);
+    } else {
+      this.mostrarToast(`✅ Cuenta de ${cuenta.nombre} cobrada con éxito (${metodoPago.toUpperCase()}).`);
+    }
+  }
+
+  traspasarDeudaAHistorial(deudaId: number) {
+    this.http.post(`${API}/deudas/${deudaId}/pasar-historial`, {}).subscribe({
+      next: () => {
+        this.cargarDatos();
+        this.mostrarToast('📤 Deuda transferida al historial general.');
+      },
+      error: () => this.mostrarToast('❌ Error al traspasar deuda.')
+    });
+  }
+
   private actualizarDetalleCuentaSeleccionada() {
     const actual = this.selectedCuenta();
     if (actual) {
