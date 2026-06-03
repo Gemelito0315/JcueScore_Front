@@ -257,16 +257,16 @@ export class Ventas implements OnInit, OnDestroy {
     }
   }
 
-  // LISTADO CONSOLIDADO DE CUENTAS ACTIVAS (TARJETAS) - muestra TODAS las mesas
+  // LISTADO CONSOLIDADO DE CUENTAS ACTIVAS (TARJETAS) - muestra TODAS las mesas y clientes independientes con pedidos activos
   cuentasActivas = computed(() => {
     const list: CuentaActiva[] = [];
-    // Mesas Activas
+    
+    // 1. Mesas Activas
     this.recursosActivos().forEach(m => {
-      // Solo asociar pedidos si la mesa está ocupada (partidaId != null)
-      // Si la mesa está libre, no debería mostrar pedidos pendientes asociados
-      const pedidosDeMesa = m.partidaId 
-        ? this.pedidosActivos().filter(p => p.recursoId === m.id && p.estado !== 'entregado' && p.estado !== 'cancelado')
-        : [];
+      // Asociar pedidos a la mesa si existen, esté o no ocupada la mesa
+      const pedidosDeMesa = this.pedidosActivos().filter(
+        p => p.recursoId === m.id && p.estado !== 'entregado' && p.estado !== 'cancelado'
+      );
         
       const totalConsumo = pedidosDeMesa.reduce((acc, p) => acc + parseFloat(p.total), 0);
 
@@ -296,6 +296,42 @@ export class Ventas implements OnInit, OnDestroy {
         llamadoId: llamado?.id,
         nuevoPedidoPendiente: tienePedidoPendiente,
         status: m.status
+      });
+    });
+
+    // 2. Pedidos sin mesa (pedidos de barra/app de clientes individuales)
+    const pedidosSinMesa = this.pedidosActivos().filter(
+      p => !p.recursoId && p.estado !== 'entregado' && p.estado !== 'cancelado'
+    );
+    
+    // Agrupar por usuarioId
+    const pedidosPorUsuario = new Map<number, any[]>();
+    pedidosSinMesa.forEach(p => {
+      const uId = p.usuarioId || 0;
+      if (!pedidosPorUsuario.has(uId)) {
+        pedidosPorUsuario.set(uId, []);
+      }
+      pedidosPorUsuario.get(uId)!.push(p);
+    });
+
+    pedidosPorUsuario.forEach((pedidos, uId) => {
+      const primerPedido = pedidos[0];
+      const user = primerPedido.usuario;
+      const nombre = user ? `${user.name} ${user.lastName || ''}`.trim() : `Cliente #${uId || primerPedido.id}`;
+      const totalConsumo = pedidos.reduce((acc, p) => acc + parseFloat(p.total), 0);
+      const tienePedidoPendiente = pedidos.some(p => p.estado === 'pendiente');
+
+      list.push({
+        id: `usuario-${uId || primerPedido.id}`,
+        tipo: 'cliente',
+        nombre: nombre,
+        usuarioId: uId || undefined,
+        pedidos: pedidos,
+        totalConsumo,
+        totalMesa: 0,
+        totalGeneral: totalConsumo,
+        nuevoPedidoPendiente: tienePedidoPendiente,
+        status: 'available'
       });
     });
 
@@ -754,6 +790,49 @@ export class Ventas implements OnInit, OnDestroy {
         this.mostrarToast('❌ Error al habilitar mesa: ' + (err.error?.message || 'No disponible.'));
       }
     });
+  }
+
+  prepararPedido(pedidoId: number) {
+    this.http.put(`${API}/pedidos/${pedidoId}/preparar`, {}).subscribe({
+      next: () => {
+        this.cargarDatos();
+        this.mostrarToast('👨‍🍳 Pedido en preparación.');
+        this.actualizarDetalleCuentaSeleccionada();
+      },
+      error: () => this.mostrarToast('❌ Error al preparar pedido.')
+    });
+  }
+
+  marcarListoPedido(pedidoId: number) {
+    this.http.put(`${API}/pedidos/${pedidoId}/listo`, {}).subscribe({
+      next: () => {
+        this.cargarDatos();
+        this.mostrarToast('📦 Pedido listo para entrega.');
+        this.actualizarDetalleCuentaSeleccionada();
+      },
+      error: () => this.mostrarToast('❌ Error al marcar listo.')
+    });
+  }
+
+  entregarPedido(pedidoId: number, metodoPago: string, total: number) {
+    this.http.put(`${API}/pedidos/${pedidoId}/entregar`, { metodoPago, pagado: total }).subscribe({
+      next: () => {
+        this.cargarDatos();
+        this.mostrarToast('✅ Pedido entregado con éxito.');
+        this.actualizarDetalleCuentaSeleccionada();
+      },
+      error: () => this.mostrarToast('❌ Error al entregar pedido.')
+    });
+  }
+
+  private actualizarDetalleCuentaSeleccionada() {
+    const actual = this.selectedCuenta();
+    if (actual) {
+      setTimeout(() => {
+        const actualizada = this.cuentasActivas().find(c => c.id === actual.id);
+        if (actualizada) this.selectedCuenta.set(actualizada);
+      }, 500);
+    }
   }
 
   mostrarToast(msg: string) {
