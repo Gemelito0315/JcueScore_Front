@@ -36,7 +36,8 @@
               "fonts": {
                 "inline": false
               }
-            }
+            },
+            "serviceWorker": "ngsw-config.json"
           },
           "configurations": {
             "production": {
