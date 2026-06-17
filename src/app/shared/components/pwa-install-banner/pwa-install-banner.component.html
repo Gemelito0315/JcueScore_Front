@@ -1,0 +1,39 @@
+@if (pwaService.isInstallable()) {
+  <div class="pwa-floating-btn" (click)="pwaService.promptInstall()">
+    <span class="icon">📲</span>
+    <span class="text">Instalar App</span>
+  </div>
+}
+
+@if (pwaService.showIosInstructions()) {
+  <div class="ios-instruction-overlay" (click)="pwaService.closeIosInstructions()">
+    <div class="ios-instruction-modal" (click)="$event.stopPropagation()">
+      <button class="close-btn" (click)="pwaService.closeIosInstructions()">✕</button>
+      
+      <div class="modal-header">
+        <img src="favicon.png" alt="JcueScore" class="app-icon" />
+        <h3>Instalar JcueScore</h3>
+      </div>
+      
+      <div class="instruction-steps">
+        <p>Instala esta aplicación en tu pantalla de inicio para acceso rápido y pantalla completa.</p>
+        
+        <ol>
+          <li>
+            Toca el ícono <strong>Compartir</strong> 
+            <svg viewBox="0 0 50 50" class="share-icon">
+              <path d="M25,2 L25,32 M15,12 L25,2 L35,12 M10,22 L10,48 L40,48 L40,22" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            en la barra inferior de Safari.
+          </li>
+          <li>
+            Desliza hacia abajo y selecciona <strong>Agregar a inicio</strong> 
+            <span class="plus-icon">⊞</span>
+          </li>
+        </ol>
+      </div>
+      
+      <div class="arrow-down"></div>
+    </div>
+  </div>
+}
