@@ -4,12 +4,14 @@ const path = require('path');
 // Leer variables de entorno con valores por defecto
 const apiBaseUrl = process.env.API_BASE_URL || 'http://localhost:3000';
 const wsUrl = process.env.WS_URL || 'ws://localhost:3000/ws';
+const vapidPublicKey = process.env.VAPID_PUBLIC_KEY || 'BJKNFKDZzDGYnsEPVnXvL3AiZEbueqH6ighFuuvVnhnVm8mGb5ofoKEA55a7AlyK7UHZk0xximyqOkQ_T_dshzg';
 const isProduction = process.env.NODE_ENV === 'production' || true;
 
 const envFileContent = `export const environment = {
   production: ${isProduction},
   apiBaseUrl: '${apiBaseUrl}',
-  wsUrl: '${wsUrl}'
+  wsUrl: '${wsUrl}',
+  vapidPublicKey: '${vapidPublicKey}'
 };
 `;
 
