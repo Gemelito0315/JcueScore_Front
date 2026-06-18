@@ -2,6 +2,7 @@ import { Component, inject, signal } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { PushNotificationService } from '../../core/services/push-notification.service';
 import { LoginInterface } from '../interfaces/login';
 import { Auth } from '../services/auth';
 import { environment } from '../../../environments/environment';
@@ -17,6 +18,7 @@ export class LogIn {
   private authService = inject(Auth);
   private router = inject(Router);
   private http = inject(HttpClient);
+  private pushService = inject(PushNotificationService);
 
   hidePassword = true;
   errorMsg = '';
@@ -35,6 +37,9 @@ export class LogIn {
 
       this.authService.login(rawForm).subscribe({
         next: (res) => {
+          // Iniciar suscripción de notificaciones al tener éxito el login
+          this.pushService.subscribeToNotifications();
+
           const isAdmin = res.user?.roles?.some((r: any) => r.id === 1);
           const isGaritero = res.user?.roles?.some((r: any) => r.id === 3);
           if (isAdmin) {
