@@ -26,6 +26,17 @@
   }
 }
 
+.pwa-floating-btn.push-btn {
+  bottom: 80px; // Un poco más arriba para que no pise el otro si ambos salen
+  background: linear-gradient(135deg, #2196F3 0%, #00BCD4 100%);
+  box-shadow: 0 4px 15px rgba(33, 150, 243, 0.4);
+
+  &:hover {
+    box-shadow: 0 6px 20px rgba(33, 150, 243, 0.6);
+  }
+}
+
+
 .ios-instruction-overlay {
   position: fixed;
   top: 0;

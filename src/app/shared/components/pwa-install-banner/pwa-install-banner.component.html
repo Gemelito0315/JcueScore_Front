@@ -5,6 +5,13 @@
   </div>
 }
 
+@if (auth.isAuthenticated() && showPushPrompt()) {
+  <div class="pwa-floating-btn push-btn" (click)="pedirPermisosPush()">
+    <span class="icon">🔔</span>
+    <span class="text">Activar Notificaciones</span>
+  </div>
+}
+
 @if (pwaService.showIosInstructions()) {
   <div class="ios-instruction-overlay" (click)="pwaService.closeIosInstructions()">
     <div class="ios-instruction-modal" (click)="$event.stopPropagation()">
