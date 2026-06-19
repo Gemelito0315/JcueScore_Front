@@ -4,6 +4,7 @@ import { HttpClient } from '@angular/common/http';
 import { map, catchError } from 'rxjs/operators';
 import { of } from 'rxjs';
 import { Auth } from '../../auth/services/auth';
+import { environment } from '../../../environments/environment';
 
 export const maintenanceGuard: CanActivateFn = () => {
   const http = inject(HttpClient);
@@ -14,7 +15,7 @@ export const maintenanceGuard: CanActivateFn = () => {
   const user = auth.currentUser();
   if (user?.roles?.some(r => r.name?.toLowerCase() === 'admin')) return true;
 
-  return http.get<any>('http://localhost:3000/maintenance').pipe(
+  return http.get<any>(`${environment.apiBaseUrl}/maintenance`).pipe(
     map(data => {
       if (data.active) {
         router.navigate(['/mantenimiento']);

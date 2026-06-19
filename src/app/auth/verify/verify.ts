@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-verify',
@@ -25,7 +26,7 @@ export class VerifyComponent implements OnInit {
         return;
       }
 
-      this.http.post<{message: string}>(`http://localhost:3000/auth/verify`, { token })
+      this.http.post<{message: string}>(`${environment.apiBaseUrl}/auth/verify`, { token })
         .subscribe({
           next: (res) => {
             this.status.set('success');

@@ -2,6 +2,7 @@ import { Injectable, inject, signal, computed } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable, tap } from 'rxjs';
 import { LoginInterface } from '../interfaces/login';
+import { environment } from '../../../environments/environment';
 // import { LoginInterface } from '../interfaces/login';
 
 // export interface AuthResponse {
@@ -49,7 +50,7 @@ export interface AuthResponse {
 export class Auth {
 
   private http = inject(HttpClient);
-  private readonly API_URL = 'http://localhost:3000/auth';
+  private readonly API_URL = `${environment.apiBaseUrl}/auth`;
 
   // 1. Estado privado (Signal) - restaura desde localStorage al iniciar
   private _authStatus = signal<AuthResponse | null>(
@@ -84,7 +85,7 @@ export class Auth {
 
   /** Registro de nuevo usuario */
   public register(data: any): Observable<any> {
-    return this.http.post(`http://localhost:3000/users/register`, data);
+    return this.http.post(`${environment.apiBaseUrl}/users/register`, data);
   }
 
   public logout(): void {
