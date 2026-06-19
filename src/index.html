@@ -15,5 +15,14 @@
   </head>
   <body>
     <app-root></app-root>
+
+    <!-- Service Worker personalizado para manejar clicks en notificaciones push nativas -->
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw-push-handler.js', { scope: '/' })
+          .then(reg => console.log('[SW Push Handler] Registrado correctamente', reg.scope))
+          .catch(err => console.warn('[SW Push Handler] Error al registrar:', err));
+      }
+    </script>
   </body>
 </html>

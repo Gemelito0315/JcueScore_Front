@@ -1,4 +1,21 @@
 <div class="lobby-container">
+
+  <!-- 🔔 Toast de nueva partida en vivo -->
+  @if (liveToast()) {
+    <div class="live-toast" (click)="verPartidaDesdeToast()">
+      <div class="toast-pulse"></div>
+      <div class="toast-content">
+        <span class="toast-icon">🎱</span>
+        <div class="toast-text">
+          <strong>¡Nueva partida en vivo!</strong>
+          <span>{{ liveToast()!.jugadores }}</span>
+        </div>
+        <button class="toast-btn">Ver ahora 👁️</button>
+      </div>
+      <button class="toast-close" (click)="$event.stopPropagation(); dismissToast()">✕</button>
+    </div>
+  }
+
   <div class="lobby-header">
     <h1>🔴 Mesas en Vivo</h1>
     <p>Selecciona una mesa para observar la partida en tiempo real.</p>
