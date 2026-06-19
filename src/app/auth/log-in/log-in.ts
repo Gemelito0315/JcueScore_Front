@@ -35,6 +35,9 @@ export class LogIn {
       this.isLoading.set(true);
       const rawForm = this.loginForm.value as LoginInterface;
 
+      // Timeout global: si el login + navegación tarda más de 1s, forzamos apagar el loader
+      const loaderTimeout = setTimeout(() => this.isLoading.set(false), 1000);
+
       this.authService.login(rawForm).subscribe({
         next: (res) => {
           // Iniciar suscripción de notificaciones al tener éxito el login
@@ -42,18 +45,35 @@ export class LogIn {
 
           const isAdmin = res.user?.roles?.some((r: any) => r.id === 1);
           const isGaritero = res.user?.roles?.some((r: any) => r.id === 3);
+
+          const navigate = (route: string) => {
+            clearTimeout(loaderTimeout);
+            this.isLoading.set(false);
+            this.router.navigate([route]);
+          };
+
           if (isAdmin) {
-            this.router.navigate(['/dashboard']);
+            navigate('/dashboard');
           } else if (isGaritero) {
-            this.router.navigate(['/garitero']);
+            navigate('/garitero');
           } else {
+            // Timeout de 1 segundo para la llamada a /maintenance
+            const maintenanceTimeout = setTimeout(() => navigate('/usuario'), 1000);
+
             this.http.get<any>(`${environment.apiBaseUrl}/maintenance`).subscribe({
-              next: (m) => this.router.navigate([m.active ? '/mantenimiento' : '/usuario']),
-              error: () => this.router.navigate(['/usuario'])
+              next: (m) => {
+                clearTimeout(maintenanceTimeout);
+                navigate(m.active ? '/mantenimiento' : '/usuario');
+              },
+              error: () => {
+                clearTimeout(maintenanceTimeout);
+                navigate('/usuario');
+              }
             });
           }
         },
         error: (err) => {
+          clearTimeout(loaderTimeout);
           this.isLoading.set(false);
           this.errorMsg = err.error?.message || 'Credenciales incorrectas';
         }
