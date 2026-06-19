@@ -1,7 +1,9 @@
 import { Component, signal, OnInit, OnDestroy, ViewChild, ElementRef, inject, ViewEncapsulation } from '@angular/core';
 import { CommonModule, Location } from '@angular/common';
 import { ActivatedRoute } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { WebsocketsService } from '../core/services/websockets.service';
+import { environment } from '../../environments/environment';
 
 export interface Jugada {
   id: number;
@@ -34,6 +36,7 @@ export class Mesa implements OnInit, OnDestroy {
   private route = inject(ActivatedRoute);
   private ws = inject(WebsocketsService);
   private location = inject(Location);
+  private http = inject(HttpClient);
 
   isViewer = signal(false);
   private syncSub: any;
@@ -385,6 +388,17 @@ export class Mesa implements OnInit, OnDestroy {
     this.iniciarTimer();
     this.iniciarCamara();
     this.broadcastState();
+
+    // Notificar al backend para que dispare push a todos los usuarios suscritos
+    const js = this.jugadores();
+    this.http.post(`${environment.apiBaseUrl}/partidas/notify-live`, {
+      mesaId: this.mesaId(),
+      jugador1: js[0]?.nombre || 'Jugador 1',
+      jugador2: js[1]?.nombre !== 'Jugador 2' ? js[1]?.nombre : undefined,
+    }).subscribe({
+      next: () => console.log('[Push] Notificación de partida en vivo enviada.'),
+      error: err => console.warn('[Push] No se pudo enviar notificación de partida en vivo:', err),
+    });
   }
 
   iniciarTimer() {
