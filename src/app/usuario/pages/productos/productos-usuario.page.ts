@@ -203,7 +203,8 @@ export class ProductosUsuarioPage implements OnInit {
       },
       error: (error) => {
         console.error('Error creando pedido:', error);
-        this.snackBar.showError('Error al crear el pedido');
+        const errorMsg = error.error?.message || error.message || 'Error al crear el pedido';
+        this.snackBar.showError(errorMsg);
       }
     });
   }
