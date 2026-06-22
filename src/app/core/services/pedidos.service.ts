@@ -151,7 +151,29 @@ export class PedidosService {
   }
 
   crearPedido(pedidoData: CreatePedidoDto): Observable<Pedido> {
-    return this.http.post<Pedido>(`${this.API_URL}/pedidos`, pedidoData);
+    return new Observable<Pedido>((observer) => {
+      if (!navigator.geolocation) {
+        observer.error(new Error('Geolocalización no soportada. Habilita el GPS para pedir.'));
+        return;
+      }
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const payload = {
+            ...pedidoData,
+            userLat: pos.coords.latitude,
+            userLng: pos.coords.longitude
+          };
+          this.http.post<Pedido>(`${this.API_URL}/pedidos`, payload).subscribe({
+            next: (res) => { observer.next(res); observer.complete(); },
+            error: (err) => observer.error(err)
+          });
+        },
+        (err) => {
+          observer.error(new Error('Debes permitir el acceso a tu ubicación GPS para hacer pedidos dentro del local.'));
+        },
+        { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+      );
+    });
   }
 
   actualizarEstado(pedidoId: number, estado: string, gariteroId?: number): Observable<Pedido> {

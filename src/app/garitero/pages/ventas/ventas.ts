@@ -107,6 +107,23 @@ export class Ventas implements OnInit, OnDestroy {
   liveTiempos = signal<Record<string, string>>({});
   liveCostosMesa = signal<Record<string, number>>({});
 
+  actualizarUbicacionLocal() {
+    if (!navigator.geolocation) {
+      alert('Tu navegador no soporta geolocalización.');
+      return;
+    }
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        this.http.put(`${API}/configuracion/ubicacion`, { lat: latitude, lng: longitude }).subscribe({
+          next: () => alert(`Ubicación fijada correctamente.\nLat: ${latitude}\nLng: ${longitude}`),
+          error: (err) => alert('Error al guardar la ubicación: ' + err.message)
+        });
+      },
+      (err) => alert('Error obteniendo ubicación: ' + err.message)
+    );
+  }
+
   ngOnInit() {
     this.audioAlert.volume = 0.5;
     this.cargarProductos();

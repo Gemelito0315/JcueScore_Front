@@ -47,6 +47,9 @@
           (input)="filtroBusqueda.set($any($event.target).value)"
         />
       </div>
+      <button class="btn-primary" style="margin-left: 10px; padding: 8px 12px; font-size: 0.85rem;" (click)="actualizarUbicacionLocal()">
+        📍 Fijar Ubic. del Local
+      </button>
       <p class="stats-resumen">
         Total Mesas: <strong>{{ cuentasActivas().length }}</strong> | 
         En Juego: <strong class="text-warning">{{ cuentasActivas().filter(c => c.partidaId).length }}</strong> | 
