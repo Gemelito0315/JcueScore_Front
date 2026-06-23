@@ -770,7 +770,7 @@ export class Ventas implements OnInit, OnDestroy {
     const body = {
       recursoId: null,
       usuarioId: userDebtorId,
-      metodoPago: this.metodoPagoBarra() === 'deuda' ? 'deuda' : this.metodoPagoBarra(),
+      metodoPago: this.metodoPagoBarra() === 'deuda' ? 'cuenta_mesa' : this.metodoPagoBarra(),
       notas: 'Venta rápida en barra' + (this.metodoPagoBarra() === 'deuda' ? ' (Cuenta pendiente)' : ''),
       metadata: { origen: 'barra' },
       items: this.carritoBarra().map(i => ({
@@ -793,7 +793,7 @@ export class Ventas implements OnInit, OnDestroy {
           this.http.post(`${API}/deudas`, bodyDeuda).subscribe({
             next: () => {
               // Luego entregar el pedido
-              this.entregarPedidoBarra(pedido.id, 'deuda', pedido.total);
+              this.entregarPedidoBarra(pedido.id, 'cuenta_mesa', pedido.total);
               this.mostrarToast(`💰 Deuda registrada para ${nombreDebtor}: $${new Intl.NumberFormat('es-CO').format(pedido.total)}`);
             },
             error: () => this.mostrarToast('❌ Error al registrar la deuda en barra.')
