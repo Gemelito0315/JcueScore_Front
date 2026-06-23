@@ -669,6 +669,7 @@ export class Ventas implements OnInit, OnDestroy {
       usuarioId: cuenta.usuarioId || null,
       metodoPago: 'cuenta_mesa',
       notas: 'Consumo agregado por Garitero',
+      metadata: { origen: 'barra' },
       items: this.carritoAgregar().map(i => ({
         productId: i.id,
         cantidad: i.cantidad
@@ -771,6 +772,7 @@ export class Ventas implements OnInit, OnDestroy {
       usuarioId: userDebtorId,
       metodoPago: this.metodoPagoBarra() === 'deuda' ? 'deuda' : this.metodoPagoBarra(),
       notas: 'Venta rápida en barra' + (this.metodoPagoBarra() === 'deuda' ? ' (Cuenta pendiente)' : ''),
+      metadata: { origen: 'barra' },
       items: this.carritoBarra().map(i => ({
         productId: i.id,
         cantidad: i.cantidad
