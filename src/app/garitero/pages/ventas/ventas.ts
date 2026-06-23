@@ -67,6 +67,12 @@ export class Ventas implements OnInit, OnDestroy {
   cuentaParaAgregar = signal<CuentaActiva | null>(null);
   carritoAgregar = signal<any[]>([]);
 
+  // Cambiar Titular
+  mostrandoCambiarTitular = signal(false);
+  cuentaParaCambiarTitular = signal<CuentaActiva | null>(null);
+  titularSeleccionadoId = signal<number | null>(null);
+  titularOcasionalNombre = signal<string>('');
+
   // --- MANUAL START & CHECKOUT WIZARD FIELDS ---
   mostrandoIniciarMesaManual = signal(false);
   mesaParaIniciar = signal<any | null>(null);
@@ -326,19 +332,23 @@ export class Ventas implements OnInit, OnDestroy {
       p => !p.recursoId && p.estado !== 'entregado' && p.estado !== 'cancelado'
     );
     
-    // Agrupar por usuarioId
-    const pedidosPorUsuario = new Map<number, any[]>();
+    // Agrupar por usuarioId o por nombre de cliente ocasional
+    const pedidosPorUsuario = new Map<string, any[]>();
     pedidosSinMesa.forEach(p => {
       const uId = p.usuarioId || 0;
-      if (!pedidosPorUsuario.has(uId)) {
-        pedidosPorUsuario.set(uId, []);
+      // Si tiene un nombre personalizado en metadata y es del garitero (ocasional), agruparlo aparte
+      const key = p.metadata?.nombreCliente ? `ocasional_${p.metadata.nombreCliente}` : String(uId);
+      
+      if (!pedidosPorUsuario.has(key)) {
+        pedidosPorUsuario.set(key, []);
       }
-      pedidosPorUsuario.get(uId)!.push(p);
+      pedidosPorUsuario.get(key)!.push(p);
     });
 
-    pedidosPorUsuario.forEach((pedidos, uId) => {
+    pedidosPorUsuario.forEach((pedidos, groupKey) => {
       const primerPedido = pedidos[0];
       const user = primerPedido.usuario;
+      const uId = primerPedido.usuarioId;
       const metadataNombre = primerPedido.metadata?.nombreCliente;
       const nombre = metadataNombre ? metadataNombre : (user ? `${user.name} ${user.lastName || ''}`.trim() : `Cliente #${uId || primerPedido.id}`);
       const totalConsumo = pedidos.reduce((acc, p) => acc + parseFloat(p.total), 0);
@@ -983,9 +993,87 @@ export class Ventas implements OnInit, OnDestroy {
     this.http.post(`${API}/deudas/${deudaId}/pasar-historial`, {}).subscribe({
       next: () => {
         this.cargarDatos();
-        this.mostrarToast('📤 Deuda transferida al historial general.');
+        this.mostrarToast('✅ Deuda transferida al historial general.');
+      }
+    });
+  }
+
+  // ================= CAMBIAR TITULAR =================
+  abrirCambiarTitular(cuenta: CuentaActiva) {
+    this.cuentaParaCambiarTitular.set(cuenta);
+    this.titularSeleccionadoId.set(null);
+    let defaultNombre = cuenta.nombre;
+    if (defaultNombre.startsWith('Cliente #') || defaultNombre.startsWith('Mesa')) {
+      defaultNombre = '';
+    }
+    this.titularOcasionalNombre.set(defaultNombre);
+    this.mostrandoCambiarTitular.set(true);
+  }
+
+  cerrarCambiarTitular() {
+    this.mostrandoCambiarTitular.set(false);
+    this.cuentaParaCambiarTitular.set(null);
+  }
+
+  guardarCambiarTitular() {
+    const cuenta = this.cuentaParaCambiarTitular();
+    if (!cuenta) return;
+    
+    const isRegistrado = !!this.titularSeleccionadoId();
+    const nuevoNombre = this.titularOcasionalNombre().trim();
+
+    if (!isRegistrado && !nuevoNombre) {
+      this.mostrarToast('Debe seleccionar un cliente registrado o ingresar un nombre ocasional');
+      return;
+    }
+
+    const pedidoIds = cuenta.pedidos?.map((p: any) => p.id) || [];
+    if (pedidoIds.length === 0) {
+        this.mostrarToast('Esta cuenta no tiene consumos activos para trasladar.');
+        return;
+    }
+
+    const body: any = {
+      pedidoIds: pedidoIds,
+      nuevoUsuarioId: this.titularSeleccionadoId(),
+      nuevoNombreCliente: isRegistrado ? undefined : nuevoNombre
+    };
+
+    this.http.put(`${API}/pedidos/asignar-titular`, body).subscribe({
+      next: () => {
+        // También actualizar deudas si aplica
+        const bodyDeuda: any = {
+           newUserId: this.titularSeleccionadoId(),
+           newNombreCliente: isRegistrado ? undefined : nuevoNombre
+        };
+        
+        // Determinar oldUserId/oldNombreCliente de la cuenta
+        const esOcasional = !!(cuenta.pedidos && cuenta.pedidos[0]?.metadata?.nombreCliente);
+        
+        if (cuenta.usuarioId && !esOcasional) {
+           bodyDeuda.oldUserId = cuenta.usuarioId;
+        } else if (esOcasional) {
+           bodyDeuda.oldNombreCliente = cuenta.pedidos[0].metadata.nombreCliente;
+        }
+
+        this.http.put(`${API}/deudas/asignar-titular`, bodyDeuda).subscribe({
+          next: () => {
+             this.mostrarToast('✅ Titular actualizado correctamente');
+             this.cerrarCambiarTitular();
+             this.cerrarDetalle();
+             this.cargarDatos();
+          },
+          error: () => {
+             this.mostrarToast('✅ Titular de pedidos actualizado (sin deudas)');
+             this.cerrarCambiarTitular();
+             this.cerrarDetalle();
+             this.cargarDatos();
+          }
+        });
       },
-      error: () => this.mostrarToast('❌ Error al traspasar deuda.')
+      error: () => {
+        this.mostrarToast('❌ Error al cambiar titular.');
+      }
     });
   }
 

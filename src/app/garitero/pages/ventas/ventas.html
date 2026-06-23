@@ -529,6 +529,9 @@
         } @else if ((selectedCuentaDetail()?.tipo === 'cliente' || (selectedCuentaDetail()?.tipo === 'mesa' && !selectedCuentaDetail()?.partidaId)) && (selectedCuentaDetail()?.pedidos?.length ?? 0) > 0) {
           <!-- CLIENTE BARRA / MESA LIBRE CON CONSUMOS: COBRAR O TRASPASAR A DEUDA -->
           <div class="cobrar-acciones-row" style="width: 100%; display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap;">
+            <button class="btn-primary" style="background: #6b7280; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;" (click)="abrirCambiarTitular(selectedCuentaDetail()!)">
+              👤 Cambiar Titular
+            </button>
             <button class="btn-primary" style="background: #10b981; border: none; padding: 10px 18px; border-radius: 8px; font-weight: 600; font-size: 0.9rem;" (click)="cerrarCuentaCliente(selectedCuentaDetail()!, 'efectivo')">
               💵 Cobrar Efectivo
             </button>
@@ -903,3 +906,43 @@
     </div>
   </div>
 }
+
+<!-- ================= POPUP MODAL: CAMBIAR TITULAR ================= -->
+@if (mostrandoCambiarTitular()) {
+  <div class="modal-overlay" style="z-index: 1300;" (click)="cerrarCambiarTitular()">
+    <div class="wizard-modal" (click)="$event.stopPropagation()" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3>Trasladar Cuenta a Otro Titular</h3>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="font-size: 0.9rem; color: #9ca3af; margin-bottom: 20px;">
+          Todos los pedidos de esta cuenta se asociarán al nuevo cliente.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #e5e7eb;">Seleccionar Cliente Registrado</label>
+          <select [ngModel]="titularSeleccionadoId()" (ngModelChange)="titularSeleccionadoId.set($event)" class="styled-select" style="width: 100%; padding: 12px; border-radius: 8px; background: #1f2937; border: 1px solid #374151; color: white;">
+            <option [ngValue]="null">--- Cliente Ocasional (No Registrado) ---</option>
+            @for (u of usuarios(); track u.id) {
+              <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }} ({{ u.email }})</option>
+            }
+          </select>
+        </div>
+
+        @if (!titularSeleccionadoId()) {
+          <div class="form-group">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #e5e7eb;">O Digita un Nombre (Ocasional)</label>
+            <input type="text" [ngModel]="titularOcasionalNombre()" (ngModelChange)="titularOcasionalNombre.set($event)" class="styled-input" placeholder="Ej: Juan Camilo" style="width: 100%; padding: 12px; border-radius: 8px; background: #1f2937; border: 1px solid #374151; color: white;">
+          </div>
+        }
+      </div>
+      <div class="modal-footer" style="padding: 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #374151;">
+        <button class="btn-cancelar" style="background: transparent; border: 1px solid #4b5563; padding: 10px 20px; border-radius: 8px; color: #e5e7eb; cursor: pointer;" (click)="cerrarCambiarTitular()">Cancelar</button>
+        <button class="btn-guardar-consumo" style="background: #8b5cf6; border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;" (click)="guardarCambiarTitular()">
+          💾 Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+}
+
