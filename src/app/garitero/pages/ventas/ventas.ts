@@ -796,14 +796,26 @@ export class Ventas implements OnInit, OnDestroy {
               this.entregarPedidoBarra(pedido.id, 'cuenta_mesa', pedido.total);
               this.mostrarToast(`💰 Deuda registrada para ${nombreDebtor}: $${new Intl.NumberFormat('es-CO').format(pedido.total)}`);
             },
-            error: () => this.mostrarToast('❌ Error al registrar la deuda en barra.')
+            error: (err) => {
+              console.error(err);
+              const msg = err.error?.message || err.message || 'Error al registrar la deuda en barra.';
+              this.mostrarToast(`❌ ${msg}`);
+            }
           });
         } else {
+          // Entregar directo si es efectivo o transferencia
           this.entregarPedidoBarra(pedido.id, this.metodoPagoBarra() as any, pedido.total);
-          this.mostrarToast('✅ Venta de barra cobrada con éxito.');
+          this.mostrarToast(`✅ Venta rápida registrada: $${new Intl.NumberFormat('es-CO').format(pedido.total)}`);
         }
+        this.carritoBarra.set([]);
+        this.barraUsuarioRegistradoId.set('');
+        this.barraNombreClienteOcasional.set('');
       },
-      error: () => this.mostrarToast('❌ Error al registrar la venta.')
+      error: (err) => {
+        console.error(err);
+        const msg = err.error?.message || err.message || 'Error al registrar la venta.';
+        this.mostrarToast(`❌ ${msg}`);
+      }
     });
   }
 
