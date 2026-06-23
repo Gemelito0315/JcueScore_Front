@@ -35,9 +35,6 @@
         <button class="btn-llamar-waiter" (click)="llamarAlGaritero()" [disabled]="llamadoPendiente()">
           🔔 Llamar Garitero
         </button>
-        <a routerLink="/usuario/productos" class="btn-ordenar-comida">
-          🍔 Pedir Menú
-        </a>
         <a routerLink="/usuario/mi-partida" class="btn-ver-mesa">
           📺 Ver Partida en Vivo
         </a>
@@ -46,8 +43,8 @@
   </div>
 }
 
-<!-- ================= CASE 2: PETICION DE MESA EN TIEMPO REAL EN ESPERA ================= -->
-@if (!partidaActiva() && solicitudPendiente()) {
+<!-- ================= CASE 2: PETICION DE MESA EN TIEMPO REAL EN ESPERA (OCULTO) ================= -->
+@if (false && !partidaActiva() && solicitudPendiente()) {
   <div class="pending-request-banner">
     <div class="pending-glow"></div>
     <div class="banner-content">
@@ -72,8 +69,8 @@
   </div>
 }
 
-<!-- ================= CASE 3: NO ACTIVE GAME & NO PENDING REQUEST (SO CAN REQUEST MESA) ================= -->
-@if (!partidaActiva() && !solicitudPendiente()) {
+<!-- ================= CASE 3: NO ACTIVE GAME & NO PENDING REQUEST (SO CAN REQUEST MESA) (OCULTO) ================= -->
+@if (false && !partidaActiva() && !solicitudPendiente()) {
   <div class="request-table-card" (click)="abrirPeticionMesa()">
     <div class="card-glow"></div>
     <div class="card-content">
@@ -95,6 +92,7 @@
     <h4>Nueva Reserva</h4>
     <p>Asegura tu mesa VIP</p>
   </a>
+  <!-- 
   <a routerLink="/usuario/disponibilidad" class="quick-card purple">
     <span>🕐</span>
     <h4>Disponibilidad</h4>
@@ -109,11 +107,12 @@
     <span>📦</span>
     <h4>Mis Pedidos</h4>
     <p>Estado de tus pedidos</p>
-  </a>
+  </a> 
+  -->
 </div>
 
-<!-- ================= MODAL: SOLICITAR MESA EN TIEMPO REAL ================= -->
-@if (mostrandoModalPeticion()) {
+<!-- ================= MODAL: SOLICITAR MESA EN TIEMPO REAL (OCULTO) ================= -->
+@if (false && mostrandoModalPeticion()) {
   <div class="modal-overlay" (click)="cerrarPeticionMesa()">
     <div class="modal-peticion-mesa" (click)="$event.stopPropagation()">
       <div class="modal-header">
