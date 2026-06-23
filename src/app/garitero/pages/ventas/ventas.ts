@@ -782,11 +782,10 @@ export class Ventas implements OnInit, OnDestroy {
     this.http.post<any>(`${API}/pedidos`, body).subscribe({
       next: (pedido) => {
         if (this.metodoPagoBarra() === 'deuda') {
-          // Si es deuda, crear primero la deuda
           const bodyDeuda = {
             userId: userDebtorId || null,
             nombreCliente: userDebtorId ? undefined : nombreDebtor,
-            monto: pedido.total,
+            monto: Number(pedido.total),
             descripcion: 'Consumo en barra',
             notas: 'Venta rápida asignada a cuenta'
           };
