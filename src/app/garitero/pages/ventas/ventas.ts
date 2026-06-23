@@ -225,8 +225,8 @@ export class Ventas implements OnInit, OnDestroy {
       });
 
       this.pedidosActivos().filter(p => p.estado === 'pendiente').forEach(p => {
-        const clienteName = p.usuario ? `${p.usuario.name} ${p.usuario.lastName}` : `Mesa ${p.recursoId}`;
-        const msg = `🍔 Nuevo Pedido Pendiente de ${clienteName} por $${new Intl.NumberFormat().format(p.total)}`;
+        const clienteName = p.metadata?.nombreCliente ? p.metadata.nombreCliente : (p.usuario ? `${p.usuario.name} ${p.usuario.lastName || ''}` : `Mesa ${p.recursoId}`);
+        const msg = `🔔 Nuevo Pedido Pendiente de ${clienteName} por $${new Intl.NumberFormat().format(p.total)}`;
         if (!this.notificaciones().includes(msg)) {
           nuevasAlertas.push(msg);
         }
@@ -339,7 +339,8 @@ export class Ventas implements OnInit, OnDestroy {
     pedidosPorUsuario.forEach((pedidos, uId) => {
       const primerPedido = pedidos[0];
       const user = primerPedido.usuario;
-      const nombre = user ? `${user.name} ${user.lastName || ''}`.trim() : `Cliente #${uId || primerPedido.id}`;
+      const metadataNombre = primerPedido.metadata?.nombreCliente;
+      const nombre = metadataNombre ? metadataNombre : (user ? `${user.name} ${user.lastName || ''}`.trim() : `Cliente #${uId || primerPedido.id}`);
       const totalConsumo = pedidos.reduce((acc, p) => acc + parseFloat(p.total), 0);
       const tienePedidoPendiente = pedidos.some(p => p.estado === 'pendiente');
 
@@ -772,7 +773,10 @@ export class Ventas implements OnInit, OnDestroy {
       usuarioId: userDebtorId,
       metodoPago: this.metodoPagoBarra() === 'deuda' ? 'cuenta_mesa' : this.metodoPagoBarra(),
       notas: 'Venta rápida en barra' + (this.metodoPagoBarra() === 'deuda' ? ' (Cuenta pendiente)' : ''),
-      metadata: { origen: 'barra' },
+      metadata: { 
+        origen: 'barra',
+        nombreCliente: userDebtorId ? undefined : nombreDebtor
+      },
       items: this.carritoBarra().map(i => ({
         productId: i.id,
         cantidad: i.cantidad
