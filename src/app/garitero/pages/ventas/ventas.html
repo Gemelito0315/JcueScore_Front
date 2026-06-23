@@ -229,7 +229,45 @@
         <div class="metodo-tabs">
           <button [class.active]="metodoPagoBarra() === 'efectivo'" (click)="metodoPagoBarra.set('efectivo')">💵 Efectivo</button>
           <button [class.active]="metodoPagoBarra() === 'transferencia'" (click)="metodoPagoBarra.set('transferencia')">📱 Transferencia</button>
+          <button [class.active]="metodoPagoBarra() === 'deuda'" (click)="metodoPagoBarra.set('deuda')">📝 Cuenta / Deuda</button>
         </div>
+
+        @if (metodoPagoBarra() === 'deuda') {
+          <div class="form-group-wizard" style="margin: 15px 0;">
+            <label style="font-size: 0.9rem; margin-bottom: 5px; display: block;">👤 ¿A quién se le asigna la cuenta?</label>
+            <div class="quien-paga-radio-grid" style="grid-template-columns: 1fr 1fr; margin-bottom: 10px;">
+              <button 
+                type="button" 
+                [class.active]="barraQuienPaga() === 'registrado'"
+                (click)="barraQuienPaga.set('registrado')"
+              >
+                👤 Registrado
+              </button>
+              <button 
+                type="button" 
+                [class.active]="barraQuienPaga() === 'cliente_nuevo'"
+                (click)="barraQuienPaga.set('cliente_nuevo')"
+              >
+                🆕 Ocasional
+              </button>
+            </div>
+
+            @if (barraQuienPaga() === 'registrado') {
+              <div class="sub-form-group animate-slide">
+                <select [ngModel]="barraUsuarioRegistradoId()" (ngModelChange)="barraUsuarioRegistradoId.set($event)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white;">
+                  <option [ngValue]="null">-- Buscar Cliente Registrado --</option>
+                  @for (u of usuarios(); track u.id) {
+                    <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }} ({{ u.email }})</option>
+                  }
+                </select>
+              </div>
+            } @else {
+              <div class="sub-form-group animate-slide">
+                <input type="text" [ngModel]="barraNombreClienteOcasional()" (ngModelChange)="barraNombreClienteOcasional.set($event)" placeholder="Ej. Cliente Mesa Exterior" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.2); color: white;" />
+              </div>
+            }
+          </div>
+        }
         <button class="btn-cobrar" (click)="cobrarBarra()" [disabled]="carritoBarra().length === 0">
           ✅ Registrar Venta Rápida
         </button>

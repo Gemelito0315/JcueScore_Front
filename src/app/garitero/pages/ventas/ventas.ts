@@ -55,7 +55,12 @@ export class Ventas implements OnInit, OnDestroy {
     return this.cuentasActivas().find(c => c.id === sel.id) || sel;
   });
   carritoBarra = signal<any[]>([]);
-  metodoPagoBarra = signal<'efectivo' | 'transferencia'>('efectivo');
+  metodoPagoBarra = signal<'efectivo' | 'transferencia' | 'deuda'>('efectivo');
+
+  // Para venta rápida en barra cuando el método es 'deuda'
+  barraQuienPaga = signal<'registrado' | 'cliente_nuevo'>('registrado');
+  barraUsuarioRegistradoId = signal<number | null>(null);
+  barraNombreClienteOcasional = signal<string>('');
 
   // Para agregar consumo a cuentas
   mostrandoAgregarProductos = signal(false);
@@ -739,10 +744,33 @@ export class Ventas implements OnInit, OnDestroy {
   cobrarBarra() {
     if (this.carritoBarra().length === 0) return;
     
+    // Si el método es deuda, validar campos
+    let nombreDebtor = '';
+    let userDebtorId: number | null = null;
+
+    if (this.metodoPagoBarra() === 'deuda') {
+      if (this.barraQuienPaga() === 'registrado') {
+        const u = this.usuarios().find(x => Number(x.id) === Number(this.barraUsuarioRegistradoId()));
+        if (!u) {
+          this.mostrarToast('⚠️ Selecciona un cliente registrado.');
+          return;
+        }
+        nombreDebtor = `${u.name} ${u.lastName || ''}`.trim();
+        userDebtorId = Number(this.barraUsuarioRegistradoId());
+      } else {
+        nombreDebtor = this.barraNombreClienteOcasional().trim();
+        if (!nombreDebtor) {
+          this.mostrarToast('⚠️ Ingresa el nombre del cliente ocasional.');
+          return;
+        }
+      }
+    }
+
     const body = {
       recursoId: null,
-      metodoPago: this.metodoPagoBarra(),
-      notas: 'Venta rápida en barra',
+      usuarioId: userDebtorId,
+      metodoPago: this.metodoPagoBarra() === 'deuda' ? 'deuda' : this.metodoPagoBarra(),
+      notas: 'Venta rápida en barra' + (this.metodoPagoBarra() === 'deuda' ? ' (Cuenta pendiente)' : ''),
       items: this.carritoBarra().map(i => ({
         productId: i.id,
         cantidad: i.cantidad
@@ -751,16 +779,40 @@ export class Ventas implements OnInit, OnDestroy {
 
     this.http.post<any>(`${API}/pedidos`, body).subscribe({
       next: (pedido) => {
-        this.http.put(`${API}/pedidos/${pedido.id}/entregar`, {
-          metodoPago: this.metodoPagoBarra(),
-          pagado: pedido.total
-        }).subscribe(() => {
-          this.cargarHistorialBarra();
-          this.carritoBarra.set([]);
+        if (this.metodoPagoBarra() === 'deuda') {
+          // Si es deuda, crear primero la deuda
+          const bodyDeuda = {
+            userId: userDebtorId || null,
+            nombreCliente: userDebtorId ? undefined : nombreDebtor,
+            monto: pedido.total,
+            descripcion: 'Consumo en barra',
+            notas: 'Venta rápida asignada a cuenta'
+          };
+          this.http.post(`${API}/deudas`, bodyDeuda).subscribe({
+            next: () => {
+              // Luego entregar el pedido
+              this.entregarPedidoBarra(pedido.id, 'deuda', pedido.total);
+              this.mostrarToast(`💰 Deuda registrada para ${nombreDebtor}: $${new Intl.NumberFormat('es-CO').format(pedido.total)}`);
+            },
+            error: () => this.mostrarToast('❌ Error al registrar la deuda en barra.')
+          });
+        } else {
+          this.entregarPedidoBarra(pedido.id, this.metodoPagoBarra() as any, pedido.total);
           this.mostrarToast('✅ Venta de barra cobrada con éxito.');
-        });
+        }
       },
       error: () => this.mostrarToast('❌ Error al registrar la venta.')
+    });
+  }
+
+  private entregarPedidoBarra(pedidoId: number, metodoPago: string, pagado: number) {
+    this.http.put(`${API}/pedidos/${pedidoId}/entregar`, {
+      metodoPago,
+      pagado
+    }).subscribe(() => {
+      this.cargarHistorialBarra();
+      this.cargarDatos(); // Para actualizar cuentas pendientes si aplica
+      this.carritoBarra.set([]);
     });
   }
 
