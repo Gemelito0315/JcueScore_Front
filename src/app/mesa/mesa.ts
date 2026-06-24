@@ -44,7 +44,13 @@ export class Mesa implements OnInit, OnDestroy {
   @ViewChild('videoEl') videoEl!: ElementRef<HTMLVideoElement>;
   @ViewChild('replayEl') replayEl!: ElementRef<HTMLVideoElement>;
 
-  // Config
+  // Config & Wizard
+  wizardStep = signal(1);
+  tipoJuego = signal<'facil' | 'avanzado' | 'pool'>('facil');
+  numJugadores = signal(2);
+  limiteEntradasConfig = signal(50);
+  metaCarambolasConfig = signal(50);
+
   mesaId = signal('Mesa 1');
   modalidad = signal('Tres Bandas');
   modalidades = ['Libre', 'Tres Bandas', 'Cinco Pines', 'Carambola', 'Pool 8', 'Pool 9'];
@@ -59,12 +65,60 @@ export class Mesa implements OnInit, OnDestroy {
     { nombre: 'Jugador 2', puntos: 0, meta: 50, historial: [], promedio: 0, rachaActual: 0, rachMax: 0, handicap: 15, jcueCoins: 200 },
   ]);
 
+  actualizarNumJugadores(num: number) {
+    this.numJugadores.set(num);
+    const current = this.jugadores();
+    const nuevos: Jugador[] = [];
+    for (let i = 0; i < num; i++) {
+      if (i < current.length) {
+        nuevos.push(current[i]);
+      } else {
+        nuevos.push({ nombre: `Jugador ${i + 1}`, puntos: 0, meta: this.metaCarambolasConfig(), historial: [], promedio: 0, rachaActual: 0, rachMax: 0, handicap: 0, jcueCoins: 0 });
+      }
+    }
+    this.jugadores.set(nuevos);
+  }
+
+  siguientePaso() {
+    const step = this.wizardStep();
+    if (step === 1) {
+      if (this.tipoJuego() === 'avanzado') this.wizardStep.set(2);
+      else this.wizardStep.set(3);
+    } else if (step === 2) {
+      this.wizardStep.set(3);
+    } else if (step === 3) {
+      this.wizardStep.set(4);
+    }
+  }
+
+  pasoAnterior() {
+    const step = this.wizardStep();
+    if (step === 4) this.wizardStep.set(3);
+    else if (step === 3) {
+      if (this.tipoJuego() === 'avanzado') this.wizardStep.set(2);
+      else this.wizardStep.set(1);
+    } else if (step === 2) {
+      this.wizardStep.set(1);
+    }
+  }
+
   // Timer
   tiempoSegundos = signal(0);
   timerActivo = signal(false);
   private timerInterval: any;
   private broadcastInterval: any;
   liveFrame = signal<string | null>(null);
+
+  // Configuración de tiro (modo avanzado)
+  tiempoEntrada = signal(40);        // duración configurable 30/40/50
+  entradaActual = signal(1);          // contador de entradas (innings)
+  tiempoTiro = signal(40);            // countdown del tiro actual
+  private tiroInterval: any;
+
+  // Cierre de cuenta
+  cuentaPendiente = signal(false);
+  mostrarConsumo = signal(false);
+  private cuentaSub: any;
 
   // Historial de jugadas
   jugadas = signal<Jugada[]>([]);
@@ -131,7 +185,14 @@ export class Mesa implements OnInit, OnDestroy {
 
     this.syncSub = this.ws.onMatchUpdate().subscribe((data) => {
       if (data.mesaId === this.mesaId()) {
-        this.syncState(data.state);
+        if (data.type === 'cerrar_cuenta') {
+          // Garitero liberó la mesa
+          this.cuentaPendiente.set(false);
+          this.mostrarConsumo.set(false);
+          this.resetPartida();
+        } else {
+          this.syncState(data.state);
+        }
       }
     });
   }
@@ -223,9 +284,11 @@ export class Mesa implements OnInit, OnDestroy {
   ngOnDestroy() {
     clearInterval(this.timerInterval);
     clearInterval(this.broadcastInterval);
+    clearInterval(this.tiroInterval);
     clearTimeout(this.jugadaTimeout);
     this.detenerCamara();
     if (this.syncSub) this.syncSub.unsubscribe();
+    if (this.cuentaSub) this.cuentaSub.unsubscribe();
   }
 
   // ── CÁMARA ──────────────────────────────────────────────────
@@ -377,15 +440,21 @@ export class Mesa implements OnInit, OnDestroy {
 
   // ── PARTIDA ──────────────────────────────────────────────────
   iniciarPartida() {
+    if (this.cuentaPendiente()) {
+      alert('Debe cerrar la cuenta pendiente antes de iniciar una nueva partida.');
+      return;
+    }
     this.jugadores.update(js => {
       const updated = [...js];
-      updated[0].puntos = updated[0].handicap;
-      updated[1].puntos = updated[1].handicap;
+      updated.forEach(j => j.puntos = j.handicap || 0);
       return updated;
     });
     this.partidaIniciada.set(true);
     this.showConfig.set(false);
+    this.entradaActual.set(1);
+    this.tiempoTiro.set(this.tiempoEntrada());
     this.iniciarTimer();
+    this.iniciarTiroTimer();
     this.iniciarCamara();
     this.broadcastState();
 
@@ -399,6 +468,34 @@ export class Mesa implements OnInit, OnDestroy {
       next: () => console.log('[Push] Notificación de partida en vivo enviada.'),
       error: err => console.warn('[Push] No se pudo enviar notificación de partida en vivo:', err),
     });
+  }
+
+  // ── TIRO TIMER (countdown por entrada) ─────────────────────
+  iniciarTiroTimer() {
+    clearInterval(this.tiroInterval);
+    this.tiempoTiro.set(this.tiempoEntrada());
+    this.tiroInterval = setInterval(() => {
+      this.tiempoTiro.update(t => {
+        if (t <= 1) {
+          // Se acabó el tiempo del tiro → resetear y avanzar turno
+          this.resetTiroTimer();
+          return this.tiempoEntrada();
+        }
+        return t - 1;
+      });
+    }, 1000);
+  }
+
+  resetTiroTimer() {
+    this.tiempoTiro.set(this.tiempoEntrada());
+  }
+
+  pausarTiroTimer() {
+    clearInterval(this.tiroInterval);
+  }
+
+  reanudarTiroTimer() {
+    this.iniciarTiroTimer();
   }
 
   iniciarTimer() {
@@ -421,6 +518,11 @@ export class Mesa implements OnInit, OnDestroy {
   }
 
   sumarPuntos(jugadorIdx: number, puntos: number) {
+    this.sumarPuntosConValor(jugadorIdx, puntos);
+  }
+
+  // Método principal para sumar puntos (usado por botones +2, +3, +5 y click en score +1)
+  sumarPuntosConValor(jugadorIdx: number, puntos: number) {
     // Iniciar grabación del clip
     this.iniciarGrabacion();
 
@@ -453,11 +555,15 @@ export class Mesa implements OnInit, OnDestroy {
     // Detener grabación después de 5 segundos
     setTimeout(() => this.detenerGrabacion(jugada), 5000);
 
-    this.turnoActual.set(jugadorIdx === 0 ? 1 : 0);
+    // Cambiar turno y resetear timer de tiro
+    this.turnoActual.set((jugadorIdx + 1) % this.numJugadores());
+    this.entradaActual.update(e => e + 1);
+    this.resetTiroTimer();
     this.broadcastState();
   }
 
-  restarPuntos(jugadorIdx: number) {
+  // Restar exactamente 1 punto
+  restarPunto(jugadorIdx: number) {
     this.jugadores.update(js => {
       const updated = [...js];
       const j = { ...updated[jugadorIdx] };
@@ -468,16 +574,54 @@ export class Mesa implements OnInit, OnDestroy {
     this.broadcastState();
   }
 
+  restarPuntos(jugadorIdx: number) {
+    this.restarPunto(jugadorIdx);
+  }
+
+  // ── CIERRE DE CUENTA ──────────────────────────────────────────
+  cerrarTiempoYPedirCuenta() {
+    // Pausar todo
+    this.timerActivo.set(false);
+    clearInterval(this.timerInterval);
+    this.pausarTiroTimer();
+
+    // Marcar como cuenta pendiente
+    this.cuentaPendiente.set(true);
+    this.mostrarConsumo.set(true);
+
+    // Notificar al garitero vía WebSocket
+    this.ws.send({
+      type: 'solicitar_cuenta',
+      mesaId: this.mesaId(),
+      datos: {
+        jugadores: this.jugadores(),
+        tiempoTotal: this.tiempoSegundos(),
+        entradas: this.entradaActual(),
+        jugadas: this.jugadas()
+      }
+    });
+  }
+
+  cerrarModalConsumo() {
+    // Solo ocultar modal, pero la mesa sigue bloqueada hasta que el garitero libere
+    this.mostrarConsumo.set(false);
+  }
+
   resetPartida() {
-    if (!confirm('¿Reiniciar la partida?')) return;
+    if (!this.cuentaPendiente() && !confirm('¿Reiniciar la partida?')) return;
     clearInterval(this.timerInterval);
     clearInterval(this.broadcastInterval);
+    clearInterval(this.tiroInterval);
     this.tiempoSegundos.set(0);
     this.timerActivo.set(false);
     this.partidaIniciada.set(false);
     this.turnoActual.set(0);
+    this.entradaActual.set(1);
+    this.tiempoTiro.set(this.tiempoEntrada());
     this.jugadas.set([]);
     this.grabaciones.set([]);
+    this.cuentaPendiente.set(false);
+    this.mostrarConsumo.set(false);
     this.jugadores.update(js => js.map(j => ({
       ...j, puntos: j.handicap, historial: [], promedio: 0, rachaActual: 0, rachMax: 0
     })));

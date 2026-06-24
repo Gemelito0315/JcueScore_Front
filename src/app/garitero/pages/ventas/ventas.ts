@@ -2,6 +2,7 @@ import { Component, inject, signal, OnInit, OnDestroy, computed } from '@angular
 import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
+import { WebsocketsService } from '../../../core/services/websockets.service';
 
 const API = 'http://localhost:3000';
 
@@ -35,6 +36,7 @@ export interface CuentaActiva {
 })
 export class Ventas implements OnInit, OnDestroy {
   private http = inject(HttpClient);
+  private ws = inject(WebsocketsService);
 
   // Datos base de la API
   productos = signal<any[]>([]);
@@ -108,6 +110,10 @@ export class Ventas implements OnInit, OnDestroy {
   // Notificaciones emergentes
   notificaciones = signal<string[]>([]);
 
+  // Alertas de solicitud de cuenta desde las tablets
+  alertasMesaCuenta = signal<{mesaId: string; datos: any; timestamp: Date}[]>([]);
+  private solicitudCuentaSub: any;
+
   // Hilos/Temporizadores
   private updateInterval: any;
   private timeTickInterval: any;
@@ -147,11 +153,25 @@ export class Ventas implements OnInit, OnDestroy {
 
     // Reloj secundario para actualizar los cronómetros cada segundo
     this.timeTickInterval = setInterval(() => this.tickTiempos(), 1000);
+
+    // Escuchar solicitudes de cuenta desde las tablets
+    this.solicitudCuentaSub = this.ws.onSolicitarCuenta().subscribe((data) => {
+      const mesaId = data?.mesaId || '?';
+      // Agregar a alertas activas
+      this.alertasMesaCuenta.update(a => [
+        ...a.filter(x => x.mesaId !== mesaId),
+        { mesaId, datos: data?.datos || {}, timestamp: new Date() }
+      ]);
+      // Notificación visual y sonido
+      this.audioAlert.play().catch(() => {});
+      this.mostrarToast(`🧾 ¡Mesa ${mesaId} solicita cerrar la cuenta!`);
+    });
   }
 
   ngOnDestroy() {
     if (this.updateInterval) clearInterval(this.updateInterval);
     if (this.timeTickInterval) clearInterval(this.timeTickInterval);
+    if (this.solicitudCuentaSub) this.solicitudCuentaSub.unsubscribe();
   }
 
   cargarProductos() {
@@ -1098,5 +1118,20 @@ export class Ventas implements OnInit, OnDestroy {
     return new Intl.NumberFormat('es-CO', {
       style: 'currency', currency: 'COP', minimumFractionDigits: 0
     }).format(value || 0);
+  }
+
+  // ================= LIBERAR MESA (CERRAR CUENTA DESDE GARITERO) =================
+  liberarMesaDesdeGaritero(mesaId: string) {
+    // Enviar evento WebSocket para liberar la tablet
+    this.ws.send({ type: 'cerrar_cuenta', mesaId: mesaId });
+    // Quitar la alerta de la lista
+    this.alertasMesaCuenta.update(a => a.filter(x => x.mesaId !== mesaId));
+    this.mostrarToast(`✅ Mesa ${mesaId} liberada. La tablet volverá al menú principal.`);
+    // Recargar datos
+    this.cargarDatos();
+  }
+
+  quitarAlertaMesa(mesaId: string) {
+    this.alertasMesaCuenta.update(a => a.filter(x => x.mesaId !== mesaId));
   }
 }

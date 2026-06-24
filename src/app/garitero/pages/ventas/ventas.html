@@ -13,6 +13,31 @@
   </div>
 }
 
+<!-- ALERTAS DE CUENTA DESDE LAS TABLETS -->
+@if (alertasMesaCuenta().length > 0) {
+  <div class="alertas-mesa-cuenta">
+    @for (alerta of alertasMesaCuenta(); track alerta.mesaId) {
+      <div class="alerta-mesa-card">
+        <div class="alerta-mesa-info">
+          <span class="alerta-mesa-icon">🧾</span>
+          <div>
+            <h4>Mesa {{ alerta.mesaId }} solicita la cuenta</h4>
+            <p>Tiempo: {{ alerta.datos?.tiempoTotal ? (alerta.datos.tiempoTotal | number:'1.0-0') + 's' : '—' }} · Entradas: {{ alerta.datos?.entradas || '—' }}</p>
+          </div>
+        </div>
+        <div class="alerta-mesa-actions">
+          <button class="btn-liberar-mesa" (click)="liberarMesaDesdeGaritero(alerta.mesaId)">
+            ✅ Cerrar Cuenta y Liberar Mesa
+          </button>
+          <button class="btn-ignorar-alerta" (click)="quitarAlertaMesa(alerta.mesaId)">
+            Ignorar
+          </button>
+        </div>
+      </div>
+    }
+  </div>
+}
+
 <!-- SELECCIÓN DE PANELES (TABS) -->
 <div class="tab-selector">
   <button [class.active]="activeTab() === 'cuentas'" (click)="activeTab.set('cuentas')">

@@ -3,7 +3,7 @@ import { Subject } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 export interface WebSocketMessage {
-  type: 'partida_actualizada' | 'nueva_reserva' | 'torneo_actualizado' | 'mining_actualizado' | 'sistema_mantenimiento' | 'match_update' | 'active_matches';
+  type: 'partida_actualizada' | 'nueva_reserva' | 'torneo_actualizado' | 'mining_actualizado' | 'sistema_mantenimiento' | 'match_update' | 'active_matches' | 'solicitar_cuenta' | 'cerrar_cuenta';
   data: any;
   timestamp: Date;
 }
@@ -63,6 +63,8 @@ export class WebsocketsService {
   private miningSubject = new Subject<MiningActualizado>();
   private matchUpdateSubject = new Subject<any>();
   private activeMatchesSubject = new Subject<any[]>();
+  private solicitarCuentaSubject = new Subject<any>();
+  private cerrarCuentaSubject = new Subject<any>();
 
   constructor() {
     this.connect();
@@ -143,6 +145,13 @@ export class WebsocketsService {
         break;
       case 'active_matches':
         this.activeMatchesSubject.next(message.data);
+        break;
+      case 'solicitar_cuenta':
+        this.solicitarCuentaSubject.next(message.data);
+        this.addNotificación(`🧾 Mesa ${message.data?.mesaId || '?'} solicita la cuenta`);
+        break;
+      case 'cerrar_cuenta':
+        this.cerrarCuentaSubject.next(message.data);
         break;
     }
   }
@@ -268,6 +277,14 @@ export class WebsocketsService {
 
   onActiveMatches() {
     return this.activeMatchesSubject.asObservable();
+  }
+
+  onSolicitarCuenta() {
+    return this.solicitarCuentaSubject.asObservable();
+  }
+
+  onCerrarCuenta() {
+    return this.cerrarCuentaSubject.asObservable();
   }
 
   // Método para desconectar manualmente

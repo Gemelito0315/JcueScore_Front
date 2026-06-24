@@ -71,6 +71,132 @@ body {
     }
   }
 
+  // Wizard Styles
+  .wizard-card {
+    gap: 20px !important;
+    max-width: 700px !important;
+
+    .wizard-header {
+      text-align: center;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding-bottom: 20px;
+      margin-bottom: 10px;
+
+      .wizard-steps-indicator {
+        display: flex;
+        justify-content: center;
+        gap: 15px;
+        margin-top: 15px;
+
+        span {
+          font-size: 0.8rem;
+          color: rgba(255,255,255,0.3);
+          font-weight: 700;
+          text-transform: uppercase;
+          padding: 5px 10px;
+          border-radius: 20px;
+          background: rgba(0,0,0,0.5);
+
+          &.active {
+            color: $neon-blue;
+            background: rgba($neon-blue, 0.1);
+            box-shadow: 0 0 10px rgba($neon-blue, 0.3);
+          }
+          &.disabled {
+            opacity: 0.3;
+            text-decoration: line-through;
+          }
+        }
+      }
+    }
+
+    .wizard-body {
+      min-height: 250px;
+    }
+
+    .wizard-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      padding-top: 20px;
+
+      button {
+        padding: 12px 24px;
+        border-radius: 12px;
+        font-weight: 700;
+        font-family: 'Orbitron', sans-serif;
+        text-transform: uppercase;
+        cursor: pointer;
+        transition: all 0.3s;
+        
+        &.btn-prev {
+          background: rgba(255,255,255,0.05);
+          color: white;
+          border: 1px solid rgba(255,255,255,0.1);
+          
+          &:hover { background: rgba(255,255,255,0.1); }
+          &[disabled] { opacity: 0.5; cursor: not-allowed; }
+        }
+
+        &.btn-next, &.btn-start {
+          background: $neon-blue;
+          color: black;
+          border: none;
+          box-shadow: 0 0 15px rgba($neon-blue, 0.4);
+
+          &:hover {
+            background: white;
+            box-shadow: 0 0 25px rgba(255,255,255,0.6);
+          }
+        }
+      }
+    }
+
+    .fade-in {
+      animation: fadeIn 0.3s ease-in-out;
+    }
+
+    .btn-grid.compact {
+      grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+    }
+
+    .players-names-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 15px;
+
+      @media (max-width: 576px) {
+        grid-template-columns: 1fr;
+      }
+
+      .name-input-group {
+        display: flex;
+        align-items: center;
+        background: rgba(0,0,0,0.5);
+        border-radius: 8px;
+        padding: 5px 15px;
+        border: 1px solid rgba(255,255,255,0.1);
+
+        .player-num {
+          color: $neon-blue;
+          font-weight: 900;
+          margin-right: 10px;
+          font-size: 0.9rem;
+        }
+        input {
+          background: transparent;
+          border: none;
+          color: white;
+          font-size: 1rem;
+          outline: none;
+          width: 100%;
+          padding: 8px 0;
+        }
+      }
+    }
+  }
+
   h1 {
     font-family: 'Orbitron', sans-serif;
     font-size: 3.5rem;
@@ -251,6 +377,11 @@ body {
   100% { transform: rotate(360deg); }
 }
 
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 @keyframes pulseVs {
   0% { transform: scale(1); opacity: 0.8; }
   50% { transform: scale(1.1); opacity: 1; text-shadow: 0 0 25px rgba($neon-red, 0.8); }
@@ -410,6 +541,14 @@ body {
     gap: 6px;
     padding: 6px;
   }
+
+  .players-group {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    height: 100%;
+    justify-content: center;
+  }
 }
 
 .player-panel {
@@ -435,6 +574,22 @@ body {
       box-shadow: 0 0 40px rgba(#ffd700, 0.25);
       border-color: rgba(#ffd700, 0.5);
     }
+  }
+
+  &.compact {
+    .panel-header { padding: 10px; }
+    .score-display {
+      margin: 10px;
+      .score { 
+        font-size: 5rem; 
+        @media (max-width: 1200px) { font-size: 4rem; }
+      }
+    }
+    .stats-footer { display: none; }
+    .avg-hr-row { font-size: 0.75rem; padding: 0 10px; }
+    .controls { padding: 10px; }
+    .add-buttons button { padding: 8px; font-size: 0.9rem; }
+    .progress-tracker { padding: 0 10px 10px; }
   }
 
   .colored-bar {
@@ -1261,5 +1416,327 @@ body {
     letter-spacing: 3px;
     text-transform: uppercase;
     pointer-events: none;
+  }
+}
+
+// ── AVG / HR Row ──────────────────────────────────────────────
+.avg-hr-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 24px 0;
+  font-family: 'Orbitron', sans-serif;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+
+  @media (max-width: 768px) {
+    padding: 4px 12px 0;
+    font-size: 0.7rem;
+  }
+}
+
+// ── Clickable Score (+1 on tap) ─────────────────────────────
+.clickable-score {
+  cursor: pointer;
+  transition: transform 0.15s, text-shadow 0.15s;
+  user-select: none;
+
+  &:hover {
+    transform: scale(1.05);
+  }
+  &:active {
+    transform: scale(0.95);
+    text-shadow: 0 0 60px rgba(255,255,255,0.8) !important;
+  }
+}
+
+// ── Entrada + Tiro Timer Bar ────────────────────────────────
+.entrada-tiro-bar {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 0;
+  border-radius: 0 0 12px 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0,0,0,0.6);
+
+  .entrada-box {
+    background: #1e293b;
+    padding: 8px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+
+    .entrada-label {
+      font-size: 0.6rem;
+      color: #94a3b8;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .entrada-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.6rem;
+      font-weight: 900;
+      color: white;
+    }
+  }
+
+  .tiro-countdown {
+    background: #dc2626;
+    padding: 8px 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 80px;
+    transition: background 0.3s;
+
+    &.tiro-warning {
+      background: #b91c1c;
+      animation: tiroPulse 0.5s infinite alternate;
+    }
+
+    .tiro-num {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 900;
+      color: white;
+    }
+    .tiro-label {
+      font-size: 0.5rem;
+      color: rgba(255,255,255,0.8);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+  }
+}
+
+@keyframes tiroPulse {
+  0% { opacity: 1; }
+  100% { opacity: 0.6; }
+}
+
+// ── Consumo Bar (bottom) ────────────────────────────────────
+.consumo-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 80, 0, 0.3);
+  border: 1px solid rgba(0, 180, 0, 0.2);
+  border-radius: 10px;
+  padding: 10px 20px;
+  margin-top: 8px;
+
+  .consumo-info {
+    font-family: 'Orbitron', sans-serif;
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #22c55e;
+
+    span {
+      margin-right: 24px;
+    }
+  }
+
+  .btn-cerrar-tiempo {
+    background: linear-gradient(135deg, #6b7280, #4b5563);
+    border: none;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-family: 'Outfit', sans-serif;
+    font-size: 0.9rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    cursor: pointer;
+    transition: all 0.2s;
+
+    &:hover:not(:disabled) {
+      background: linear-gradient(135deg, #ef4444, #dc2626);
+      box-shadow: 0 0 20px rgba(239, 68, 68, 0.4);
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      background: #374151;
+    }
+  }
+}
+
+// ── Modal Detalle Consumo ───────────────────────────────────
+.consumo-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+
+  .consumo-modal {
+    background: #fafafa;
+    color: #1a1a1a;
+    border-radius: 16px;
+    padding: 40px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 80vh;
+    overflow-y: auto;
+    box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+
+    .consumo-title {
+      font-family: 'Orbitron', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 900;
+      text-align: center;
+      color: #0f172a;
+      margin: 0 0 24px;
+      padding-bottom: 16px;
+      border-bottom: 2px solid #e2e8f0;
+    }
+
+    .consumo-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+
+      th {
+        background: #0f172a;
+        color: white;
+        padding: 10px 12px;
+        text-align: left;
+        font-size: 0.8rem;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+      }
+
+      td {
+        padding: 10px 12px;
+        border-bottom: 1px solid #e2e8f0;
+        font-size: 0.9rem;
+      }
+
+      .consumo-row-tiempo {
+        td {
+          background: #f1f5f9;
+          font-weight: 700;
+        }
+      }
+    }
+
+    .consumo-totals {
+      background: #f1f5f9;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 20px;
+
+      .consumo-total-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px 0;
+        font-weight: 700;
+        font-size: 1rem;
+
+        &:last-child {
+          border-top: 2px solid #0f172a;
+          padding-top: 12px;
+          margin-top: 8px;
+          font-size: 1.2rem;
+        }
+      }
+    }
+
+    .consumo-waiting {
+      text-align: center;
+      color: #64748b;
+      font-size: 1rem;
+      font-weight: 600;
+      padding: 16px 0;
+      animation: waitingPulse 2s infinite;
+    }
+
+    .consumo-close-btn {
+      display: block;
+      margin: 0 auto;
+      background: #22c55e;
+      border: none;
+      color: white;
+      padding: 14px 40px;
+      border-radius: 8px;
+      font-family: 'Outfit', sans-serif;
+      font-size: 1rem;
+      font-weight: 800;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: all 0.2s;
+
+      &:hover {
+        background: #16a34a;
+        transform: translateY(-2px);
+        box-shadow: 0 6px 20px rgba(34,197,94,0.4);
+      }
+    }
+  }
+}
+
+@keyframes waitingPulse {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 1; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+// ── Cuenta Pendiente Banner ─────────────────────────────────
+.cuenta-pendiente-banner {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9000;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #1a1a1a;
+  text-align: center;
+  padding: 16px;
+  font-weight: 800;
+  font-size: 1rem;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  animation: bannerPulse 2s infinite;
+  box-shadow: 0 -4px 20px rgba(245, 158, 11, 0.4);
+
+  &:hover {
+    background: linear-gradient(135deg, #d97706, #b45309);
+  }
+}
+
+@keyframes bannerPulse {
+  0%, 100% { opacity: 0.9; }
+  50% { opacity: 1; box-shadow: 0 -4px 30px rgba(245, 158, 11, 0.6); }
+}
+
+// ── Add buttons grid fix for 4 columns ──────────────────────
+.controls .add-buttons {
+  grid-template-columns: repeat(4, 1fr) !important;
+
+  @media (max-width: 768px) {
+    grid-template-columns: repeat(4, 1fr) !important;
+  }
+  @media (max-width: 480px) {
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }

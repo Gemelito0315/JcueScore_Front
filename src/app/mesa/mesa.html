@@ -1,40 +1,105 @@
 <!-- CONFIG SCREEN -->
 @if (!partidaIniciada()) {
   <div class="config-screen">
-    <div class="glass-card">
-      <div>
+    <div class="glass-card wizard-card">
+      <div class="wizard-header">
         <h1>JCUESCORE</h1>
         <div class="subtitle">E-Sports Match Setup</div>
-      </div>
-
-      <div class="config-section">
-        <label>Modalidad de Juego</label>
-        <div class="btn-grid">
-          @for (m of modalidades; track m) {
-            <button class="cfg-btn" [class.active]="modalidad()===m" (click)="modalidad.set(m)">{{ m }}</button>
-          }
+        <div class="wizard-steps-indicator">
+          <span [class.active]="wizardStep() >= 1">1. Modo</span>
+          <span [class.active]="wizardStep() >= 2" [class.disabled]="tipoJuego() !== 'avanzado'">2. Reglas</span>
+          <span [class.active]="wizardStep() >= 3">3. Jugadores</span>
+          <span [class.active]="wizardStep() >= 4">4. Nombres</span>
         </div>
       </div>
 
-      <div class="config-section">
-        <label>Meta de Puntos (Target)</label>
-        <div class="btn-grid">
-          @for (meta of [50,100,150,200,300]; track meta) {
-            <button class="cfg-btn" [class.active]="jugadores()[0].meta === meta" (click)="setMeta(meta)">{{ meta }} PTS</button>
-          }
-        </div>
+      <div class="wizard-body">
+        <!-- PASO 1: MODALIDAD -->
+        @if (wizardStep() === 1) {
+          <div class="config-section fade-in">
+            <label>Modalidad de Juego</label>
+            <p class="section-desc">Selecciona el tipo de partida. 'Fácil' y 'Pool' no tienen límite de entradas ni tiempo por tiro.</p>
+            <div class="btn-grid mode-grid">
+              <button class="cfg-btn" [class.active]="tipoJuego() === 'facil'" (click)="tipoJuego.set('facil')">
+                <span class="icon">🎱</span> Fácil / Libre
+              </button>
+              <button class="cfg-btn" [class.active]="tipoJuego() === 'avanzado'" (click)="tipoJuego.set('avanzado')">
+                <span class="icon">🏆</span> Avanzado (Torneo)
+              </button>
+              <button class="cfg-btn" [class.active]="tipoJuego() === 'pool'" (click)="tipoJuego.set('pool')">
+                <span class="icon">🎱</span> Pool (8 / 9)
+              </button>
+            </div>
+          </div>
+        }
+
+        <!-- PASO 2: REGLAS AVANZADAS -->
+        @if (wizardStep() === 2) {
+          <div class="config-section fade-in">
+            <label>Meta de Puntos (Target)</label>
+            <div class="btn-grid compact">
+              @for (meta of [20,30,40,50,60,100]; track meta) {
+                <button class="cfg-btn" [class.active]="metaCarambolasConfig() === meta" (click)="metaCarambolasConfig.set(meta)">{{ meta }} PTS</button>
+              }
+            </div>
+          </div>
+          <div class="config-section fade-in">
+            <label>Límite de Entradas</label>
+            <div class="btn-grid compact">
+              @for (ent of [30,40,50,60,80]; track ent) {
+                <button class="cfg-btn" [class.active]="limiteEntradasConfig() === ent" (click)="limiteEntradasConfig.set(ent)">{{ ent }}</button>
+              }
+            </div>
+          </div>
+          <div class="config-section fade-in">
+            <label>Tiempo por Tiro (Shot Clock)</label>
+            <div class="btn-grid compact">
+              <button class="cfg-btn" [class.active]="tiempoEntrada()===30" (click)="tiempoEntrada.set(30)">30s</button>
+              <button class="cfg-btn" [class.active]="tiempoEntrada()===40" (click)="tiempoEntrada.set(40)">40s</button>
+              <button class="cfg-btn" [class.active]="tiempoEntrada()===50" (click)="tiempoEntrada.set(50)">50s</button>
+            </div>
+          </div>
+        }
+
+        <!-- PASO 3: CANTIDAD DE JUGADORES -->
+        @if (wizardStep() === 3) {
+          <div class="config-section fade-in">
+            <label>Número de Participantes</label>
+            <p class="section-desc">¿Cuántas personas van a jugar en la misma mesa?</p>
+            <div class="btn-grid players-grid">
+              @for (num of [2,3,4,5,6]; track num) {
+                <button class="cfg-btn" [class.active]="numJugadores() === num" (click)="actualizarNumJugadores(num)">
+                  <span class="icon">👥</span> {{ num }}
+                </button>
+              }
+            </div>
+          </div>
+        }
+
+        <!-- PASO 4: NOMBRES -->
+        @if (wizardStep() === 4) {
+          <div class="config-section fade-in">
+            <label>Nombres de Jugadores</label>
+            <div class="players-names-grid">
+              @for (j of jugadores(); track $index) {
+                <div class="name-input-group">
+                  <span class="player-num">J{{ $index + 1 }}</span>
+                  <input [value]="j.nombre" (input)="j.nombre = $any($event.target).value" placeholder="Nombre Jugador {{ $index + 1 }}" />
+                </div>
+              }
+            </div>
+          </div>
+        }
       </div>
 
-      <div class="config-section">
-        <label>Jugadores</label>
-        <div class="vs-container">
-          <input [value]="jugadores()[0].nombre" (input)="setNombre(0,$any($event.target).value)" placeholder="Jugador 1" />
-          <span class="vs">VS</span>
-          <input [value]="jugadores()[1].nombre" (input)="setNombre(1,$any($event.target).value)" placeholder="Jugador 2" />
-        </div>
+      <div class="wizard-footer">
+        <button class="btn-prev" (click)="pasoAnterior()" [disabled]="wizardStep() === 1">⬅ Volver</button>
+        @if (wizardStep() < 4) {
+          <button class="btn-next" (click)="siguientePaso()">Siguiente ➡</button>
+        } @else {
+          <button class="btn-start" (click)="iniciarPartida()">▶ Iniciar Transmisión</button>
+        }
       </div>
-
-      <button class="btn-start" (click)="iniciarPartida()">▶ Iniciar Partida Oficial</button>
     </div>
   </div>
 }
@@ -64,67 +129,101 @@
     </header>
 
     <!-- MAIN BOARD -->
-    <main class="main-board">
-      
-      <!-- PLAYER 1 (LEFT) -->
-      <div class="player-panel p1" [class.active-turn]="turnoActual()===0">
-        @if (turnoActual()===0) { <div class="colored-bar p1"></div> }
-        
-        <div class="panel-header">
-          <div class="name-block">
-            <div class="name">
-              {{ jugadores()[0].nombre }} 
-            </div>
-            @if (jugadores()[0].handicap > 0) { 
-              <div class="handicap">+{{jugadores()[0].handicap}} PTS de Ventaja</div> 
-            }
-          </div>
-          <div class="turn-indicator" [class.active]="turnoActual()===0"></div>
-        </div>
+    <main class="main-board" [class]="'layout-' + numJugadores()">
 
-        <div class="score-display">
-          <span class="score p1">{{ jugadores()[0].puntos }}</span>
-        </div>
-
-        <div class="progress-tracker">
-          <div class="tracker-labels">
-            <span>Racha Real: {{jugadores()[0].rachaActual}}</span>
-            <span>Meta: {{jugadores()[0].meta}}</span>
-          </div>
-          <div class="track-bg">
-            <div class="track-fill p1" [style.width]="(jugadores()[0].puntos/jugadores()[0].meta)*100 + '%'"></div>
-          </div>
-        </div>
-
-        @if (!isViewer()) {
-          <div class="controls">
-            <div class="add-buttons">
-              @for (n of [1, 2, 3, 4, 5]; track n) {
-                <button class="p1" (click)="sumarPuntos(0,n)">+{{ n }}</button>
+      <ng-template #playerCard let-j="jugador" let-i="index">
+        <div class="player-panel" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" [class.active-turn]="turnoActual() === i" [class.compact]="numJugadores() > 2">
+          @if (turnoActual() === i) { <div class="colored-bar" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0"></div> }
+          
+          <div class="panel-header">
+            <div class="name-block">
+              <div class="name">
+                {{ j.nombre }} 
+              </div>
+              @if (j.handicap > 0) { 
+                <div class="handicap">+{{j.handicap}} PTS de Ventaja</div> 
               }
             </div>
-            <button class="btn-minus" (click)="restarPuntos(0)">− Restar Punto</button>
+            <div class="turn-indicator" [class.active]="turnoActual() === i"></div>
           </div>
-        }
 
-        <div class="stats-footer">
-          <div class="stat-box">
-            <span class="val">{{ jugadores()[0].promedio || 0 }}</span>
-            <span class="lbl">Promedio</span>
+          <div class="avg-hr-row">
+            <span>AVG: {{ j.promedio || 0 }}</span>
+            <span>HR: {{ j.rachMax || 0 }}</span>
           </div>
-          <div class="stat-box">
-            <span class="val">{{ jugadores()[0].rachMax || 0 }}</span>
-            <span class="lbl">Racha Máx</span>
+
+          <div class="score-display">
+            <span class="score clickable-score" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,1)">{{ j.puntos }}</span>
           </div>
-          <div class="stat-box">
-            <span class="val">{{ jugadores()[0].historial.length || 0 }}</span>
-            <span class="lbl">Turnos</span>
+
+          @if (tipoJuego() === 'avanzado') {
+            <div class="progress-tracker">
+              <div class="tracker-labels">
+                <span>Racha Real: {{j.rachaActual}}</span>
+                <span>Meta: {{j.meta}}</span>
+              </div>
+              <div class="track-bg">
+                <div class="track-fill" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" [style.width]="(j.puntos/j.meta)*100 + '%'"></div>
+              </div>
+            </div>
+          }
+
+          @if (!isViewer()) {
+            <div class="controls">
+              <div class="add-buttons">
+                <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,2)">+2</button>
+                <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,3)">+3</button>
+                <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,5)">+5</button>
+                <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="restarPunto(i)">‑1</button>
+              </div>
+              <button class="btn-minus" (click)="restarPunto(i)">− Restar Punto</button>
+            </div>
+          }
+
+          <div class="stats-footer">
+            <div class="stat-box">
+              <span class="val">{{ j.promedio || 0 }}</span>
+              <span class="lbl">Promedio</span>
+            </div>
+            <div class="stat-box">
+              <span class="val">{{ j.rachMax || 0 }}</span>
+              <span class="lbl">Racha Máx</span>
+            </div>
+            <div class="stat-box">
+              <span class="val">{{ j.historial.length || 0 }}</span>
+              <span class="lbl">Turnos</span>
+            </div>
           </div>
         </div>
+      </ng-template>
+
+      <!-- PLAYERS LEFT -->
+      <div class="players-group left-group">
+        @for (j of jugadores(); track $index) {
+          @if ($index < numJugadores() / 2) {
+            <ng-container *ngTemplateOutlet="playerCard; context: { jugador: j, index: $index }"></ng-container>
+          }
+        }
       </div>
+      
+
 
       <!-- CAMERA FEED (CENTER) -->
       <div class="camera-feed" [class.fullscreen-mode]="isFullscreen()">
+        <!-- ENTRADA + TIRO TIMER (BiirtualScore style) -->
+        @if (tipoJuego() === 'avanzado') {
+          <div class="entrada-tiro-bar">
+            <div class="entrada-box">
+              <span class="entrada-label">entrada</span>
+              <span class="entrada-num">{{ entradaActual() }}</span>
+            </div>
+            <div class="tiro-countdown" [class.tiro-warning]="tiempoTiro() <= 10">
+              <span class="tiro-num">{{ tiempoTiro() }}</span>
+              <span class="tiro-label">SEGUNDOS</span>
+            </div>
+          </div>
+        }
+
         <div class="live-badge">
           <div class="en-vivo-tag"><div class="pulse"></div> EN VIVO</div>
           @if (!isViewer()) {
@@ -172,61 +271,13 @@
         }
       </div>
 
-      <!-- PLAYER 2 (RIGHT) -->
-      <div class="player-panel p2" [class.active-turn]="turnoActual()===1">
-        @if (turnoActual()===1) { <div class="colored-bar p2"></div> }
-        
-        <div class="panel-header">
-          <div class="name-block">
-            <div class="name">
-              {{ jugadores()[1].nombre }} 
-            </div>
-            @if (jugadores()[1].handicap > 0) { 
-              <div class="handicap">+{{jugadores()[1].handicap}} PTS de Ventaja</div> 
-            }
-          </div>
-          <div class="turn-indicator" [class.active]="turnoActual()===1"></div>
-        </div>
-
-        <div class="score-display">
-          <span class="score p2">{{ jugadores()[1].puntos }}</span>
-        </div>
-
-        <div class="progress-tracker">
-          <div class="tracker-labels">
-            <span>Racha Real: {{jugadores()[1].rachaActual}}</span>
-            <span>Meta: {{jugadores()[1].meta}}</span>
-          </div>
-          <div class="track-bg">
-            <div class="track-fill p2" [style.width]="(jugadores()[1].puntos/jugadores()[1].meta)*100 + '%'"></div>
-          </div>
-        </div>
-
-        @if (!isViewer()) {
-          <div class="controls">
-            <div class="add-buttons">
-              @for (n of [1, 2, 3, 4, 5]; track n) {
-                <button class="p2" (click)="sumarPuntos(1,n)">+{{ n }}</button>
-              }
-            </div>
-            <button class="btn-minus" (click)="restarPuntos(1)">− Restar Punto</button>
-          </div>
+      <!-- PLAYERS RIGHT -->
+      <div class="players-group right-group">
+        @for (j of jugadores(); track $index) {
+          @if ($index >= numJugadores() / 2) {
+            <ng-container *ngTemplateOutlet="playerCard; context: { jugador: j, index: $index }"></ng-container>
+          }
         }
-
-        <div class="stats-footer">
-          <div class="stat-box">
-            <span class="val">{{ jugadores()[1].promedio || 0 }}</span>
-            <span class="lbl">Promedio</span>
-          </div>
-          <div class="stat-box">
-            <span class="val">{{ jugadores()[1].rachMax || 0 }}</span>
-            <span class="lbl">Racha Máx</span>
-          </div>
-          <div class="stat-box">
-            <span class="val">{{ jugadores()[1].historial.length || 0 }}</span>
-            <span class="lbl">Turnos</span>
-          </div>
-        </div>
       </div>
 
     </main>
@@ -246,6 +297,19 @@
           }
         </div>
       </div>
+
+      <!-- Barra de consumo + Cerrar Tiempo -->
+      <div class="consumo-bar">
+        <div class="consumo-info">
+          <span>Tiempo: {{ tiempoFormateado }}</span>
+        </div>
+        @if (!isViewer()) {
+          <button class="btn-cerrar-tiempo" (click)="cerrarTiempoYPedirCuenta()" [disabled]="cuentaPendiente()">
+            {{ cuentaPendiente() ? '⏳ ESPERANDO GARITERO...' : 'CERRAR TIEMPO Y PEDIR LA CUENTA' }}
+          </button>
+        }
+      </div>
+
       @if (jugadas().length > 0 && tieneReplay(jugadas()[0])) {
         <button class="btn-replay" (click)="verReplay(jugadas()[0])">▶ V.A.R. / REPLAY DISPONIBLE</button>
       }
@@ -296,5 +360,60 @@
       <button style="border-color:#ffd700; color:#ffd700;" (click)="cerrarVarCompleto()">✕ CERRAR V.A.R</button>
     </div>
     <video id="varVideoEl" controls autoplay (click)="$event.stopPropagation()" style="border-color:#ffd700; box-shadow: 0 0 40px rgba(255,215,0,0.3);"></video>
+  </div>
+}
+
+<!-- MODAL DETALLE CONSUMO (aparece al cerrar tiempo) -->
+@if (mostrarConsumo()) {
+  <div class="consumo-overlay">
+    <div class="consumo-modal">
+      <h2 class="consumo-title">DETALLE CONSUMO</h2>
+      <table class="consumo-table">
+        <thead>
+          <tr>
+            <th>ITEM</th>
+            <th>CANTIDAD</th>
+            <th>VALOR UNIT</th>
+            <th>TOTAL</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (j of jugadas(); track j.id) {
+            <tr>
+              <td>{{ j.jugador }} (+{{ j.puntos }})</td>
+              <td>1</td>
+              <td>-</td>
+              <td>{{ tiempoJugada(j.tiempo) }}</td>
+            </tr>
+          }
+          <tr class="consumo-row-tiempo">
+            <td>TIEMPO</td>
+            <td>{{ tiempoFormateado }}</td>
+            <td colspan="2">-</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="consumo-totals">
+        <div class="consumo-total-row">
+          <span>Entradas:</span>
+          <span>{{ entradaActual() }}</span>
+        </div>
+        <div class="consumo-total-row">
+          <span>Tiempo Total:</span>
+          <span>{{ tiempoFormateado }}</span>
+        </div>
+      </div>
+      <div class="consumo-waiting">
+        ⏳ Esperando que el garitero cierre la cuenta...
+      </div>
+      <button class="consumo-close-btn" (click)="cerrarModalConsumo()">CERRAR</button>
+    </div>
+  </div>
+}
+
+<!-- CUENTA PENDIENTE BANNER (visible cuando modal cerrado pero cuenta sin pagar) -->
+@if (cuentaPendiente() && !mostrarConsumo()) {
+  <div class="cuenta-pendiente-banner" (click)="mostrarConsumo.set(true)">
+    ⚠️ CUENTA PENDIENTE — Esperando al garitero. Toca para ver detalles.
   </div>
 }
