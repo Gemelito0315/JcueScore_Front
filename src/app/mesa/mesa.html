@@ -304,6 +304,12 @@
           <span>Tiempo: {{ tiempoFormateado }}</span>
         </div>
         @if (!isViewer()) {
+          <button class="btn-shop" (click)="toggleTienda()">
+            🛒 TIENDA Y PEDIDOS
+            @if (carritoTienda().length > 0) {
+              <span class="badge">{{ carritoTienda().length }}</span>
+            }
+          </button>
           <button class="btn-cerrar-tiempo" (click)="cerrarTiempoYPedirCuenta()" [disabled]="cuentaPendiente()">
             {{ cuentaPendiente() ? '⏳ ESPERANDO GARITERO...' : 'CERRAR TIEMPO Y PEDIR LA CUENTA' }}
           </button>
@@ -413,7 +419,63 @@
 
 <!-- CUENTA PENDIENTE BANNER (visible cuando modal cerrado pero cuenta sin pagar) -->
 @if (cuentaPendiente() && !mostrarConsumo()) {
-  <div class="cuenta-pendiente-banner" (click)="mostrarConsumo.set(true)">
+  <div class="cuenta-pendiente-banner fade-in" (click)="mostrarConsumo.set(true)">
     ⚠️ CUENTA PENDIENTE — Esperando al garitero. Toca para ver detalles.
+  </div>
+}
+
+<!-- TIENDA / CARRITO LATERAL -->
+@if (mostrarTienda()) {
+  <div class="shop-panel-overlay fade-in" (click)="toggleTienda()"></div>
+  <div class="shop-panel slide-in-right">
+    <div class="shop-header">
+      <h3>🛒 Tienda y Consumo</h3>
+      <button class="btn-close" (click)="toggleTienda()">✕</button>
+    </div>
+
+    <div class="shop-body">
+      <div class="productos-grid">
+        @for (p of productos(); track p.id) {
+          <div class="producto-card">
+            @if (p.imageUrl) {
+              <img [src]="p.imageUrl" alt="{{ p.name }}" class="prod-img">
+            } @else {
+              <div class="prod-img-placeholder">🥤</div>
+            }
+            <div class="prod-info">
+              <h4>{{ p.name }}</h4>
+              <span class="price">${{ p.price | number:'1.0-0' }}</span>
+            </div>
+            <button class="btn-add-prod" (click)="agregarAlCarrito(p)">AGREGAR</button>
+          </div>
+        }
+        @if (productos().length === 0) {
+          <p class="empty-msg">No hay productos disponibles actualmente.</p>
+        }
+      </div>
+    </div>
+
+    <div class="shop-footer">
+      <h4>Tu Pedido</h4>
+      @if (carritoTienda().length === 0) {
+        <p class="empty-cart">No has agregado nada al pedido.</p>
+      } @else {
+        <div class="cart-items">
+          @for (item of carritoTienda(); track item.producto.id) {
+            <div class="cart-item">
+              <span class="qty">{{ item.cantidad }}x</span>
+              <span class="name">{{ item.producto.name }}</span>
+              <span class="subtotal">${{ (item.producto.price * item.cantidad) | number:'1.0-0' }}</span>
+              <button class="btn-remove-prod" (click)="quitarDelCarrito(item.producto.id)">-</button>
+            </div>
+          }
+        </div>
+        <div class="cart-total">
+          <span>TOTAL:</span>
+          <strong>${{ totalCarrito | number:'1.0-0' }}</strong>
+        </div>
+        <button class="btn-enviar-pedido" (click)="enviarPedidoMesa()">ENVIAR PEDIDO A LA BARRA</button>
+      }
+    </div>
   </div>
 }

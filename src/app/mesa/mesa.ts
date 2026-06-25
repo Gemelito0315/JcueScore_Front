@@ -51,6 +51,11 @@ export class Mesa implements OnInit, OnDestroy {
   limiteEntradasConfig = signal(50);
   metaCarambolasConfig = signal(50);
 
+  // === SHOPPING CART / TIENDA ===
+  productos = signal<any[]>([]);
+  mostrarTienda = signal(false);
+  carritoTienda = signal<{producto: any, cantidad: number}[]>([]);
+
   mesaId = signal('Mesa 1');
   modalidad = signal('Tres Bandas');
   modalidades = ['Libre', 'Tres Bandas', 'Cinco Pines', 'Carambola', 'Pool 8', 'Pool 9'];
@@ -195,6 +200,8 @@ export class Mesa implements OnInit, OnDestroy {
         }
       }
     });
+
+    this.cargarProductos();
   }
 
   syncState(state: any) {
@@ -490,6 +497,13 @@ export class Mesa implements OnInit, OnDestroy {
     this.tiempoTiro.set(this.tiempoEntrada());
   }
 
+  cargarProductos() {
+    this.http.get<any[]>(`${environment.apiBaseUrl}/productos`).subscribe({
+      next: p => this.productos.set(p.filter(x => x.isActive)),
+      error: () => {}
+    });
+  }
+
   pausarTiroTimer() {
     clearInterval(this.tiroInterval);
   }
@@ -605,6 +619,67 @@ export class Mesa implements OnInit, OnDestroy {
   cerrarModalConsumo() {
     // Solo ocultar modal, pero la mesa sigue bloqueada hasta que el garitero libere
     this.mostrarConsumo.set(false);
+  }
+
+  // --- LOGICA DE LA TIENDA (CARRITO) ---
+  toggleTienda() {
+    this.mostrarTienda.set(!this.mostrarTienda());
+  }
+
+  agregarAlCarrito(producto: any) {
+    this.carritoTienda.update(c => {
+      const existing = c.find(item => item.producto.id === producto.id);
+      if (existing) {
+        existing.cantidad++;
+      } else {
+        c.push({ producto, cantidad: 1 });
+      }
+      return [...c];
+    });
+  }
+
+  quitarDelCarrito(productoId: number) {
+    this.carritoTienda.update(c => {
+      const existing = c.find(item => item.producto.id === productoId);
+      if (existing) {
+        existing.cantidad--;
+        if (existing.cantidad <= 0) {
+          return c.filter(item => item.producto.id !== productoId);
+        }
+      }
+      return [...c];
+    });
+  }
+
+  get totalCarrito() {
+    return this.carritoTienda().reduce((acc, item) => acc + (item.producto.price * item.cantidad), 0);
+  }
+
+  enviarPedidoMesa() {
+    if (this.carritoTienda().length === 0) return;
+
+    // Extraer solo el número de la mesa si el ID tiene texto extra
+    const numeroMesa = parseInt(this.mesaId().replace(/\D/g, '')) || 1;
+
+    const payload = {
+      recursoId: numeroMesa,
+      metodoPago: 'cuenta_mesa',
+      productos: this.carritoTienda().map(item => ({
+        id: item.producto.id,
+        cantidad: item.cantidad
+      }))
+    };
+
+    this.http.post(`${environment.apiBaseUrl}/pedidos`, payload).subscribe({
+      next: () => {
+        alert('✅ ¡Pedido enviado a la barra! Te lo llevaremos pronto.');
+        this.carritoTienda.set([]);
+        this.mostrarTienda.set(false);
+      },
+      error: (err) => {
+        alert('Error al enviar el pedido. Asegúrate de estar conectado a internet.');
+      }
+    });
   }
 
   resetPartida() {

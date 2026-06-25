@@ -114,6 +114,12 @@ export class Ventas implements OnInit, OnDestroy {
   alertasMesaCuenta = signal<{mesaId: string; datos: any; timestamp: Date}[]>([]);
   private solicitudCuentaSub: any;
 
+  // Estado WS en vivo de mesas
+  wsActiveMatches = signal<Record<string, any>>({});
+  private matchUpdateSub: any;
+  private activeMatchesSub: any;
+  private cerrarCuentaSub: any;
+
   // Hilos/Temporizadores
   private updateInterval: any;
   private timeTickInterval: any;
@@ -166,12 +172,48 @@ export class Ventas implements OnInit, OnDestroy {
       this.audioAlert.play().catch(() => {});
       this.mostrarToast(`🧾 ¡Mesa ${mesaId} solicita cerrar la cuenta!`);
     });
+
+    // Sincronizar estado en vivo de las tablets
+    this.activeMatchesSub = this.ws.onActiveMatches().subscribe((data: any[]) => {
+      const map: Record<string, any> = {};
+      data.forEach(item => { map[item.mesaId] = item.state; });
+      this.wsActiveMatches.set(map);
+    });
+
+    this.matchUpdateSub = this.ws.onMatchUpdate().subscribe((data) => {
+      const { mesaId, state } = data;
+      this.wsActiveMatches.update(prev => {
+        const next = { ...prev };
+        if (state && state.partidaIniciada === false && state.tiempoSegundos === 0) {
+          delete next[mesaId];
+        } else if (state) {
+          next[mesaId] = state;
+        }
+        return next;
+      });
+    });
+
+    this.cerrarCuentaSub = this.ws.onCerrarCuenta().subscribe((data) => {
+      const { mesaId } = data;
+      this.wsActiveMatches.update(prev => {
+        const next = { ...prev };
+        delete next[mesaId];
+        return next;
+      });
+      this.quitarAlertaMesa(mesaId);
+    });
+
+    // Solicitar estado actual a WS
+    this.ws.send({ type: 'get_active_matches' });
   }
 
   ngOnDestroy() {
     if (this.updateInterval) clearInterval(this.updateInterval);
     if (this.timeTickInterval) clearInterval(this.timeTickInterval);
     if (this.solicitudCuentaSub) this.solicitudCuentaSub.unsubscribe();
+    if (this.matchUpdateSub) this.matchUpdateSub.unsubscribe();
+    if (this.activeMatchesSub) this.activeMatchesSub.unsubscribe();
+    if (this.cerrarCuentaSub) this.cerrarCuentaSub.unsubscribe();
   }
 
   cargarProductos() {
@@ -315,35 +357,43 @@ export class Ventas implements OnInit, OnDestroy {
       const pedidosDeMesa = this.pedidosActivos().filter(
         p => p.recursoId === m.id && p.estado !== 'entregado' && p.estado !== 'cancelado'
       );
+      
+      const wsMatch = this.wsActiveMatches()[m.id.toString()];
+      const isWsActive = wsMatch && wsMatch.partidaIniciada;
         
       const totalConsumo = pedidosDeMesa.reduce((acc, p) => acc + parseFloat(p.total), 0);
 
       let tiempoInicioDate: Date | undefined;
-      if (m.tiempoInicio) {
+      if (isWsActive && wsMatch.tiempoInicio) {
+        tiempoInicioDate = new Date(wsMatch.tiempoInicio);
+      } else if (m.tiempoInicio) {
         tiempoInicioDate = new Date(m.tiempoInicio);
       }
 
       const llamado = this.llamadosActivos().find(ll => ll.recursoId === m.id);
       const tienePedidoPendiente = pedidosDeMesa.some(p => p.estado === 'pendiente');
 
+      const isOcupada = isWsActive || m.partidaId;
+      const isCuentaPendiente = wsMatch?.cuentaPendiente;
+
       list.push({
         id: `mesa-${m.id}`,
         tipo: 'mesa',
         nombre: m.code || `Mesa ${m.id}`,
         recursoId: m.id,
-        partidaId: m.partidaId,
-        jugadores: m.jugadores || [],
+        partidaId: m.partidaId || (isWsActive ? -1 : undefined),
+        jugadores: m.jugadores || (wsMatch?.jugadores?.map((j:any) => j.nombre) || []),
         jugadoresIds: m.jugadoresIds || [],
         tiempoInicio: tiempoInicioDate,
         precioHora: m.pricePerHour ? parseFloat(m.pricePerHour) : 15000,
         pedidos: pedidosDeMesa,
         totalConsumo,
-        totalMesa: m.partidaId ? (this.liveCostosMesa()[`mesa-${m.id}`] || 0) : 0,
-        totalGeneral: m.partidaId ? ((this.liveCostosMesa()[`mesa-${m.id}`] || 0) + totalConsumo) : totalConsumo,
-        llamadoAyuda: !!llamado,
+        totalMesa: isOcupada ? (this.liveCostosMesa()[`mesa-${m.id}`] || 0) : 0,
+        totalGeneral: isOcupada ? ((this.liveCostosMesa()[`mesa-${m.id}`] || 0) + totalConsumo) : totalConsumo,
+        llamadoAyuda: !!llamado || isCuentaPendiente,
         llamadoId: llamado?.id,
         nuevoPedidoPendiente: tienePedidoPendiente,
-        status: m.status
+        status: isWsActive ? (isCuentaPendiente ? 'Cuenta Pendiente' : 'En Juego (Tablet)') : m.status
       });
     });
 
