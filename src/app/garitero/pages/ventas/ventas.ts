@@ -841,7 +841,7 @@ export class Ventas implements OnInit, OnDestroy {
           this.mostrarToast(`✅ Venta rápida registrada: $${new Intl.NumberFormat('es-CO').format(pedido.total)}`);
         }
         this.carritoBarra.set([]);
-        this.barraUsuarioRegistradoId.set('');
+        this.barraUsuarioRegistradoId.set(null);
         this.barraNombreClienteOcasional.set('');
       },
       error: (err) => {
