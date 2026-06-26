@@ -25,6 +25,20 @@ export interface Jugador {
   jcueCoins: number;
 }
 
+export interface PedidoMesa {
+  items: { name: string; cantidad: number; precio: number }[];
+  total: number;
+  timestamp: Date;
+}
+
+export interface ResumenCuenta {
+  tiempoFormateado: string;
+  costoTiempo: number;
+  pedidos: PedidoMesa[];
+  totalConsumo: number;
+  totalGeneral: number;
+}
+
 @Component({
   selector: 'app-mesa',
   imports: [CommonModule],
@@ -55,6 +69,17 @@ export class Mesa implements OnInit, OnDestroy {
   productos = signal<any[]>([]);
   mostrarTienda = signal(false);
   carritoTienda = signal<{producto: any, cantidad: number}[]>([]);
+
+  // === PEDIDOS DESDE MESA ===
+  pedidosMesa = signal<PedidoMesa[]>([]);
+  precioHora = signal(20000); // se carga desde la API
+  mostrarResumenFinal = signal(false);
+  resumenFinal = signal<ResumenCuenta | null>(null);
+
+  get costoTiempo(): number {
+    const horas = this.tiempoSegundos() / 3600;
+    return Math.round(horas * this.precioHora());
+  }
 
   mesaId = signal('Mesa 1');
   modalidad = signal('Tres Bandas');
@@ -164,8 +189,6 @@ export class Mesa implements OnInit, OnDestroy {
         const modeParam = params['mode'] || this.route.snapshot.queryParamMap.get('mode');
         this.isViewer.set(modeParam === 'viewer');
         
-        // Siempre intentamos unirnos a la sala WebSocket para escuchar/sincronizar
-        // Si somos viewer, nos sincronizaremos siempre. Si somos tablet, recuperaremos el estado si se refrescó.
         const joinMatch = () => {
           if (this.ws.connectionStatus() === 'conectado') {
             this.ws.send({ type: 'join_match', mesaId: this.mesaId() });
@@ -191,10 +214,10 @@ export class Mesa implements OnInit, OnDestroy {
     this.syncSub = this.ws.onMatchUpdate().subscribe((data) => {
       if (data.mesaId === this.mesaId()) {
         if (data.type === 'cerrar_cuenta') {
-          // Garitero liberó la mesa
+          // Garitero cerró la cuenta — mostrar resumen final antes de resetear
           this.cuentaPendiente.set(false);
           this.mostrarConsumo.set(false);
-          this.resetPartida();
+          this.mostrarResumenDeCierre(data.resumen);
         } else {
           this.syncState(data.state);
         }
@@ -202,6 +225,62 @@ export class Mesa implements OnInit, OnDestroy {
     });
 
     this.cargarProductos();
+    this.cargarPrecioMesa();
+  }
+
+  /** Carga el precio/hora de la mesa desde el backend */
+  cargarPrecioMesa() {
+    const id = this.mesaId();
+    if (!id) return;
+    this.http.get<any[]>(`${environment.apiBaseUrl}/recursos/todas`).subscribe({
+      next: (mesas) => {
+        const mesa = mesas.find(m => String(m.id) === String(id));
+        if (mesa?.pricePerHour) {
+          this.precioHora.set(parseFloat(mesa.pricePerHour));
+        }
+      },
+      error: () => {}
+    });
+  }
+
+  /** Muestra el resumen final enviado por el garitero y luego resetea */
+  mostrarResumenDeCierre(resumenRemoto?: any) {
+    const pedidos = this.pedidosMesa();
+    const totalConsumoLocal = pedidos.reduce((s, p) => s + p.total, 0);
+
+    // Preferir datos del garitero (son los definitivos con IVA incluido)
+    const costoTiempo = resumenRemoto?.totalMesa ?? this.costoTiempo;
+    const totalConsumo = resumenRemoto?.totalConsumo ?? totalConsumoLocal;
+    const totalGeneral = resumenRemoto?.totalGeneral ?? (costoTiempo + totalConsumo);
+    const tiempoFormateado = resumenRemoto?.tiempoFormateado ?? this.tiempoFormateado;
+
+    this.resumenFinal.set({
+      tiempoFormateado,
+      costoTiempo,
+      pedidos,
+      totalConsumo,
+      totalGeneral,
+    });
+    this.mostrarResumenFinal.set(true);
+
+    // Pausar timers pero no resetear aún
+    this.timerActivo.set(false);
+    clearInterval(this.timerInterval);
+    clearInterval(this.broadcastInterval);
+  }
+
+  /** Confirma el resumen final y libera la mesa */
+  confirmarResumenFinal() {
+    this.mostrarResumenFinal.set(false);
+    this.resumenFinal.set(null);
+    this.pedidosMesa.set([]);
+    this.resetPartida();
+  }
+
+  formatCurrency(value: number): string {
+    return new Intl.NumberFormat('es-CO', {
+      style: 'currency', currency: 'COP', minimumFractionDigits: 0
+    }).format(value || 0);
   }
 
   syncState(state: any) {
@@ -661,6 +740,14 @@ export class Mesa implements OnInit, OnDestroy {
     // Extraer solo el número de la mesa si el ID tiene texto extra
     const numeroMesa = parseInt(this.mesaId().replace(/\D/g, '')) || 1;
 
+    // Guardar los items del carrito antes de enviarlo (para historial local)
+    const itemsSnapshot = this.carritoTienda().map(item => ({
+      name: item.producto.name,
+      cantidad: item.cantidad,
+      precio: item.producto.price
+    }));
+    const totalSnapshot = itemsSnapshot.reduce((s, i) => s + i.precio * i.cantidad, 0);
+
     const payload = {
       recursoId: numeroMesa,
       metodoPago: 'cuenta_mesa',
@@ -673,7 +760,11 @@ export class Mesa implements OnInit, OnDestroy {
 
     this.http.post(`${environment.apiBaseUrl}/pedidos/mesa`, payload).subscribe({
       next: () => {
-        alert('✅ ¡Pedido enviado a la barra! Te lo llevaremos pronto.');
+        // Guardar pedido en historial local de la mesa
+        this.pedidosMesa.update(lista => [
+          ...lista,
+          { items: itemsSnapshot, total: totalSnapshot, timestamp: new Date() }
+        ]);
         this.carritoTienda.set([]);
         this.mostrarTienda.set(false);
       },
@@ -685,6 +776,11 @@ export class Mesa implements OnInit, OnDestroy {
         alert(`Error al enviar el pedido: ${msg}`);
       }
     });
+  }
+
+  /** Helper para reduce en template: suma los totales de pedidosMesa */
+  sumTotal(acc: number, p: PedidoMesa): number {
+    return acc + p.total;
   }
 
   resetPartida() {

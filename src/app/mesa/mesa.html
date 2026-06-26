@@ -373,42 +373,59 @@
 @if (mostrarConsumo()) {
   <div class="consumo-overlay">
     <div class="consumo-modal">
-      <h2 class="consumo-title">DETALLE CONSUMO</h2>
-      <table class="consumo-table">
-        <thead>
-          <tr>
-            <th>ITEM</th>
-            <th>CANTIDAD</th>
-            <th>VALOR UNIT</th>
-            <th>TOTAL</th>
-          </tr>
-        </thead>
-        <tbody>
-          @for (j of jugadas(); track j.id) {
-            <tr>
-              <td>{{ j.jugador }} (+{{ j.puntos }})</td>
-              <td>1</td>
-              <td>-</td>
-              <td>{{ tiempoJugada(j.tiempo) }}</td>
-            </tr>
-          }
-          <tr class="consumo-row-tiempo">
-            <td>TIEMPO</td>
-            <td>{{ tiempoFormateado }}</td>
-            <td colspan="2">-</td>
-          </tr>
-        </tbody>
-      </table>
-      <div class="consumo-totals">
-        <div class="consumo-total-row">
-          <span>Entradas:</span>
-          <span>{{ entradaActual() }}</span>
+      <h2 class="consumo-title">🧾 CUENTA EN CURSO</h2>
+
+      <!-- COSTO DEL TIEMPO -->
+      <div class="consumo-tiempo-card">
+        <div class="ct-row">
+          <span class="ct-label">⏱️ Tiempo en mesa</span>
+          <span class="ct-value">{{ tiempoFormateado }}</span>
         </div>
-        <div class="consumo-total-row">
-          <span>Tiempo Total:</span>
-          <span>{{ tiempoFormateado }}</span>
+        <div class="ct-row">
+          <span class="ct-label">Tarifa ({{ formatCurrency(precioHora()) }}/hr)</span>
+          <span class="ct-value">{{ formatCurrency(costoTiempo) }}</span>
         </div>
       </div>
+
+      <!-- PEDIDOS ENVIADOS DESDE LA MESA -->
+      @if (pedidosMesa().length > 0) {
+        <h4 class="consumo-section-title">🛒 Pedidos enviados a la barra</h4>
+        <div class="consumo-pedidos-list">
+          @for (p of pedidosMesa(); track $index) {
+            <div class="consumo-pedido-grupo">
+              <div class="cpg-header">
+                <span class="cpg-hora">{{ p.timestamp | date:'HH:mm' }}</span>
+                <span class="cpg-total">{{ formatCurrency(p.total) }}</span>
+              </div>
+              @for (item of p.items; track $index) {
+                <div class="cpg-item">
+                  <span>{{ item.cantidad }}x {{ item.name }}</span>
+                  <span>{{ formatCurrency(item.precio * item.cantidad) }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      } @else {
+        <p class="consumo-sin-pedidos">Sin pedidos enviados a la barra aún.</p>
+      }
+
+      <!-- TOTALES -->
+      <div class="consumo-totals">
+        <div class="consumo-total-row">
+          <span>⏱️ Tiempo de Mesa:</span>
+          <span>{{ formatCurrency(costoTiempo) }}</span>
+        </div>
+        <div class="consumo-total-row">
+          <span>🛒 Consumos Barra:</span>
+          <span>{{ formatCurrency(pedidosMesa().reduce(sumTotal, 0)) }}</span>
+        </div>
+        <div class="consumo-total-row gran-total">
+          <span>💰 TOTAL ESTIMADO:</span>
+          <span>{{ formatCurrency(costoTiempo + pedidosMesa().reduce(sumTotal, 0)) }}</span>
+        </div>
+      </div>
+
       <div class="consumo-waiting">
         ⏳ Esperando que el garitero cierre la cuenta...
       </div>
@@ -421,6 +438,58 @@
 @if (cuentaPendiente() && !mostrarConsumo()) {
   <div class="cuenta-pendiente-banner fade-in" (click)="mostrarConsumo.set(true)">
     ⚠️ CUENTA PENDIENTE — Esperando al garitero. Toca para ver detalles.
+  </div>
+}
+
+<!-- MODAL RESUMEN FINAL (cuando el garitero cierra la cuenta) -->
+@if (mostrarResumenFinal()) {
+  <div class="consumo-overlay resumen-final-overlay">
+    <div class="consumo-modal resumen-final-modal">
+      <div class="resumen-icon">✅</div>
+      <h2 class="consumo-title resumen-title">¡CUENTA CERRADA!</h2>
+      <p class="resumen-subtitle">El garitero ha liberado tu mesa.</p>
+
+      @if (resumenFinal(); as rf) {
+        <!-- TIEMPO -->
+        <div class="resumen-block">
+          <div class="resumen-row">
+            <span>⏱️ Tiempo Total</span>
+            <span class="resumen-val">{{ rf.tiempoFormateado }}</span>
+          </div>
+          <div class="resumen-row">
+            <span>Costo de Tiempo</span>
+            <span class="resumen-val">{{ formatCurrency(rf.costoTiempo) }}</span>
+          </div>
+        </div>
+
+        <!-- CONSUMOS -->
+        @if (rf.pedidos.length > 0) {
+          <div class="resumen-block">
+            <h4 class="resumen-block-title">🛒 Consumos de Barra</h4>
+            @for (p of rf.pedidos; track $index) {
+              @for (item of p.items; track $index) {
+                <div class="resumen-row">
+                  <span>{{ item.cantidad }}x {{ item.name }}</span>
+                  <span>{{ formatCurrency(item.precio * item.cantidad) }}</span>
+                </div>
+              }
+            }
+            <div class="resumen-row resumen-subtotal">
+              <span>Subtotal Consumos</span>
+              <span>{{ formatCurrency(rf.totalConsumo) }}</span>
+            </div>
+          </div>
+        }
+
+        <!-- GRAN TOTAL -->
+        <div class="resumen-gran-total">
+          <span>💰 TOTAL A PAGAR</span>
+          <span class="resumen-monto">{{ formatCurrency(rf.totalGeneral) }}</span>
+        </div>
+      }
+
+      <button class="btn-confirmar-resumen" (click)="confirmarResumenFinal()">✅ ENTENDIDO — Nueva Partida</button>
+    </div>
   </div>
 }
 

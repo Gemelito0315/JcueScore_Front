@@ -1173,11 +1173,24 @@ export class Ventas implements OnInit, OnDestroy {
 
   // ================= LIBERAR MESA (CERRAR CUENTA DESDE GARITERO) =================
   liberarMesaDesdeGaritero(mesaId: string) {
-    // Enviar evento WebSocket para liberar la tablet
-    this.ws.send({ type: 'cerrar_cuenta', mesaId: mesaId });
+    // Buscar la cuenta activa para obtener los datos de costo
+    const numericId = parseInt(mesaId.replace(/\D/g, '')) || mesaId;
+    const cuenta = this.cuentasActivas().find(c =>
+      c.id === `mesa-${numericId}` || c.id === `mesa-${mesaId}`
+    );
+
+    const resumen = cuenta ? {
+      tiempoFormateado: this.liveTiempos()[cuenta.id] || '00:00:00',
+      totalMesa: cuenta.totalMesa,
+      totalConsumo: cuenta.totalConsumo,
+      totalGeneral: cuenta.totalGeneral,
+    } : null;
+
+    // Enviar evento WebSocket con el resumen para que la tablet lo muestre
+    this.ws.send({ type: 'cerrar_cuenta', mesaId, resumen });
     // Quitar la alerta de la lista
     this.alertasMesaCuenta.update(a => a.filter(x => x.mesaId !== mesaId));
-    this.mostrarToast(`✅ Mesa ${mesaId} liberada. La tablet volverá al menú principal.`);
+    this.mostrarToast(`✅ Mesa ${mesaId} liberada. La tablet mostrará el resumen final.`);
     // Recargar datos
     this.cargarDatos();
   }
@@ -1186,3 +1199,4 @@ export class Ventas implements OnInit, OnDestroy {
     this.alertasMesaCuenta.update(a => a.filter(x => x.mesaId !== mesaId));
   }
 }
+
