@@ -75,6 +75,7 @@ export class Mesa implements OnInit, OnDestroy {
   precioHora = signal(20000); // se carga desde la API
   mostrarResumenFinal = signal(false);
   resumenFinal = signal<ResumenCuenta | null>(null);
+  tiempoInicioPartida = signal<string | null>(null); // ISO string del inicio del timer
 
   get costoTiempo(): number {
     const horas = this.tiempoSegundos() / 3600;
@@ -311,7 +312,12 @@ export class Mesa implements OnInit, OnDestroy {
         this.timerActivo.set(state.timerActivo || false);
         this.turnoActual.set(state.turnoActual || 0);
         this.jugadas.set(state.jugadas || []);
-        this.partidaIniciada.set(true);
+        this.partidaIniciada.set(state.partidaIniciada || false);
+
+        // Restaurar tiempoInicio si llega en el estado (ej. tras F5)
+        if (state.tiempoInicio && !this.tiempoInicioPartida()) {
+          this.tiempoInicioPartida.set(state.tiempoInicio);
+        }
         this.showConfig.set(false);
         
         if (state.frame && this.isViewer()) {
@@ -362,6 +368,7 @@ export class Mesa implements OnInit, OnDestroy {
         turnoActual: this.turnoActual(),
         jugadas: this.jugadas(),
         partidaIniciada: this.partidaIniciada(),
+        tiempoInicio: this.tiempoInicioPartida(), // para que el garitero calcule el costo
         frame: frame
       }
     });
@@ -539,6 +546,8 @@ export class Mesa implements OnInit, OnDestroy {
     this.showConfig.set(false);
     this.entradaActual.set(1);
     this.tiempoTiro.set(this.tiempoEntrada());
+    // Guardar el momento de inicio para que el garitero pueda calcular el costo en tiempo real
+    this.tiempoInicioPartida.set(new Date().toISOString());
     this.iniciarTimer();
     this.iniciarTiroTimer();
     this.iniciarCamara();
@@ -791,6 +800,7 @@ export class Mesa implements OnInit, OnDestroy {
     this.tiempoSegundos.set(0);
     this.timerActivo.set(false);
     this.partidaIniciada.set(false);
+    this.tiempoInicioPartida.set(null); // limpiar para que el garitero deje de contar
     this.turnoActual.set(0);
     this.entradaActual.set(1);
     this.tiempoTiro.set(this.tiempoEntrada());
