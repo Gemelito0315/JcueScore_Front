@@ -499,7 +499,7 @@ export class Mesa implements OnInit, OnDestroy {
 
   cargarProductos() {
     this.http.get<any[]>(`${environment.apiBaseUrl}/productos`).subscribe({
-      next: p => this.productos.set(p.filter(x => x.isActive)),
+      next: p => this.productos.set(p.filter(x => x.isActive && x.stock > 0)),
       error: () => {}
     });
   }
@@ -664,8 +664,9 @@ export class Mesa implements OnInit, OnDestroy {
     const payload = {
       recursoId: numeroMesa,
       metodoPago: 'cuenta_mesa',
-      productos: this.carritoTienda().map(item => ({
-        id: item.producto.id,
+      metadata: { origen: 'mesa' },
+      items: this.carritoTienda().map(item => ({
+        productId: item.producto.id,
         cantidad: item.cantidad
       }))
     };
@@ -677,7 +678,11 @@ export class Mesa implements OnInit, OnDestroy {
         this.mostrarTienda.set(false);
       },
       error: (err) => {
-        alert('Error al enviar el pedido. Asegúrate de estar conectado a internet.');
+        let msg = 'Asegúrate de estar conectado a internet.';
+        if (err.error && err.error.message) {
+          msg = typeof err.error.message === 'string' ? err.error.message : JSON.stringify(err.error.message);
+        }
+        alert(`Error al enviar el pedido: ${msg}`);
       }
     });
   }
