@@ -671,7 +671,7 @@ export class Mesa implements OnInit, OnDestroy {
       }))
     };
 
-    this.http.post(`${environment.apiBaseUrl}/pedidos`, payload).subscribe({
+    this.http.post(`${environment.apiBaseUrl}/pedidos/mesa`, payload).subscribe({
       next: () => {
         alert('✅ ¡Pedido enviado a la barra! Te lo llevaremos pronto.');
         this.carritoTienda.set([]);

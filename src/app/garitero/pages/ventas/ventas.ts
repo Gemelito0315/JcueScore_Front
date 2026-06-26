@@ -3,8 +3,9 @@ import { CommonModule } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { FormsModule } from '@angular/forms';
 import { WebsocketsService } from '../../../core/services/websockets.service';
+import { environment } from '../../../../../environments/environment';
 
-const API = 'http://localhost:3000';
+const API = environment.apiBaseUrl;
 
 export interface CuentaActiva {
   id: string; // "mesa-X" o "usuario-Y"
