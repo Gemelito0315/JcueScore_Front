@@ -633,23 +633,22 @@ export class Ventas implements OnInit, OnDestroy {
           userDebtorId = null;
         }
 
-        // Lógica posterior a finalizar en DB
-        const onNext = () => {
-          // Notificar a la tablet (mesa) para que pause y muestre el resumen
-          this.ws.send({
-            type: 'cerrar_cuenta',
-            mesaId: cuenta.recursoId,
-            resumen: {
-              tiempoFormateado: this.liveTiempos()[cuenta.id] || '00:00:00',
-              totalMesa: cuenta.totalMesa,
-              totalConsumo: cuenta.totalConsumo,
-              totalGeneral: cuenta.totalGeneral,
-            }
-          });
+        // 1. Notificar a la tablet (mesa) INMEDIATAMENTE para que pause el reloj
+        // Esto evita que el timer siga corriendo si hay latencia o timeout en el backend
+        this.ws.send({
+          type: 'cerrar_cuenta',
+          mesaId: cuenta.recursoId,
+          resumen: {
+            tiempoFormateado: this.liveTiempos()[cuenta.id] || '00:00:00',
+            totalMesa: cuenta.totalMesa,
+            totalConsumo: cuenta.totalConsumo,
+            totalGeneral: cuenta.totalGeneral,
+          }
+        });
 
-          // 3. Procesar cobro inmediato o registrar deuda
+        // 2. Función para procesar cobro/deuda y limpiar la UI
+        const procesarCobro = () => {
           if (this.checkoutMetodoPago() === 'deuda') {
-            // Registrar como deuda
             const bodyDeuda = {
               userId: userDebtorId || null,
               nombreCliente: userDebtorId ? undefined : nombreDebtor,
@@ -673,22 +672,23 @@ export class Ventas implements OnInit, OnDestroy {
           }
         };
 
+        // 3. Finalizar en base de datos
         if (cuenta.partidaId && cuenta.partidaId > 0) {
-          // 2. Parar tiempo de la mesa en el backend
           this.http.put(`${API}/partidas/finalizar`, {
             partidaId: cuenta.partidaId,
             marcador: { j1: 10, j2: 8 },
             endTime: new Date().toISOString(),
             metodoPago: this.checkoutMetodoPago()
           }).subscribe({
-            next: onNext,
+            next: procesarCobro,
             error: (err) => {
-              this.mostrarToast('❌ Error al finalizar: ' + (err.error?.message || 'Error'));
+              console.warn('⚠️ Error o Timeout al finalizar en BD (puede ser latencia). Continuando cierre en UI:', err);
+              procesarCobro(); // Forzamos el cierre en UI para no bloquear al garitero
             }
           });
         } else {
           // Partida sin ID en DB (iniciada desde la tablet directamente), solo cerrar cuenta
-          onNext();
+          procesarCobro();
         }
       },
       error: () => {
