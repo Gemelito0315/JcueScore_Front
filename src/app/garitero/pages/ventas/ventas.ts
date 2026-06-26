@@ -633,55 +633,63 @@ export class Ventas implements OnInit, OnDestroy {
           userDebtorId = null;
         }
 
-        // 2. Parar tiempo de la mesa en el backend
-        this.http.put(`${API}/partidas/finalizar`, {
-          partidaId: cuenta.partidaId,
-          marcador: { j1: 10, j2: 8 },
-          endTime: new Date().toISOString(),
-          metodoPago: this.checkoutMetodoPago()
-        }).subscribe({
-          next: () => {
-            // Notificar a la tablet (mesa) para que pause y muestre el resumen
-            this.ws.send({
-              type: 'cerrar_cuenta',
-              mesaId: cuenta.recursoId,
-              resumen: {
-                tiempoFormateado: this.liveTiempos()[cuenta.id] || '00:00:00',
-                totalMesa: cuenta.totalMesa,
-                totalConsumo: cuenta.totalConsumo,
-                totalGeneral: cuenta.totalGeneral,
+        // Lógica posterior a finalizar en DB
+        const onNext = () => {
+          // Notificar a la tablet (mesa) para que pause y muestre el resumen
+          this.ws.send({
+            type: 'cerrar_cuenta',
+            mesaId: cuenta.recursoId,
+            resumen: {
+              tiempoFormateado: this.liveTiempos()[cuenta.id] || '00:00:00',
+              totalMesa: cuenta.totalMesa,
+              totalConsumo: cuenta.totalConsumo,
+              totalGeneral: cuenta.totalGeneral,
+            }
+          });
+
+          // 3. Procesar cobro inmediato o registrar deuda
+          if (this.checkoutMetodoPago() === 'deuda') {
+            // Registrar como deuda
+            const bodyDeuda = {
+              userId: userDebtorId || null,
+              nombreCliente: userDebtorId ? undefined : nombreDebtor,
+              monto: cuenta.totalGeneral,
+              descripcion: `Deuda de juego en ${cuenta.nombre} (Mesa + Consumos)`,
+              notas: this.checkoutNotas().trim() || 'Registrado al cerrar partida.'
+            };
+
+            this.http.post(`${API}/deudas`, bodyDeuda).subscribe({
+              next: () => {
+                this.entregarConsumosDeCuentaFinalizada(cuenta, 'deuda');
+                this.mostrarToast(`💰 Deuda registrada para ${nombreDebtor}: $${new Intl.NumberFormat('es-CO').format(cuenta.totalGeneral)}`);
+              },
+              error: () => {
+                this.mostrarToast('❌ Error al registrar la deuda. Intenta de nuevo.');
               }
             });
-
-            // 3. Procesar cobro inmediato o registrar deuda
-            if (this.checkoutMetodoPago() === 'deuda') {
-              // Registrar como deuda
-              const bodyDeuda = {
-                userId: userDebtorId || null,
-                nombreCliente: userDebtorId ? undefined : nombreDebtor,
-                monto: cuenta.totalGeneral,
-                descripcion: `Deuda de juego en ${cuenta.nombre} (Mesa + Consumos)`,
-                notas: this.checkoutNotas().trim() || 'Registrado al cerrar partida.'
-              };
-
-              this.http.post(`${API}/deudas`, bodyDeuda).subscribe({
-                next: () => {
-                  this.entregarConsumosDeCuentaFinalizada(cuenta, 'deuda');
-                  this.mostrarToast(`💰 Deuda registrada para ${nombreDebtor}: $${new Intl.NumberFormat('es-CO').format(cuenta.totalGeneral)}`);
-                },
-                error: () => {
-                  this.mostrarToast('❌ Error al registrar la deuda. Intenta de nuevo.');
-                }
-              });
-            } else {
-              this.entregarConsumosDeCuentaFinalizada(cuenta, this.checkoutMetodoPago() as any);
-              this.mostrarToast(`✅ Cuenta cobrada en ${this.checkoutMetodoPago().toUpperCase()} a nombre de ${nombreDebtor}.`);
-            }
-          },
-          error: (err) => {
-            this.mostrarToast('❌ Error al finalizar: ' + (err.error?.message || 'Error'));
+          } else {
+            this.entregarConsumosDeCuentaFinalizada(cuenta, this.checkoutMetodoPago() as any);
+            this.mostrarToast(`✅ Cuenta cobrada en ${this.checkoutMetodoPago().toUpperCase()} a nombre de ${nombreDebtor}.`);
           }
-        });
+        };
+
+        if (cuenta.partidaId && cuenta.partidaId > 0) {
+          // 2. Parar tiempo de la mesa en el backend
+          this.http.put(`${API}/partidas/finalizar`, {
+            partidaId: cuenta.partidaId,
+            marcador: { j1: 10, j2: 8 },
+            endTime: new Date().toISOString(),
+            metodoPago: this.checkoutMetodoPago()
+          }).subscribe({
+            next: onNext,
+            error: (err) => {
+              this.mostrarToast('❌ Error al finalizar: ' + (err.error?.message || 'Error'));
+            }
+          });
+        } else {
+          // Partida sin ID en DB (iniciada desde la tablet directamente), solo cerrar cuenta
+          onNext();
+        }
       },
       error: () => {
         this.mostrarToast('❌ Error al obtener usuarios. Intenta de nuevo.');
