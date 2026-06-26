@@ -367,6 +367,9 @@ export class Ventas implements OnInit, OnDestroy {
       let tiempoInicioDate: Date | undefined;
       if (isWsActive && wsMatch.tiempoInicio) {
         tiempoInicioDate = new Date(wsMatch.tiempoInicio);
+      } else if (isWsActive && wsMatch.tiempoSegundos) {
+        // Fallback: si la tablet está enviando tiempoSegundos pero no tiempoInicio (ej. juego ya estaba en curso)
+        tiempoInicioDate = new Date(Date.now() - (wsMatch.tiempoSegundos * 1000));
       } else if (m.tiempoInicio) {
         tiempoInicioDate = new Date(m.tiempoInicio);
       }
@@ -638,6 +641,18 @@ export class Ventas implements OnInit, OnDestroy {
           metodoPago: this.checkoutMetodoPago()
         }).subscribe({
           next: () => {
+            // Notificar a la tablet (mesa) para que pause y muestre el resumen
+            this.ws.send({
+              type: 'cerrar_cuenta',
+              mesaId: cuenta.recursoId,
+              resumen: {
+                tiempoFormateado: this.liveTiempos()[cuenta.id] || '00:00:00',
+                totalMesa: cuenta.totalMesa,
+                totalConsumo: cuenta.totalConsumo,
+                totalGeneral: cuenta.totalGeneral,
+              }
+            });
+
             // 3. Procesar cobro inmediato o registrar deuda
             if (this.checkoutMetodoPago() === 'deuda') {
               // Registrar como deuda
