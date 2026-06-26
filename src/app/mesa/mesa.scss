@@ -530,7 +530,34 @@ body {
   padding: 24px;
   background: radial-gradient(circle at center, #11111a 0%, #050508 100%);
   
-  @media (max-width: 992px) {
+  /* --- RESPONSIVE TABLET IMPROVEMENTS --- */
+  @media (max-width: 1200px) and (orientation: landscape) {
+    grid-template-columns: minmax(220px, 1fr) 1.5fr minmax(220px, 1fr);
+    gap: 16px;
+    padding: 16px;
+  }
+
+  @media (max-width: 1024px) and (orientation: portrait) {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 16px;
+
+    .camera-feed {
+      order: -1;
+      max-height: 40vh;
+      border-radius: 16px;
+    }
+
+    .players-group {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      flex-direction: row;
+    }
+  }
+  
+  @media (max-width: 992px) and (orientation: landscape) {
     grid-template-columns: 1fr 1fr;
     gap: 12px;
     padding: 12px;
@@ -538,9 +565,18 @@ body {
   
   @media (max-width: 576px) {
     grid-template-columns: 1fr;
+    display: flex;
+    flex-direction: column;
     gap: 6px;
     padding: 6px;
+    
+    .players-group {
+      display: flex !important;
+      flex-direction: column;
+      grid-template-columns: none;
+    }
   }
+  /* -------------------------------------- */
 
   .players-group {
     display: flex;
@@ -715,21 +751,8 @@ body {
     
     .score {
       font-family: 'Bebas Neue', sans-serif;
-      font-size: 10rem;
+      font-size: clamp(3rem, 12vw, 10rem);
       line-height: 1;
-
-      @media (max-width: 1200px) {
-        font-size: 7rem;
-      }
-      @media (max-width: 768px) {
-        font-size: 4rem;
-      }
-      @media (max-width: 576px) {
-        font-size: 3rem;
-      }
-      @media (max-width: 400px) {
-        font-size: 2.5rem;
-      }
 
       &.p1 { color: white; text-shadow: 0 0 40px rgba($neon-blue, 0.4); }
       &.p2 { color: white; text-shadow: 0 0 40px rgba(#ffd700, 0.4); }
@@ -819,16 +842,17 @@ body {
         border-radius: 10px;
         cursor: pointer;
         transition: 0.2s;
+        min-height: 48px; // Optimizacion Táctil
 
         @media (max-width: 768px) {
+          padding: 12px 0;
+          font-size: 1.1rem;
+          border-radius: 8px;
+        }
+        @media (max-width: 576px) {
           padding: 10px 0;
           font-size: 1rem;
           border-radius: 6px;
-        }
-        @media (max-width: 576px) {
-          padding: 6px 0;
-          font-size: 0.85rem;
-          border-radius: 4px;
         }
         
         &:hover {
@@ -1623,6 +1647,13 @@ body {
     max-height: 80vh;
     overflow-y: auto;
     box-shadow: 0 25px 60px rgba(0, 0, 0, 0.6);
+
+    @media (max-width: 768px) {
+      padding: 24px;
+    }
+    @media (max-width: 480px) {
+      padding: 16px;
+    }
 
     .consumo-title {
       font-family: 'Orbitron', sans-serif;
