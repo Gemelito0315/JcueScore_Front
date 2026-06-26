@@ -470,6 +470,75 @@ export class Ventas implements OnInit, OnDestroy {
     });
   }
 
+  // ================= EDICIÓN DE DEUDAS =================
+  mostrandoEditarDeuda = signal(false);
+  deudaParaEditar = signal<any>(null);
+  nuevoTitularDeudaId = signal<number | null>(null);
+  nuevoTitularOcasional = signal<string>('');
+  listaUsuariosParaDeuda = signal<any[]>([]);
+  filtroUsuariosDeuda = signal<string>('');
+
+  usuariosDeudaFiltrados = computed(() => {
+    const f = this.filtroUsuariosDeuda().toLowerCase().trim();
+    if (!f) return [];
+    return this.listaUsuariosParaDeuda().filter(u => {
+      const nombre = (u.name + ' ' + (u.lastName || '')).toLowerCase();
+      return nombre.includes(f);
+    });
+  });
+
+  abrirEditarTitularDeuda(deuda: any) {
+    this.deudaParaEditar.set(deuda);
+    this.nuevoTitularDeudaId.set(deuda.userId || null);
+    this.nuevoTitularOcasional.set(deuda.nombreCliente || '');
+    this.filtroUsuariosDeuda.set('');
+    this.mostrandoEditarDeuda.set(true);
+    
+    this.http.get<any[]>(`${API}/users/names`).subscribe({
+      next: (users) => this.listaUsuariosParaDeuda.set(users)
+    });
+  }
+
+  cerrarEditarDeuda() {
+    this.mostrandoEditarDeuda.set(false);
+    this.deudaParaEditar.set(null);
+  }
+
+  seleccionarNuevoTitular(userId: number) {
+    this.nuevoTitularDeudaId.set(userId);
+    this.nuevoTitularOcasional.set('');
+  }
+
+  seleccionarTitularOcasional(name: string) {
+    this.nuevoTitularOcasional.set(name);
+    this.nuevoTitularDeudaId.set(null);
+  }
+
+  guardarNuevoTitularDeuda() {
+    const deuda = this.deudaParaEditar();
+    if (!deuda) return;
+    
+    const userId = this.nuevoTitularDeudaId();
+    const nombreCliente = this.nuevoTitularOcasional().trim();
+
+    if (!userId && !nombreCliente) {
+      this.mostrarToast('❌ Selecciona un usuario o escribe un nombre.');
+      return;
+    }
+
+    this.http.put(`${API}/deudas/${deuda.id}/titular`, {
+      newUserId: userId || null,
+      newNombreCliente: nombreCliente || null
+    }).subscribe({
+      next: () => {
+        this.mostrarToast('✅ Titular actualizado correctamente.');
+        this.cerrarEditarDeuda();
+        this.cargarDatos(); // Refresh all
+      },
+      error: () => this.mostrarToast('❌ Error al actualizar el titular.')
+    });
+  }
+
   aprobarPedidosDeCuenta(cuenta: CuentaActiva) {
     const pendientes = cuenta.pedidos.filter(p => p.estado === 'pendiente');
     if (pendientes.length === 0) return;

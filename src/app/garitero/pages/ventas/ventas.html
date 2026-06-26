@@ -327,7 +327,10 @@
         <div class="deuda-card">
           <div class="deuda-header">
             <h4>Deuda #{{ d.id }}</h4>
-            <span class="deuda-fecha">{{ d.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</span>
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <span class="deuda-fecha">{{ d.fechaCreacion | date:'dd/MM/yyyy HH:mm' }}</span>
+              <button class="btn-icon-small" style="background: rgba(255, 255, 255, 0.1); border: none; border-radius: 4px; padding: 4px; cursor: pointer;" (click)="abrirEditarTitularDeuda(d)" title="Cambiar Titular de la Deuda">✏️</button>
+            </div>
           </div>
           <div class="deuda-body">
             <p><strong>Cliente:</strong> {{ d.name ? (d.name + ' ' + (d.lastName || '')) : (d.nombreCliente || 'Cliente General') }}</p>
@@ -971,3 +974,41 @@
   </div>
 }
 
+<!-- ================= POPUP MODAL: EDITAR TITULAR DE DEUDA ================= -->
+@if (mostrandoEditarDeuda()) {
+  <div class="modal-overlay" style="z-index: 1300;" (click)="cerrarEditarDeuda()">
+    <div class="wizard-modal" (click)="$event.stopPropagation()" style="max-width: 450px;">
+      <div class="modal-header">
+        <h3>Editar Titular de Deuda #{{ deudaParaEditar()?.id }}</h3>
+      </div>
+      <div class="modal-body" style="padding: 20px;">
+        <p style="font-size: 0.9rem; color: #9ca3af; margin-bottom: 20px;">
+          Titular actual: <strong>{{ deudaParaEditar()?.name ? (deudaParaEditar()?.name + ' ' + (deudaParaEditar()?.lastName || '')) : (deudaParaEditar()?.nombreCliente || 'Cliente General') }}</strong>
+        </p>
+
+        <div class="form-group" style="margin-bottom: 20px;">
+          <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #e5e7eb;">Seleccionar Cliente Registrado</label>
+          <select [ngModel]="nuevoTitularDeudaId()" (ngModelChange)="seleccionarNuevoTitular($event)" class="styled-select" style="width: 100%; padding: 12px; border-radius: 8px; background: #1f2937; border: 1px solid #374151; color: white;">
+            <option [ngValue]="null">--- Ocasional (No Registrado) ---</option>
+            @for (u of listaUsuariosParaDeuda(); track u.id) {
+              <option [ngValue]="u.id">{{ u.name }} {{ u.lastName || '' }}</option>
+            }
+          </select>
+        </div>
+
+        @if (!nuevoTitularDeudaId()) {
+          <div class="form-group">
+            <label style="display: block; margin-bottom: 8px; font-weight: 600; color: #e5e7eb;">O Digita un Nombre (Ocasional)</label>
+            <input type="text" [ngModel]="nuevoTitularOcasional()" (ngModelChange)="seleccionarTitularOcasional($event)" class="styled-input" placeholder="Ej: Juan Pérez" style="width: 100%; padding: 12px; border-radius: 8px; background: #1f2937; border: 1px solid #374151; color: white;">
+          </div>
+        }
+      </div>
+      <div class="modal-footer" style="padding: 20px; display: flex; justify-content: flex-end; gap: 10px; border-top: 1px solid #374151;">
+        <button class="btn-cancelar" style="background: transparent; border: 1px solid #4b5563; padding: 10px 20px; border-radius: 8px; color: #e5e7eb; cursor: pointer;" (click)="cerrarEditarDeuda()">Cancelar</button>
+        <button class="btn-guardar-consumo" style="background: #8b5cf6; border: none; padding: 10px 20px; border-radius: 8px; color: white; font-weight: 600; cursor: pointer;" (click)="guardarNuevoTitularDeuda()">
+          💾 Guardar Cambios
+        </button>
+      </div>
+    </div>
+  </div>
+}
