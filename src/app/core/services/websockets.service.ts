@@ -65,6 +65,10 @@ export class WebsocketsService {
   private activeMatchesSubject = new Subject<any[]>();
   private solicitarCuentaSubject = new Subject<any>();
   private cerrarCuentaSubject = new Subject<any>();
+  private mantenimientoSubject = new Subject<{ activo: boolean; mensaje?: string; estimatedTime?: string }>();
+
+  // Signal reactivo para bloquear el login en tiempo real
+  maintenanceActive = signal<boolean | null>(null); // null = aún no consultado
 
   constructor() {
     this.connect();
@@ -199,10 +203,13 @@ export class WebsocketsService {
   }
 
   private handleSistemaMantenimiento(data: { activo: boolean; mensaje?: string }) {
+    // Update the reactive signal so login and other components can react instantly
+    this.maintenanceActive.set(data.activo);
+    this.mantenimientoSubject.next(data);
     if (data.activo) {
       this.addNotificación(`🔧 Sistema en mantenimiento: ${data.mensaje || 'Momentáneamente'}`);
     } else {
-      this.addNotificación('✅ Sistema operativo');
+      this.addNotificación('✅ Sistema operativo nuevamente');
     }
   }
 
@@ -285,6 +292,10 @@ export class WebsocketsService {
 
   onCerrarCuenta() {
     return this.cerrarCuentaSubject.asObservable();
+  }
+
+  onMantenimiento() {
+    return this.mantenimientoSubject.asObservable();
   }
 
   // Método para desconectar manualmente

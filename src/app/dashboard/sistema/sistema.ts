@@ -2,8 +2,7 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder } from '@angular/forms';
 import { HttpClient } from '@angular/common/http';
-
-const API = 'http://localhost:3000';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-sistema',
@@ -26,7 +25,7 @@ export class Sistema implements OnInit {
   });
 
   ngOnInit() {
-    this.http.get<any>(`${API}/maintenance`).subscribe(data => {
+    this.http.get<any>(`${environment.apiBaseUrl}/maintenance`).subscribe(data => {
       this.maintenanceMode.set(data.active);
       this.form.patchValue({ message: data.message, estimatedTime: data.estimatedTime });
     });
@@ -39,7 +38,7 @@ export class Sistema implements OnInit {
   confirmToggle() {
     this.loading.set(true);
     const newState = !this.maintenanceMode();
-    this.http.put(`${API}/maintenance`, {
+    this.http.put(`${environment.apiBaseUrl}/maintenance`, {
       active: newState,
       message: this.form.value.message,
       estimatedTime: this.form.value.estimatedTime,
@@ -55,7 +54,7 @@ export class Sistema implements OnInit {
 
   saveSettings() {
     this.loading.set(true);
-    this.http.put(`${API}/maintenance`, {
+    this.http.put(`${environment.apiBaseUrl}/maintenance`, {
       active: this.maintenanceMode(),
       message: this.form.value.message,
       estimatedTime: this.form.value.estimatedTime,

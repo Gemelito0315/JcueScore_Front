@@ -1,6 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterLink } from '@angular/router';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: 'app-mantenimiento',
@@ -14,7 +15,7 @@ export class Mantenimiento implements OnInit {
   estimatedTime = signal('');
 
   ngOnInit() {
-    this.http.get<any>('http://localhost:3000/maintenance').subscribe(data => {
+    this.http.get<any>(`${environment.apiBaseUrl}/maintenance`).subscribe(data => {
       this.message.set(data.message);
       this.estimatedTime.set(data.estimatedTime);
     });

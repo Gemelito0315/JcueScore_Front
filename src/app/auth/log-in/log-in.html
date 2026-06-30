@@ -18,61 +18,89 @@
     </div>
   }
 
-  <div class="login-card" [class.card-blurred]="isLoading()">
-    <div class="brand">
-      <h1 class="brand-title">JcueScore</h1>
-      <p class="brand-subtitle">Sports Management Platform</p>
+  <!-- ===== MANTENIMIENTO BLOQUEANTE ===== -->
+  @if (maintenanceChecked() && maintenanceActive()) {
+    <div class="maintenance-block">
+      <div class="maintenance-card">
+        <div class="maintenance-icon-wrap">
+          <span class="maintenance-icon">🔧</span>
+          <div class="maintenance-pulse"></div>
+        </div>
+        <h1 class="maintenance-title">JcueScore</h1>
+        <h2 class="maintenance-subtitle">Sistema en Mantenimiento</h2>
+        <p class="maintenance-msg">{{ maintenanceMessage() }}</p>
+        @if (maintenanceTime()) {
+          <div class="maintenance-eta">
+            <span>⏱️</span>
+            <span>Tiempo estimado: {{ maintenanceTime() }}</span>
+          </div>
+        }
+        <div class="maintenance-footer">
+          <span class="maintenance-dot"></span>
+          Volveremos pronto — gracias por tu paciencia
+        </div>
+      </div>
     </div>
+  }
 
-    <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-      <div class="field-group">
-        <label>Email</label>
-        <input
-          type="email"
-          formControlName="email"
-          placeholder="admin@billar.com"
-          class="input-field"
-          [disabled]="isLoading()"
-          autocomplete="off"
-        />
+  <!-- ===== LOGIN CARD (visible solo cuando NO hay mantenimiento) ===== -->
+  @if (!maintenanceActive()) {
+    <div class="login-card" [class.card-blurred]="isLoading()">
+      <div class="brand">
+        <h1 class="brand-title">JcueScore</h1>
+        <p class="brand-subtitle">Sports Management Platform</p>
       </div>
 
-      <div class="field-group">
-        <label>Contraseña</label>
-        <div class="password-wrapper">
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <div class="field-group">
+          <label>Email</label>
           <input
-            [type]="hidePassword ? 'password' : 'text'"
-            formControlName="password"
-            placeholder="••••••••"
+            type="email"
+            formControlName="email"
+            placeholder="admin@billar.com"
             class="input-field"
             [disabled]="isLoading()"
-            autocomplete="new-password"
+            autocomplete="off"
           />
-          <button type="button" class="toggle-pass" (click)="hidePassword = !hidePassword">
-            {{ hidePassword ? '👁️' : '🙈' }}
-          </button>
         </div>
-      </div>
 
-      @if (errorMsg) {
-        <div class="error-banner">
-          <span class="error-icon">⚠️</span>
-          <span>{{ errorMsg }}</span>
+        <div class="field-group">
+          <label>Contraseña</label>
+          <div class="password-wrapper">
+            <input
+              [type]="hidePassword ? 'password' : 'text'"
+              formControlName="password"
+              placeholder="••••••••"
+              class="input-field"
+              [disabled]="isLoading()"
+              autocomplete="new-password"
+            />
+            <button type="button" class="toggle-pass" (click)="hidePassword = !hidePassword">
+              {{ hidePassword ? '👁️' : '🙈' }}
+            </button>
+          </div>
         </div>
-      }
 
-      <button type="submit" class="btn-primary" [disabled]="isLoading()">
-        @if (isLoading()) {
-          <span class="btn-spinner"></span>
-          Ingresando...
-        } @else {
-          Ingresar
+        @if (errorMsg) {
+          <div class="error-banner">
+            <span class="error-icon">⚠️</span>
+            <span>{{ errorMsg }}</span>
+          </div>
         }
-      </button>
-    </form>
 
-    <p class="register-link">
-      ¿No tienes cuenta? <a routerLink="/auth/sign-in">Regístrate</a>
-    </p>
-  </div>
+        <button type="submit" class="btn-primary" [disabled]="isLoading()">
+          @if (isLoading()) {
+            <span class="btn-spinner"></span>
+            Ingresando...
+          } @else {
+            Ingresar
+          }
+        </button>
+      </form>
+
+      <p class="register-link">
+        ¿No tienes cuenta? <a routerLink="/auth/sign-in">Regístrate</a>
+      </p>
+    </div>
+  }
 </div>
