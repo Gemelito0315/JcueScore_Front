@@ -106,7 +106,7 @@
 
 <!-- GAME SCREEN -->
 @if (partidaIniciada()) {
-  <div class="game-screen">
+  <div class="game-screen" [class.viewer-mode]="isViewer()">
     
     <!-- TOP BAR -->
     <header class="top-bar">
