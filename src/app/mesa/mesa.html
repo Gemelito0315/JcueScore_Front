@@ -129,88 +129,75 @@
     </header>
 
     <!-- MAIN BOARD -->
-    <main class="main-board" [class]="'layout-' + numJugadores()">
-
-      <ng-template #playerCard let-j="jugador" let-i="index">
-        <div class="player-panel" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" [class.active-turn]="turnoActual() === i" [class.compact]="numJugadores() > 2">
-          @if (turnoActual() === i) { <div class="colored-bar" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0"></div> }
-          
-          <div class="panel-header">
-            <div class="name-block">
-              <div class="name">
-                {{ j.nombre }} 
-              </div>
-              @if (j.handicap > 0) { 
-                <div class="handicap">+{{j.handicap}} PTS de Ventaja</div> 
-              }
+    <ng-template #playerCard let-j="jugador" let-i="index">
+      <div class="player-panel" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" [class.active-turn]="turnoActual() === i" [class.compact]="numJugadores() > 2">
+        @if (turnoActual() === i) { <div class="colored-bar" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0"></div> }
+        
+        <div class="panel-header">
+          <div class="name-block">
+            <div class="name">
+              {{ j.nombre }} 
             </div>
-            <div class="turn-indicator" [class.active]="turnoActual() === i"></div>
+            @if (j.handicap > 0) { 
+              <div class="handicap">+{{j.handicap}} PTS de Ventaja</div> 
+            }
           </div>
+          <div class="turn-indicator" [class.active]="turnoActual() === i"></div>
+        </div>
 
-          <div class="avg-hr-row">
-            <span>AVG: {{ j.promedio || 0 }}</span>
-            <span>HR: {{ j.rachMax || 0 }}</span>
+        <div class="avg-hr-row">
+          <span>AVG: {{ j.promedio || 0 }}</span>
+          <span>HR: {{ j.rachMax || 0 }}</span>
+        </div>
+
+        <div class="score-display">
+          <span class="score clickable-score" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,1)">{{ j.puntos }}</span>
+        </div>
+
+        @if (tipoJuego() === 'avanzado') {
+          <div class="progress-tracker">
+            <div class="tracker-labels">
+              <span>Racha Real: {{j.rachaActual}}</span>
+              <span>Meta: {{j.meta}}</span>
+            </div>
+            <div class="track-bg">
+              <div class="track-fill" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" [style.width]="(j.puntos/j.meta)*100 + '%'"></div>
+            </div>
           </div>
+        }
 
-          <div class="score-display">
-            <span class="score clickable-score" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,1)">{{ j.puntos }}</span>
+        @if (!isViewer()) {
+          <div class="controls">
+            <div class="add-buttons">
+              <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,2)">+2</button>
+              <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,3)">+3</button>
+              <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,5)">+5</button>
+              <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="restarPunto(i)">‑1</button>
+            </div>
+            <button class="btn-minus" (click)="restarPunto(i)">− Restar Punto</button>
           </div>
+        }
 
-          @if (tipoJuego() === 'avanzado') {
-            <div class="progress-tracker">
-              <div class="tracker-labels">
-                <span>Racha Real: {{j.rachaActual}}</span>
-                <span>Meta: {{j.meta}}</span>
-              </div>
-              <div class="track-bg">
-                <div class="track-fill" [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" [style.width]="(j.puntos/j.meta)*100 + '%'"></div>
-              </div>
-            </div>
-          }
-
-          @if (!isViewer()) {
-            <div class="controls">
-              <div class="add-buttons">
-                <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,2)">+2</button>
-                <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,3)">+3</button>
-                <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="sumarPuntosConValor(i,5)">+5</button>
-                <button [class.p1]="i % 2 === 0" [class.p2]="i % 2 !== 0" (click)="restarPunto(i)">‑1</button>
-              </div>
-              <button class="btn-minus" (click)="restarPunto(i)">− Restar Punto</button>
-            </div>
-          }
-
-          <div class="stats-footer">
-            <div class="stat-box">
-              <span class="val">{{ j.promedio || 0 }}</span>
-              <span class="lbl">Promedio</span>
-            </div>
-            <div class="stat-box">
-              <span class="val">{{ j.rachMax || 0 }}</span>
-              <span class="lbl">Racha Máx</span>
-            </div>
-            <div class="stat-box">
-              <span class="val">{{ j.historial.length || 0 }}</span>
-              <span class="lbl">Turnos</span>
-            </div>
+        <div class="stats-footer">
+          <div class="stat-box">
+            <span class="val">{{ j.promedio || 0 }}</span>
+            <span class="lbl">Promedio</span>
+          </div>
+          <div class="stat-box">
+            <span class="val">{{ j.rachMax || 0 }}</span>
+            <span class="lbl">Racha Máx</span>
+          </div>
+          <div class="stat-box">
+            <span class="val">{{ j.historial.length || 0 }}</span>
+            <span class="lbl">Turnos</span>
           </div>
         </div>
-      </ng-template>
-
-      <!-- PLAYERS LEFT -->
-      <div class="players-group left-group">
-        @for (j of jugadores(); track $index) {
-          @if ($index < numJugadores() / 2) {
-            <ng-container *ngTemplateOutlet="playerCard; context: { jugador: j, index: $index }"></ng-container>
-          }
-        }
       </div>
-      
+    </ng-template>
 
-
-      <!-- CAMERA FEED (CENTER) -->
+    <!-- SHARED CAMERA FEED TEMPLATE -->
+    <ng-template #cameraFeed>
       <div class="camera-feed" [class.fullscreen-mode]="isFullscreen()">
-        <!-- ENTRADA + TIRO TIMER (BiirtualScore style) -->
         @if (tipoJuego() === 'avanzado') {
           <div class="entrada-tiro-bar">
             <div class="entrada-box">
@@ -223,13 +210,10 @@
             </div>
           </div>
         }
-
         <div class="live-badge">
           <div class="en-vivo-tag"><div class="pulse"></div> EN VIVO</div>
           @if (!isViewer()) {
-            <button class="btn-var-mini" (click)="abrirVarCompleto()" title="Revisar VAR de todo el partido">
-              ⏪ V.A.R
-            </button>
+            <button class="btn-var-mini" (click)="abrirVarCompleto()" title="Revisar VAR de todo el partido">⏪ V.A.R</button>
           } @else {
             <button class="btn-var-mini" (click)="toggleFullscreenCamera()" title="Alternar Pantalla Completa">
               {{ isFullscreen() ? '✕ REDUCIR VIDEO' : '⛶ EXPANDIR VIDEO' }}
@@ -237,7 +221,6 @@
           }
         </div>
         <div class="scanline"></div>
-
         @if (!camaraActiva()) {
           @if (isViewer() && liveFrame()) {
             <img [src]="liveFrame()" alt="Live Stream" />
@@ -262,7 +245,6 @@
         } @else {
           <video #videoEl autoplay muted playsinline></video>
         }
-
         @if (ultimaJugada()) {
           <div class="flash-overlay">
             <span class="fo-player">{{ ultimaJugada()!.jugador }} Anotó</span>
@@ -270,17 +252,43 @@
           </div>
         }
       </div>
+    </ng-template>
 
-      <!-- PLAYERS RIGHT -->
-      <div class="players-group right-group">
-        @for (j of jugadores(); track $index) {
-          @if ($index >= numJugadores() / 2) {
+    <!-- ===== VIEWER LAYOUT (mobile-first: camera top, players side-by-side) ===== -->
+    @if (isViewer()) {
+      <main class="main-board viewer-layout" [class]="'layout-' + numJugadores()">
+        <!-- Camera TOP -->
+        <ng-container *ngTemplateOutlet="cameraFeed"></ng-container>
+        <!-- All players in a 2-column row -->
+        <div class="viewer-players-row">
+          @for (j of jugadores(); track $index) {
             <ng-container *ngTemplateOutlet="playerCard; context: { jugador: j, index: $index }"></ng-container>
           }
-        }
-      </div>
-
-    </main>
+        </div>
+      </main>
+    } @else {
+      <!-- ===== NORMAL LAYOUT (3-column: players | camera | players) ===== -->
+      <main class="main-board" [class]="'layout-' + numJugadores()">
+        <!-- PLAYERS LEFT -->
+        <div class="players-group left-group">
+          @for (j of jugadores(); track $index) {
+            @if ($index < numJugadores() / 2) {
+              <ng-container *ngTemplateOutlet="playerCard; context: { jugador: j, index: $index }"></ng-container>
+            }
+          }
+        </div>
+        <!-- CAMERA FEED (CENTER) -->
+        <ng-container *ngTemplateOutlet="cameraFeed"></ng-container>
+        <!-- PLAYERS RIGHT -->
+        <div class="players-group right-group">
+          @for (j of jugadores(); track $index) {
+            @if ($index >= numJugadores() / 2) {
+              <ng-container *ngTemplateOutlet="playerCard; context: { jugador: j, index: $index }"></ng-container>
+            }
+          }
+        </div>
+      </main>
+    }
 
     <!-- BOTTOM BAR -->
     <footer class="bottom-bar">

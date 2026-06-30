@@ -2302,148 +2302,122 @@ body {
 }
 
 // =====================================================
-// VIEWER MODE — Responsive overrides for spectator TV
+// VIEWER LAYOUT — Dedicated spectator TV layout
+// Camera always on top, players side-by-side below
 // =====================================================
-.game-screen.viewer-mode {
 
-  // ---- Mobile portrait (< 640px) ---- //
-  @media (max-width: 640px) {
+.main-board.viewer-layout {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  overflow-y: auto;
 
-    // Reorganize main board: camera on top, players stacked below as compact rows
-    .main-board {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 8px !important;
-      padding: 8px !important;
-      align-items: stretch;
+  // Camera fills the full width at proper 16:9 ratio
+  .camera-feed {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    height: auto;
+    min-height: 0;
+    flex-shrink: 0;
+    border-radius: 16px;
+    // Make sure image shows completely without saturation
+    img {
+      object-fit: contain !important;
+      background: #000;
+    }
+  }
 
-      // Camera first (natural DOM order via order property)
-      .camera-feed {
-        order: -1;
-        // Respect the video aspect ratio fully — no cropping
-        aspect-ratio: 16 / 9;
-        height: auto;
-        min-height: 0;
-        max-height: 56vw; // Keeps the camera from being too tall
-        border-radius: 12px;
-      }
+  // Players row: 2 columns side by side
+  .viewer-players-row {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    flex: 1;
 
-      // Both player groups as a side-by-side 2-column grid
-      .players-group {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
-        flex-direction: unset !important;
-      }
+    // On very small phones, still keep 2 columns but more compact
+    @media (max-width: 400px) {
+      gap: 6px;
     }
 
-    // Compact player panels for viewer on mobile
+    // For 3+ players, allow 3 columns on larger screens
+    @media (min-width: 768px) {
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    }
+
+    // Compact player panels in viewer mode
     .player-panel {
-      border-radius: 12px;
-
-      .panel-header {
-        padding: 8px 10px !important;
-      }
-
-      // Make the score much smaller so both panels fit side-by-side
+      // Reduce score font size so it fits in half the screen width
       .score-display {
-        margin: 6px !important;
-        border-radius: 8px !important;
-        min-height: 60px;
+        margin: 6px;
+        min-height: 80px;
 
         .score {
-          font-size: clamp(2rem, 10vw, 4.5rem) !important;
+          // Much smaller score for side-by-side view
+          font-size: clamp(2.5rem, 10vw, 5rem) !important;
+
+          @media (max-width: 480px) {
+            font-size: clamp(2rem, 9vw, 4rem) !important;
+          }
         }
       }
 
-      // Hide stats footer and avg-hr in viewer compact view
+      // Hide verbose stats — keep it visual for spectators
       .stats-footer {
-        display: none !important;
+        display: none;
       }
+
+      // Smaller text in header
+      .panel-header {
+        padding: 8px 12px;
+
+        .name-block .name {
+          font-size: 0.85rem;
+          max-width: 100%;
+
+          @media (max-width: 400px) {
+            font-size: 0.7rem;
+          }
+        }
+      }
+
       .avg-hr-row {
-        font-size: 0.65rem !important;
-        padding: 0 8px !important;
-      }
+        font-size: 0.65rem;
+        padding: 0 10px;
 
-      // Progress bar stays but compacted
-      .progress-tracker {
-        padding: 0 8px 8px !important;
-        .tracker-labels {
-          font-size: 0.55rem !important;
-        }
-      }
-    }
-
-    // Make top bar more compact for viewer on mobile
-    .top-bar {
-      min-height: 52px !important;
-      padding: 6px 12px !important;
-      flex-wrap: nowrap !important;
-      justify-content: space-between !important;
-      gap: 8px !important;
-
-      .brand-group {
-        .brand-logo { display: none !important; }
-      }
-
-      .timer-group {
-        .timer-display {
-          font-size: 1.1rem !important;
-          padding: 3px 10px !important;
-        }
-      }
-
-      .btn-reset {
-        font-size: 0.7rem !important;
-        padding: 5px 8px !important;
-        white-space: nowrap;
-      }
-    }
-
-    // Make bottom bar minimal for viewer
-    .bottom-bar {
-      min-height: 40px !important;
-      padding: 4px 10px !important;
-
-      .consumo-bar {
-        .consumo-info {
-          font-size: 0.7rem !important;
+        @media (max-width: 400px) {
+          font-size: 0.55rem;
+          padding: 0 6px;
         }
       }
     }
   }
 
-  // ---- Slightly larger phones / small tablets portrait (641px - 768px) ---- //
-  @media (min-width: 641px) and (max-width: 768px) {
-    .main-board {
-      display: flex !important;
-      flex-direction: column !important;
-      gap: 12px !important;
-      padding: 12px !important;
+  // On larger screens (tablets landscape), show camera + players side by side
+  @media (min-width: 768px) and (orientation: landscape) {
+    flex-direction: row;
+    align-items: flex-start;
 
-      .camera-feed {
-        order: -1;
-        aspect-ratio: 16 / 9;
-        height: auto;
-        border-radius: 14px;
-      }
-
-      .players-group {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 10px !important;
-      }
+    .camera-feed {
+      flex: 1.8;
+      aspect-ratio: 16 / 9;
+      height: auto;
     }
 
-    .player-panel {
-      .score-display .score {
-        font-size: clamp(2.5rem, 8vw, 5rem) !important;
-      }
-      .stats-footer {
-        grid-template-columns: repeat(3, 1fr) !important;
-        .val { font-size: 0.9rem !important; }
-        .lbl { font-size: 0.55rem !important; }
-      }
+    .viewer-players-row {
+      flex: 1;
+      grid-template-columns: 1fr;
+    }
+  }
+}
+
+// Also keep old viewer-mode rules for backwards compat (non-viewer layout)
+.game-screen.viewer-mode {
+  // Remove scanline RGB noise on mobile
+  @media (max-width: 768px) {
+    .scanline {
+      background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.15) 50%) !important;
+      background-size: 100% 4px !important;
     }
   }
 }
