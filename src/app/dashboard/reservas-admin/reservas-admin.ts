@@ -141,7 +141,9 @@ export class ReservasAdmin implements OnInit {
     
     // Validaciones lógicas de fecha y hora
     // Para que new Date() use la zona horaria local correctamente al instanciar fecha+hora
-    const resDateTime = new Date(`${v.fecha}T${v.horaInicio}:00`);
+    const [year, month, day] = v.fecha.split('-').map(Number);
+    const [hours, minutes] = v.horaInicio.split(':').map(Number);
+    const resDateTime = new Date(year, month - 1, day, hours, minutes);
     if (resDateTime < new Date()) {
       alert("⚠️ No puedes agendar una reserva en el pasado.");
       return;
