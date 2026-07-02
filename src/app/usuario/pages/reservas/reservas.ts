@@ -81,8 +81,20 @@ export class UsuarioReservas implements OnInit {
 
   guardar() {
     if (this.form.invalid) return;
-    this.saving.set(true);
+    
     const v = this.form.value;
+    
+    const resDateTime = new Date(`${v.fecha}T${v.horaInicio}:00`);
+    if (resDateTime < new Date()) {
+      alert("⚠️ No puedes agendar una reserva en el pasado.");
+      return;
+    }
+    if (v.horaFin && v.horaInicio && v.horaFin <= v.horaInicio) {
+      alert("⚠️ La hora de fin debe ser posterior a la hora de inicio.");
+      return;
+    }
+
+    this.saving.set(true);
     const userId = this.auth.currentUser()?.id;
     const payload = {
       userId: userId ? Number(userId) : null,
