@@ -83,8 +83,8 @@ export class UsuarioReservas implements OnInit {
     if (this.form.invalid) return;
     
     const v = this.form.value;
-    const [year, month, day] = v.fecha.split('-').map(Number);
-    const [hours, minutes] = v.horaInicio.split(':').map(Number);
+    const [year, month, day] = v.fecha!.split('-').map(Number);
+    const [hours, minutes] = v.horaInicio!.split(':').map(Number);
     const resDateTime = new Date(year, month - 1, day, hours, minutes);
     if (resDateTime < new Date()) {
       alert("⚠️ No puedes agendar una reserva en el pasado.");
