@@ -124,11 +124,7 @@ export const USUARIO_MENU: SidebarItem[] = [
     route: '/usuario/inicio',
     svgPath: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/>'
   },
-  /* {
-    label: 'Partida en Vivo',
-    route: '/usuario/mi-partida',
-    svgPath: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/>'
-  }, */
+
   {
     label: 'Reservas',
     route: '/usuario/reservas',
