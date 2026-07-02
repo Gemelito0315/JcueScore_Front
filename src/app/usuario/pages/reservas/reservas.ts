@@ -44,12 +44,12 @@ export class UsuarioReservas implements OnInit {
       next: (data) => {
         this.reservas.set(data.map(r => ({
           id: r.id,
-          tipo: r.recurso?.gameType?.name ?? r.recurso?.code ?? 'Billar',
-          mesa: r.recurso?.code ?? 'Mesa',
-          fecha: r.fecha?.split('T')[0] ?? r.fecha,
-          hora: `${r.horaInicio ?? ''} - ${r.horaFin ?? ''}`,
-          estado: r.estado ?? 'confirmada',
-          notas: r.notas ?? ''
+          tipo: r.resource?.gameType?.name ?? r.recurso?.gameType?.name ?? r.resource?.code ?? r.recurso?.code ?? 'Billar',
+          mesa: r.resource?.code ?? r.recurso?.code ?? 'Mesa',
+          fecha: (r.reservationDate ?? r.fecha)?.split('T')[0] ?? (r.reservationDate ?? r.fecha),
+          hora: `${r.startTime ?? r.horaInicio ?? ''} - ${r.endTime ?? r.horaFin ?? ''}`,
+          estado: ({ pending: 'pendiente', confirmed: 'confirmada', completed: 'completada', cancelled: 'cancelada' } as any)[r.status] ?? r.status ?? r.estado ?? 'confirmada',
+          notas: r.notes ?? r.notas ?? ''
         })));
         this.loading.set(false);
       },
@@ -73,7 +73,7 @@ export class UsuarioReservas implements OnInit {
 
   cancelar(id: number) {
     if (!confirm('¿Cancelar esta reserva?')) return;
-    this.http.put(`${API}/reservas/${id}`, { estado: 'cancelada' }).subscribe({
+    this.http.put(`${API}/reservas/${id}`, { status: 'cancelled', estado: 'cancelada' }).subscribe({
       next: () => this.cargarReservas(),
       error: () => this.reservas.update(rs => rs.map(r => r.id === id ? { ...r, estado: 'cancelada' } : r))
     });
@@ -85,13 +85,15 @@ export class UsuarioReservas implements OnInit {
     const v = this.form.value;
     const userId = this.auth.currentUser()?.id;
     const payload = {
-      userId,
-      recursoId: Number(v.recursoId),
-      fecha: v.fecha,
-      horaInicio: v.horaInicio,
-      horaFin: v.horaFin,
-      notas: v.notas,
-      estado: 'confirmada'
+      userId: userId ? Number(userId) : null,
+      resourceId: Number(v.recursoId),
+      venueId: 1, // Default venue ID as used in admin
+      reservationDate: v.fecha,
+      startTime: v.horaInicio,
+      endTime: v.horaFin,
+      notes: v.notas,
+      totalAmount: 0,
+      status: 'confirmed'
     };
     this.http.post(`${API}/reservas`, payload).subscribe({
       next: () => {
